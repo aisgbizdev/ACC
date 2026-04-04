@@ -40,6 +40,36 @@ pnpm workspace monorepo using TypeScript.
 | Owner     | All PTs     | No access     | View all (read-only)      | No access     | No access      | View all      | No        |
 | Superadmin| All PTs     | View + Review | Full access               | No access     | No access      | Full access   | Yes       |
 
+## Phase 7 Features (Task #8 — KPI & Rekap Cabang)
+
+- **KPI APUPPT**: Scorecard per APUPPT — update_rate, nasabah_diperiksa, temuan breakdown, avg_resolution_days, kpi_score (0-100). Ranking table di `/kpi`
+- **KPI DK**: review_rate, avg_review_time_hours, ticket_comments, 24h_response_rate
+- **KPI DU**: sign_off_rate, total_signed_off, total_eligible
+- **Rekap Cabang**: Tab baru di PTDetail — tabel per cabang dengan update_rate, nasabah, temuan terbuka, traffic_light
+- **Period filter**: Mingguan / Bulanan / Kustom (date range)
+- **Export CSV**: Per section di halaman KPI
+
+## Phase 6 Features (Task #7 — Push Notification)
+
+- **VAPID Push Notifications**: Notif otomatis ke browser (PWA) berdasarkan role
+  - APUPPT → notifikasi komentar baru di temuan mereka
+  - DK → notifikasi aktivitas baru, temuan baru, perlu review
+  - DU → notifikasi ketika ada laporan yang perlu sign-off
+  - Owner/Superadmin → ringkasan harian, notifikasi PT merah
+- **Daily Cron**: 17:00 WIB — cek PT merah, kirim ringkasan ke Owner/Superadmin
+- **push_subscriptions** table: simpan endpoint per user (multi-device)
+- **NotificationBanner**: banner ajakan aktifkan notif untuk user baru
+- **NotificationSettings** page (`/notification-settings`): toggle notif, daftar tipe notif per role
+- **Env secrets required**: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_EMAIL`
+
+## User Profile Feature
+
+- **Profile page** (`/profile`): upload avatar, edit nama inline, ganti password
+- **avatarUrl** column di tabel `users`
+- Avatar tampil di Navbar (dropdown) dan BottomNav (mobile)
+- Upload avatar via `POST /api/auth/profile/avatar` (multer, simpan di `/uploads/avatars/`)
+- Edit nama via `PUT /api/auth/profile`
+
 ## Phase 4 Features (Task #5)
 
 - **DK Review**: DK can review/acknowledge each APUPPT activity report. Badge shows "Sudah Ditinjau" after review
@@ -59,14 +89,15 @@ pnpm workspace monorepo using TypeScript.
 
 ## Database Tables
 
-- `pts` — 5 PTs (SGB, RFB, BPF, KPF, EWF)
-- `users` — 8 seed accounts
+- `pts` — 5 PTs (SGB=Solid Gold Berjangka, RFB=Rifan Financindo Berjangka, BPF=Best Profit Futures, KPF=Kontak Perkasa Futures, EWF=Equity World Futures)
+- `users` — seed accounts per PT + dk, du, owner, superadmin. Col: `avatarUrl`
 - `daily_activities` — unique `(pt_id, date)` constraint
-- `findings` — status: pending / in_progress / awaiting_verification / completed / follow_up. Additional cols: deadline, assigned_to, escalated_at, escalation_level
+- `findings` — status: pending / in_progress / awaiting_verification / completed / follow_up. Cols: deadline, assigned_to, escalated_at, escalation_level
 - `activity_reviews` — DK review records for APUPPT activity reports
 - `report_signoffs` — DU sign-off records per period (weekly/monthly)
 - `ticket_comments` — comment thread per finding (system + manual entries)
 - `audit_logs` — full audit trail for all actions
+- `push_subscriptions` — Web Push subscriptions per user (multi-device support)
 
 ## Seed Accounts (all password: `password123`)
 
@@ -116,6 +147,16 @@ pnpm workspace monorepo using TypeScript.
 - `POST /api/activities/:id/review` — DK review an activity
 - `GET /api/pts/:id/history` — get 7-day traffic light history
 - `GET /api/audit-logs` — list audit logs (superadmin only)
+- `PUT /api/auth/profile` — update user name
+- `POST /api/auth/profile/avatar` — upload avatar (multer, saves to /uploads/avatars/)
+- `GET /api/kpi/apuppt` — APUPPT scorecard per user (ranking, kpi_score)
+- `GET /api/kpi/dk` — DK engagement metrics
+- `GET /api/kpi/du` — DU sign-off rate
+- `GET /api/branches/analytics` — per-branch analytics for a PT (requires ptId)
+- `GET /api/notifications/vapid-public-key` — VAPID public key for push sub
+- `POST /api/notifications/subscribe` — save push subscription
+- `DELETE /api/notifications/subscribe` — remove push subscription
+- `GET /api/notifications/status` — check if user has active subscriptions
 
 ## Review Status Filter (GET /api/activities?reviewStatus=)
 - `pending_review` — dkReviewedAt IS NULL
