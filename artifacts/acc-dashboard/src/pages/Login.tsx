@@ -1,12 +1,15 @@
 import { useState } from "react";
-import { Redirect } from "wouter";
+import { Redirect, Link } from "wouter";
+import { Eye, EyeOff } from "lucide-react";
 import { login } from "@workspace/api-client-react";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 
 export default function Login() {
   const { user, loading, setUser } = useAuth();
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -30,16 +33,17 @@ export default function Login() {
     setError("");
     setSubmitting(true);
     try {
-      const data = await login({ email, password });
+      const data = await login({ username, password, rememberMe });
       setUser({
         id: data.id,
         name: data.name,
+        username: data.username,
         email: data.email,
         role: data.role as UserRole,
         ptId: data.ptId ?? null,
       });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Login gagal. Periksa email dan password Anda.";
+      const msg = err instanceof Error ? err.message : "Login gagal. Periksa username dan password Anda.";
       setError(msg);
     } finally {
       setSubmitting(false);
@@ -60,26 +64,54 @@ export default function Login() {
         <div className="bg-slate-800 rounded-xl p-6 shadow-xl border border-slate-700">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Email</label>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">Jabatan / Username</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 required
-                placeholder="nama@acc.local"
+                placeholder="apuppt.sgb"
                 className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               />
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-                className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="w-full px-3 py-2.5 pr-10 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-3.5 h-3.5 rounded accent-blue-500"
+                />
+                <span className="text-xs text-slate-400">Ingat Saya</span>
+              </label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Lupa Password?
+              </Link>
             </div>
 
             {error && (
@@ -101,10 +133,12 @@ export default function Login() {
         <div className="mt-6 bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
           <p className="text-xs text-slate-400 font-medium mb-2">Akun untuk testing:</p>
           <div className="space-y-1.5 text-xs text-slate-500">
-            <div className="flex justify-between"><span>APUPPT SGB</span><span>apuppt.sgb@acc.local</span></div>
-            <div className="flex justify-between"><span>DK</span><span>dk@acc.local</span></div>
-            <div className="flex justify-between"><span>DU</span><span>du@acc.local</span></div>
-            <div className="flex justify-between"><span>Owner</span><span>owner@acc.local</span></div>
+            <div className="flex justify-between"><span>APUPPT SGB</span><span className="font-mono">apuppt.sgb</span></div>
+            <div className="flex justify-between"><span>APUPPT RFB</span><span className="font-mono">apuppt.rfb</span></div>
+            <div className="flex justify-between"><span>DK SGB</span><span className="font-mono">dk.sgb</span></div>
+            <div className="flex justify-between"><span>DU SGB</span><span className="font-mono">du.sgb</span></div>
+            <div className="flex justify-between"><span>Owner</span><span className="font-mono">owner</span></div>
+            <div className="flex justify-between"><span>Superadmin</span><span className="font-mono">superadmin</span></div>
             <div className="flex justify-between pt-1 border-t border-slate-700 text-slate-400"><span>Password semua:</span><span className="font-mono">password123</span></div>
           </div>
         </div>

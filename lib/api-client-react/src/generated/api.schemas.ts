@@ -19,8 +19,19 @@ export interface SuccessResponse {
 }
 
 export interface LoginBody {
-  email: string;
+  username: string;
   password: string;
+  rememberMe?: boolean;
+}
+
+export interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordBody {
+  userId: string;
+  newPassword: string;
 }
 
 export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
@@ -30,11 +41,13 @@ export const AuthUserRole = {
   dk: "dk",
   du: "du",
   owner: "owner",
+  superadmin: "superadmin",
 } as const;
 
 export interface AuthUser {
   id: string;
   name: string;
+  username: string;
   email: string;
   role: AuthUserRole;
   ptId?: string | null;

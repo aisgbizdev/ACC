@@ -5,6 +5,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
+import ForgotPassword from "@/pages/ForgotPassword";
+import ChangePassword from "@/pages/ChangePassword";
 import Dashboard from "@/pages/Dashboard";
 import PTDetail from "@/pages/PTDetail";
 import Activity from "@/pages/Activity";
@@ -47,6 +49,12 @@ function Router() {
       <Switch>
         <Route path="/" component={RootRedirect} />
         <Route path="/login" component={Login} />
+        <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/change-password">
+          <ProtectedRoute>
+            <ChangePassword />
+          </ProtectedRoute>
+        </Route>
         <Route path="/dashboard">
           <ProtectedRoute>
             <Dashboard />
@@ -63,12 +71,12 @@ function Router() {
           </ProtectedRoute>
         </Route>
         <Route path="/findings">
-          <ProtectedRoute allowedRoles={["apuppt", "dk", "owner"]}>
+          <ProtectedRoute allowedRoles={["apuppt", "dk", "du", "owner", "superadmin"]}>
             <Findings />
           </ProtectedRoute>
         </Route>
         <Route path="/reports">
-          <ProtectedRoute allowedRoles={["dk", "du", "owner"]}>
+          <ProtectedRoute allowedRoles={["dk", "du", "owner", "superadmin"]}>
             <Reports />
           </ProtectedRoute>
         </Route>

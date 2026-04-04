@@ -13,4 +13,5 @@ export const AuthUserRole = {
   dk: "dk",
   du: "du",
   owner: "owner",
+  superadmin: "superadmin",
 } as const;

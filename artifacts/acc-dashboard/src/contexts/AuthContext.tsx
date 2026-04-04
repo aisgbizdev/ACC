@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { getMe } from "@workspace/api-client-react";
 
-export type UserRole = "apuppt" | "dk" | "du" | "owner";
+export type UserRole = "apuppt" | "dk" | "du" | "owner" | "superadmin";
 
 export interface AuthUser {
   id: string;
   name: string;
+  username: string;
   email: string;
   role: UserRole;
   ptId: string | null;
@@ -33,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser({
           id: data.id,
           name: data.name,
+          username: data.username,
           email: data.email,
           role: data.role as UserRole,
           ptId: data.ptId ?? null,

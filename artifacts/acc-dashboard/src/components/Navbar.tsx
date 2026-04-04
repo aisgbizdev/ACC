@@ -1,18 +1,32 @@
 import { useLocation, Link } from "wouter";
 import { logout } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronRight } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, KeyRound, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
 
 const ROLE_LABELS: Record<string, string> = {
   apuppt: "APUPPT",
   dk: "DK",
   du: "DU",
   owner: "Owner",
+  superadmin: "Superadmin",
 };
 
 export function Navbar() {
   const { user, setUser } = useAuth();
   const [location] = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   if (!user) return null;
 
@@ -25,10 +39,10 @@ export function Navbar() {
   };
 
   const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["apuppt", "dk", "du", "owner"] },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
     { href: "/activity", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
-    { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "owner"] },
-    { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner"] },
+    { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
+    { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner", "superadmin"] },
   ];
 
   const visibleItems = navItems.filter((item) => item.roles.includes(user.role));
@@ -65,18 +79,39 @@ export function Navbar() {
               })}
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <div className="text-xs font-medium text-white">{user.name}</div>
-              <div className="text-xs text-slate-400">{ROLE_LABELS[user.role]}</div>
+          <div className="flex items-center gap-2" ref={menuRef}>
+            <div className="relative">
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-slate-800 transition-colors"
+              >
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs font-medium text-white">{user.name}</div>
+                  <div className="text-xs text-slate-400">{ROLE_LABELS[user.role]}</div>
+                </div>
+                <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 w-44 bg-slate-800 border border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
+                  <Link
+                    href="/change-password"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    Ubah Password
+                  </Link>
+                  <div className="border-t border-slate-700" />
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Keluar
+                  </button>
+                </div>
+              )}
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Keluar</span>
-            </button>
           </div>
         </div>
       </div>

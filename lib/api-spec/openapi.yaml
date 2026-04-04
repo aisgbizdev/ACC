@@ -95,6 +95,80 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change own password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordBody"
+      responses:
+        "200":
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated or wrong current password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/reset-password:
+    post:
+      operationId: resetPassword
+      tags: [auth]
+      summary: Reset a user's password (superadmin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordBody"
+      responses:
+        "200":
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /pts:
     get:
       operationId: listPts
@@ -475,14 +549,37 @@ components:
     LoginBody:
       type: object
       properties:
-        email:
+        username:
           type: string
-          format: email
         password:
           type: string
+        rememberMe:
+          type: boolean
       required:
-        - email
+        - username
         - password
+
+    ChangePasswordBody:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - currentPassword
+        - newPassword
+
+    ResetPasswordBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        newPassword:
+          type: string
+      required:
+        - userId
+        - newPassword
 
     AuthUser:
       type: object
@@ -491,19 +588,25 @@ components:
           type: string
         name:
           type: string
+        username:
+          type: string
         email:
           type: string
         role:
-          type: string
-          enum: [apuppt, dk, du, owner]
+          $ref: "#/components/schemas/AuthUserRole"
         ptId:
           type: string
           nullable: true
       required:
         - id
         - name
+        - username
         - email
         - role
+
+    AuthUserRole:
+      type: string
+      enum: [apuppt, dk, du, owner, superadmin]
 
     Pt:
       type: object

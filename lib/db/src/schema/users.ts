@@ -3,11 +3,12 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { ptsTable } from "./pts";
 
-export const userRoleEnum = pgEnum("user_role", ["apuppt", "dk", "du", "owner"]);
+export const userRoleEnum = pgEnum("user_role", ["apuppt", "dk", "du", "owner", "superadmin"]);
 
 export const usersTable = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
+  username: varchar("username", { length: 255 }).notNull().unique(),
   email: varchar("email", { length: 255 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   role: userRoleEnum("role").notNull(),

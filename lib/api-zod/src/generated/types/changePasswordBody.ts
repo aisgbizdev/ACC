@@ -6,8 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface LoginBody {
-  username: string;
-  password: string;
-  rememberMe?: boolean;
+export interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
 }

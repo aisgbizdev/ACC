@@ -8,6 +8,7 @@
 
 export * from "./authUser";
 export * from "./authUserRole";
+export * from "./changePasswordBody";
 export * from "./createActivityBody";
 export * from "./createActivityBodyActivityType";
 export * from "./createActivityBodyFindingStatus";
@@ -34,6 +35,7 @@ export * from "./ptStatus";
 export * from "./ptStatusCard";
 export * from "./ptStatusCardStatus";
 export * from "./ptStatusStatus";
+export * from "./resetPasswordBody";
 export * from "./successResponse";
 export * from "./updateActivityBody";
 export * from "./updateActivityBodyActivityType";

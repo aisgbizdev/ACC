@@ -19,15 +19,17 @@ export const HealthCheckResponse = zod.object({
  * @summary Login
  */
 export const LoginBody = zod.object({
-  email: zod.string().email(),
+  username: zod.string(),
   password: zod.string(),
+  rememberMe: zod.boolean().optional(),
 });
 
 export const LoginResponse = zod.object({
   id: zod.string(),
   name: zod.string(),
+  username: zod.string(),
   email: zod.string(),
-  role: zod.enum(["apuppt", "dk", "du", "owner"]),
+  role: zod.enum(["apuppt", "dk", "du", "owner", "superadmin"]),
   ptId: zod.string().nullish(),
 });
 
@@ -45,9 +47,36 @@ export const LogoutResponse = zod.object({
 export const GetMeResponse = zod.object({
   id: zod.string(),
   name: zod.string(),
+  username: zod.string(),
   email: zod.string(),
-  role: zod.enum(["apuppt", "dk", "du", "owner"]),
+  role: zod.enum(["apuppt", "dk", "du", "owner", "superadmin"]),
   ptId: zod.string().nullish(),
+});
+
+/**
+ * @summary Change own password
+ */
+export const ChangePasswordBody = zod.object({
+  currentPassword: zod.string(),
+  newPassword: zod.string(),
+});
+
+export const ChangePasswordResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary Reset a user's password (superadmin only)
+ */
+export const ResetPasswordBody = zod.object({
+  userId: zod.string(),
+  newPassword: zod.string(),
+});
+
+export const ResetPasswordResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
 });
 
 /**
