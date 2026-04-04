@@ -3,20 +3,20 @@ import { eq, and, gte, lte, desc, SQL } from "drizzle-orm";
 import { db, ptsTable, dailyActivitiesTable, findingsTable, activityReviewsTable, reportSignoffsTable, usersTable } from "@workspace/db";
 import { requireRole, requireAuth } from "../middlewares/auth";
 import { computeTrafficLight } from "../lib/traffic-light";
+import * as XLSX from "xlsx";
 
 const router: IRouter = Router();
 
-router.get("/reports/summary", requireRole("dk", "du", "owner", "superadmin"), async (req, res): Promise<void> => {
-  const user = req.session.user!;
-  const today = new Date().toISOString().split("T")[0];
-
-  const startDate = req.query.startDate as string | undefined;
-  const endDate = req.query.endDate as string | undefined;
-  const ptIdFilter = req.query.ptId as string | undefined;
-
+async function buildSummaries(
+  user: { ptId?: string | null; role?: string },
+  startDate: string | undefined,
+  endDate: string | undefined,
+  ptIdFilter: string | undefined,
+  periodType: string | undefined,
+  today: string
+) {
   let pts = await db.select().from(ptsTable).orderBy(ptsTable.code);
 
-  // DU with ptId can only see their PT
   if (user.ptId) {
     pts = pts.filter((p) => p.id === user.ptId);
   } else if (ptIdFilter) {
@@ -54,7 +54,6 @@ router.get("/reports/summary", requireRole("dk", "du", "owner", "superadmin"), a
       const completedFindings = findings.filter((f) => f.status === "completed");
       const status = computeTrafficLight(lastActivity?.date ?? null, findings, today);
 
-      // DK review coverage for this week
       let dkReviewPct = 0;
       if (activities.length > 0) {
         const activityIds = activities.map((a) => a.id);
@@ -66,7 +65,6 @@ router.get("/reports/summary", requireRole("dk", "du", "owner", "superadmin"), a
         dkReviewPct = Math.round((reviewedCount / activities.length) * 100);
       }
 
-      // Activity breakdown by type
       const activityBreakdown: Record<string, number> = {};
       for (const a of activities) {
         activityBreakdown[a.activityType] = (activityBreakdown[a.activityType] ?? 0) + 1;
@@ -74,10 +72,8 @@ router.get("/reports/summary", requireRole("dk", "du", "owner", "superadmin"), a
 
       const totalItemsReviewed = activities.reduce((sum, a) => sum + (a.itemsReviewed ?? 0), 0);
 
-      // DU sign-off status
       let duSignoff = null;
       if (startDate && endDate) {
-        const periodType = req.query.periodType as string | undefined;
         if (periodType === "weekly" || periodType === "monthly") {
           const [so] = await db
             .select({
@@ -116,7 +112,20 @@ router.get("/reports/summary", requireRole("dk", "du", "owner", "superadmin"), a
     })
   );
 
-  // Group summary
+  return summaries;
+}
+
+router.get("/reports/summary", requireRole("dk", "du", "owner", "superadmin"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const today = new Date().toISOString().split("T")[0];
+
+  const startDate = req.query.startDate as string | undefined;
+  const endDate = req.query.endDate as string | undefined;
+  const ptIdFilter = req.query.ptId as string | undefined;
+  const periodType = req.query.periodType as string | undefined;
+
+  const summaries = await buildSummaries(user, startDate, endDate, ptIdFilter, periodType, today);
+
   const mostStable = summaries.filter((s) => s.status === "green").sort((a, b) => b.dkReviewPct - a.dkReviewPct)[0] ?? null;
   const mostFindings = summaries.slice().sort((a, b) => b.totalFindings - a.totalFindings)[0] ?? null;
   const leastActive = summaries.slice().sort((a, b) => a.totalActivities - b.totalActivities)[0] ?? null;
@@ -129,6 +138,53 @@ router.get("/reports/summary", requireRole("dk", "du", "owner", "superadmin"), a
       leastActive: leastActive ? { ptCode: leastActive.ptCode, ptName: leastActive.ptName, count: leastActive.totalActivities } : null,
     },
   });
+});
+
+router.get("/reports/export", requireRole("dk", "du", "owner", "superadmin"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const today = new Date().toISOString().split("T")[0];
+
+  const startDate = req.query.startDate as string | undefined;
+  const endDate = req.query.endDate as string | undefined;
+  const ptIdFilter = req.query.ptId as string | undefined;
+  const periodType = req.query.periodType as string | undefined;
+
+  const summaries = await buildSummaries(user, startDate, endDate, ptIdFilter, periodType, today);
+
+  const STATUS_LABELS: Record<string, string> = { green: "Hijau", yellow: "Kuning", red: "Merah" };
+
+  const rows = summaries.map((s) => ({
+    "Kode PT": s.ptCode,
+    "Nama PT": s.ptName,
+    "Total Aktivitas": s.totalActivities,
+    "Nasabah Diperiksa": s.totalItemsReviewed,
+    "Temuan Terbuka": s.openFindings,
+    "Temuan Selesai": s.completedFindings,
+    "% Review DK": `${s.dkReviewPct}%`,
+    "Sign-Off DU": s.duSignoff ? `Ya (${s.duSignoff.signerName ?? "-"})` : "Belum",
+    "Status Traffic Light": STATUS_LABELS[s.status] ?? s.status,
+    "Aktivitas Terakhir": s.lastActivityDate ?? "-",
+  }));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+
+  ws["!cols"] = [
+    { wch: 12 }, { wch: 30 }, { wch: 16 }, { wch: 18 },
+    { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 22 },
+    { wch: 18 }, { wch: 18 },
+  ];
+
+  XLSX.utils.book_append_sheet(wb, ws, "Laporan");
+
+  const periode = startDate && endDate ? `${startDate}_${endDate}` : today;
+  const fileName = `laporan-acc-${periode}.xlsx`;
+
+  const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+  res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+  res.send(buf);
 });
 
 export default router;
