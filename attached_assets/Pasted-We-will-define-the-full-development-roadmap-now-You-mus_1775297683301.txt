@@ -1,0 +1,155 @@
+We will define the full development roadmap now.
+
+You must follow phases strictly.
+Do NOT jump phases.
+Do NOT build everything at once.
+
+You can only execute a phase after approval.
+
+---
+
+# PHASE 1 – FOUNDATION (Already Built, but must be validated)
+
+Scope:
+
+* project setup
+* authentication
+* role-based access
+* database schema
+* seed data
+* API basic structure
+
+Validation must include:
+
+* correct seed users (5 APUPPT, 1 per PT)
+* role access restriction works
+* daily activity constraint (1 per PT per day)
+* findings status works
+* traffic light logic correct
+
+No new feature allowed in this phase.
+
+---
+
+# PHASE 2 – DASHBOARD REFINEMENT (NO NEW FEATURES)
+
+Goal:
+Improve clarity and usability of dashboard.
+
+Scope:
+
+* improve PT cards readability
+* ensure traffic light is clearly visible
+* simplify layout (less clutter)
+* ensure fast loading and clean UI
+* make dashboard readable in <5 seconds
+
+Rules:
+
+* do NOT add charts
+* do NOT add analytics
+* do NOT add new metrics
+* do NOT change logic
+
+Only UI/UX refinement.
+
+---
+
+# PHASE 3 – DAILY ACTIVITY UX IMPROVEMENT
+
+Goal:
+Make activity input extremely fast and frictionless.
+
+Scope:
+
+* optimize form layout
+* reduce typing (use dropdowns)
+* auto-fill PT for APUPPT
+* hide fields when not needed (has_finding = false)
+* improve validation feedback
+
+Rules:
+
+* do NOT change database logic
+* do NOT add new activity fields
+* do NOT add automation
+
+Focus only on usability.
+
+---
+
+# PHASE 4 – FINDINGS CLARITY & CONTROL
+
+Goal:
+Make findings easy to monitor and act on.
+
+Scope:
+
+* improve findings table readability
+* highlight overdue findings (>3 days)
+* clear status labeling (pending / follow_up / completed)
+* simple filters (status only)
+
+Rules:
+
+* do NOT add workflow system
+* do NOT add approval chain
+* do NOT add escalation logic
+
+Keep it simple and operational.
+
+---
+
+# PHASE 5 – REPORTS SIMPLIFICATION
+
+Goal:
+Make reports easy to read and consistent with dashboard.
+
+Scope:
+
+* ensure report numbers match dashboard exactly
+* clean layout (per PT summary)
+* highlight key insights:
+
+  * most findings
+  * most pending
+  * most stable PT
+
+Rules:
+
+* do NOT add export (PDF/Excel)
+* do NOT add complex analytics
+* do NOT add forecasting
+
+Focus on clarity only.
+
+---
+
+# GLOBAL RULES
+
+1. Do NOT add features outside scope
+2. Do NOT redesign system logic
+3. Do NOT introduce new modules
+4. Always prioritize simplicity
+5. Always confirm before moving to next phase
+
+---
+
+# EXECUTION RULE
+
+Before starting any phase, you must:
+
+* explain what you will change
+* confirm it follows the rules
+* wait for approval
+
+If anything is unclear, ask first.
+
+---
+
+# CURRENT STATUS
+
+We are still in:
+VALIDATION PHASE (before Phase 2)
+
+Do NOT start Phase 2 until validation is approved.
