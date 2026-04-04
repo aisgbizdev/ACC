@@ -190,7 +190,6 @@ export default function Login() {
           </form>
         </div>
 
-        <p className="mt-4 text-center text-xs text-slate-500">Password semua akun: <span className="font-mono text-slate-400">password123</span></p>
       </div>
     </div>
   );
