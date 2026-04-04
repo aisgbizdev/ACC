@@ -93,8 +93,7 @@ export default function Dashboard() {
                   const config = STATUS_CONFIG[pt.status as keyof typeof STATUS_CONFIG];
                   const Icon = config.icon;
                   return (
-                    <Link key={pt.id} href={`/pt/${pt.id}`}>
-                      <a className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <Link key={pt.id} href={`/pt/${pt.id}`} className="flex items-center justify-between px-4 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer">
                         <div className="flex items-center gap-3">
                           <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${config.dot}`} />
                           <div>
@@ -119,7 +118,6 @@ export default function Dashboard() {
                             {config.label}
                           </span>
                         </div>
-                      </a>
                     </Link>
                   );
                 })}

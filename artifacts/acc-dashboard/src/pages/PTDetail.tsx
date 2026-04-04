@@ -57,10 +57,8 @@ export default function PTDetail() {
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex items-center gap-3 mb-6">
-          <Link href="/dashboard">
-            <a className="text-slate-400 hover:text-slate-600 transition-colors">
-              <ArrowLeft className="w-4 h-4" />
-            </a>
+          <Link href="/dashboard" className="text-slate-400 hover:text-slate-600 transition-colors">
+            <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="flex items-center gap-3">
             <div>
@@ -108,10 +106,8 @@ export default function PTDetail() {
             </div>
             {user?.role === "apuppt" && (
               <div className="px-4 py-3 border-t border-slate-100">
-                <Link href="/activity">
-                  <a className="block w-full text-center text-xs font-medium text-blue-600 hover:text-blue-700 py-2 rounded-lg hover:bg-blue-50 transition-colors">
-                    + Tambah Aktivitas Hari Ini
-                  </a>
+                <Link href="/activity" className="block w-full text-center text-xs font-medium text-blue-600 hover:text-blue-700 py-2 rounded-lg hover:bg-blue-50 transition-colors">
+                  + Tambah Aktivitas Hari Ini
                 </Link>
               </div>
             )}

@@ -27,7 +27,7 @@ export function Navbar() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["apuppt", "dk", "du", "owner"] },
     { href: "/activity", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
-    { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner"] },
+    { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "owner"] },
     { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner"] },
   ];
 

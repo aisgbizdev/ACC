@@ -14,6 +14,12 @@ const router: IRouter = Router();
 
 router.get("/findings", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
+
+  if (user.role === "du") {
+    res.status(403).json({ error: "Akses ditolak. DU tidak memiliki akses ke halaman Temuan." });
+    return;
+  }
+
   const parsed = ListFindingsQueryParams.safeParse(req.query);
 
   let ptId = parsed.success ? parsed.data.ptId : undefined;

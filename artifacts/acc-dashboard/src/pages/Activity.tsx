@@ -159,21 +159,58 @@ export default function Activity() {
         </div>
 
         {todayActivity && !isEditing && !showSuccess && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <div>
+          <div className="bg-white border border-slate-200 rounded-xl mb-4 overflow-hidden">
+            <div className="bg-emerald-50 border-b border-emerald-200 px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 <p className="text-sm font-medium text-emerald-800">Aktivitas hari ini sudah diinput</p>
-                <p className="text-xs text-emerald-600">Klik Edit untuk melakukan perubahan</p>
               </div>
+              <button
+                onClick={startEdit}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors"
+              >
+                <Edit2 className="w-3 h-3" />
+                Edit
+              </button>
             </div>
-            <button
-              onClick={startEdit}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-emerald-300 rounded-lg text-xs font-medium text-emerald-700 hover:bg-emerald-50 transition-colors"
-            >
-              <Edit2 className="w-3 h-3" />
-              Edit
-            </button>
+            <div className="px-4 py-3 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Jenis Aktivitas</span>
+                <span className="font-medium text-slate-800">
+                  {ACTIVITY_TYPES.find(t => t.value === todayActivity.activityType)?.label ?? todayActivity.activityType}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Jumlah Item Diperiksa</span>
+                <span className="font-medium text-slate-800">{todayActivity.itemsReviewed}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Ada Temuan</span>
+                <span className={`font-medium ${todayActivity.hasFinding ? "text-amber-600" : "text-emerald-600"}`}>
+                  {todayActivity.hasFinding ? "Ya" : "Tidak"}
+                </span>
+              </div>
+              {todayActivity.hasFinding && todayActivity.findingSummary && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-500 shrink-0">Ringkasan Temuan</span>
+                  <span className="font-medium text-slate-800 text-right">{todayActivity.findingSummary}</span>
+                </div>
+              )}
+              {todayActivity.hasFinding && todayActivity.findingStatus && (
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Status Temuan</span>
+                  <span className="font-medium text-slate-800">
+                    {FINDING_STATUSES.find(s => s.value === todayActivity.findingStatus)?.label ?? todayActivity.findingStatus}
+                  </span>
+                </div>
+              )}
+              {todayActivity.notes && (
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-500 shrink-0">Catatan</span>
+                  <span className="font-medium text-slate-800 text-right">{todayActivity.notes}</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

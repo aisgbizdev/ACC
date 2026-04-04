@@ -32,12 +32,12 @@ pnpm workspace monorepo using TypeScript.
 
 ## Roles and Access
 
-| Role   | Dashboard       | Aktivitas      | Temuan         | Laporan        |
-|--------|-----------------|----------------|----------------|----------------|
-| APUPPT | Own PT only     | Input/edit own | View/create    | No access      |
-| DK     | All PTs         | No access      | View/create/complete all | View all |
-| DU     | All PTs         | No access      | View only      | View all       |
-| Owner  | All PTs         | No access      | View only      | View all       |
+| Role   | Dashboard       | Aktivitas      | Temuan                   | Laporan        |
+|--------|-----------------|----------------|--------------------------|----------------|
+| APUPPT | Own PT only     | Input/edit own | View/create own PT       | No access      |
+| DK     | All PTs         | No access      | View/create/complete all | View all       |
+| DU     | All PTs         | No access      | No access                | View all       |
+| Owner  | All PTs         | No access      | View all (read-only)     | View all       |
 
 ## Traffic Light Logic
 
