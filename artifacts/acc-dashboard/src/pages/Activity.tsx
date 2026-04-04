@@ -174,9 +174,7 @@ export default function Activity() {
     }
 
     const isNonCustomerActivity =
-      form.activityType === CreateActivityBodyActivityType.sosialisasi ||
-      form.activityType === CreateActivityBodyActivityType.pelaporan ||
-      form.activityType === CreateActivityBodyActivityType.lainnya;
+      form.activityType === CreateActivityBodyActivityType.sosialisasi;
 
     if (!isNonCustomerActivity && form.itemsReviewed <= 0) {
       setError("Jumlah nasabah diperiksa harus lebih dari 0 untuk jenis kegiatan ini.");
@@ -337,7 +335,7 @@ export default function Activity() {
                   onChange={(e) => setForm({ ...form, itemsReviewed: parseInt(e.target.value) || 0 })}
                   className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-slate-400 mt-1">Isi 0 jika kegiatan tidak langsung melibatkan pemeriksaan nasabah</p>
+                <p className="text-xs text-slate-400 mt-1">Wajib diisi &gt;0 kecuali untuk Sosialisasi APUPPT</p>
               </div>
 
               <div>

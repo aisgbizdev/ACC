@@ -80,6 +80,14 @@ router.post("/findings", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  if (parsed.data.branchId) {
+    const [branch] = await db.select({ ptId: branchesTable.ptId }).from(branchesTable).where(eq(branchesTable.id, parsed.data.branchId));
+    if (!branch || branch.ptId !== parsed.data.ptId) {
+      res.status(400).json({ error: "Cabang tidak ditemukan atau bukan milik PT tersebut." });
+      return;
+    }
+  }
+
   const dateStr = parsed.data.date instanceof Date
     ? parsed.data.date.toISOString().split("T")[0]
     : String(parsed.data.date);

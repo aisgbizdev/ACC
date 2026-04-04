@@ -6,10 +6,10 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
-const CUSTOMER_REQUIRED_TYPES = ["kyc", "cdd", "screening", "monitoring_transaksi"] as const;
+const SOSIALISASI_ONLY_EXEMPT = ["sosialisasi"] as const;
 
 function requiresCustomerData(activityType: string): boolean {
-  return (CUSTOMER_REQUIRED_TYPES as readonly string[]).includes(activityType);
+  return !(SOSIALISASI_ONLY_EXEMPT as readonly string[]).includes(activityType);
 }
 
 async function validateBranchBelongsToPt(branchId: string, ptId: string): Promise<boolean> {
