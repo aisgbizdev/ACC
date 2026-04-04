@@ -9,11 +9,7 @@ const router: IRouter = Router();
 router.get("/pts", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
 
-  if (user.role === "apuppt") {
-    if (!user.ptId) {
-      res.json([]);
-      return;
-    }
+  if (user.ptId) {
     const pts = await db.select().from(ptsTable).where(eq(ptsTable.id, user.ptId));
     res.json(pts);
     return;
@@ -27,7 +23,7 @@ router.get("/pts/:id", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
-  if (user.role === "apuppt" && user.ptId !== rawId) {
+  if (user.ptId && user.ptId !== rawId) {
     res.status(403).json({ error: "Akses ditolak. Anda hanya bisa melihat PT Anda sendiri." });
     return;
   }
@@ -67,7 +63,7 @@ router.get("/pts/:id/status", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
-  if (user.role === "apuppt" && user.ptId !== rawId) {
+  if (user.ptId && user.ptId !== rawId) {
     res.status(403).json({ error: "Akses ditolak." });
     return;
   }

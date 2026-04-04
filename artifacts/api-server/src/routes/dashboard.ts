@@ -12,11 +12,7 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
 
   let pts = await db.select().from(ptsTable).orderBy(ptsTable.code);
 
-  if (user.role === "apuppt") {
-    if (!user.ptId) {
-      res.json({ totalPts: 0, greenCount: 0, yellowCount: 0, redCount: 0, ptStatuses: [] });
-      return;
-    }
+  if (user.ptId) {
     pts = pts.filter((p) => p.id === user.ptId);
   }
 

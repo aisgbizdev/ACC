@@ -4,16 +4,54 @@ import { Eye, EyeOff } from "lucide-react";
 import { login } from "@workspace/api-client-react";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 
-const ACCOUNTS = [
-  { username: "apuppt.sgb", label: "APUPPT — SGB" },
-  { username: "apuppt.rfb", label: "APUPPT — RFB" },
-  { username: "apuppt.bpf", label: "APUPPT — BPF" },
-  { username: "apuppt.kpf", label: "APUPPT — KPF" },
-  { username: "apuppt.ewf", label: "APUPPT — EWF" },
-  { username: "dk",         label: "DK (Dewan Komisaris)" },
-  { username: "du",         label: "DU (Direksi Utama)" },
-  { username: "owner",      label: "Owner" },
-  { username: "superadmin", label: "Superadmin" },
+const ACCOUNT_GROUPS = [
+  {
+    group: "PT Sinar Graha Bersama (SGB)",
+    items: [
+      { username: "apuppt.sgb", label: "APUPPT — SGB" },
+      { username: "dk.sgb",     label: "DK — SGB" },
+      { username: "du.sgb",     label: "DU — SGB" },
+    ],
+  },
+  {
+    group: "PT Ratu Fortuna Buana (RFB)",
+    items: [
+      { username: "apuppt.rfb", label: "APUPPT — RFB" },
+      { username: "dk.rfb",     label: "DK — RFB" },
+      { username: "du.rfb",     label: "DU — RFB" },
+    ],
+  },
+  {
+    group: "PT Bina Prima Finansial (BPF)",
+    items: [
+      { username: "apuppt.bpf", label: "APUPPT — BPF" },
+      { username: "dk.bpf",     label: "DK — BPF" },
+      { username: "du.bpf",     label: "DU — BPF" },
+    ],
+  },
+  {
+    group: "PT Karya Prima Finansial (KPF)",
+    items: [
+      { username: "apuppt.kpf", label: "APUPPT — KPF" },
+      { username: "dk.kpf",     label: "DK — KPF" },
+      { username: "du.kpf",     label: "DU — KPF" },
+    ],
+  },
+  {
+    group: "PT Empower Wealth Finansial (EWF)",
+    items: [
+      { username: "apuppt.ewf", label: "APUPPT — EWF" },
+      { username: "dk.ewf",     label: "DK — EWF" },
+      { username: "du.ewf",     label: "DU — EWF" },
+    ],
+  },
+  {
+    group: "————————————",
+    items: [
+      { username: "owner",      label: "Owner" },
+      { username: "superadmin", label: "Superadmin" },
+    ],
+  },
 ];
 
 export default function Login() {
@@ -34,7 +72,7 @@ export default function Login() {
   }
 
   if (user) {
-    if (user.role === "apuppt" && user.ptId) {
+    if (user.ptId) {
       return <Redirect to={`/pt/${user.ptId}`} />;
     }
     return <Redirect to="/dashboard" />;
@@ -84,10 +122,14 @@ export default function Login() {
                 className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
               >
                 <option value="" disabled>— Pilih akun —</option>
-                {ACCOUNTS.map((acc) => (
-                  <option key={acc.username} value={acc.username}>
-                    {acc.label}
-                  </option>
+                {ACCOUNT_GROUPS.map((group) => (
+                  <optgroup key={group.group} label={group.group}>
+                    {group.items.map((acc) => (
+                      <option key={acc.username} value={acc.username}>
+                        {acc.label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
             </div>

@@ -13,8 +13,8 @@ router.get("/activities", requireAuth, async (req, res): Promise<void> => {
   let ptId = parsed.success ? parsed.data.ptId : undefined;
   const date = parsed.success ? parsed.data.date : undefined;
 
-  if (user.role === "apuppt") {
-    ptId = user.ptId ?? undefined;
+  if (user.ptId) {
+    ptId = user.ptId;
   }
 
   const conditions: SQL[] = [];

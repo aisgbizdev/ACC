@@ -25,8 +25,8 @@ router.get("/findings", requireAuth, async (req, res): Promise<void> => {
   let ptId = parsed.success ? parsed.data.ptId : undefined;
   const status = parsed.success ? parsed.data.status : undefined;
 
-  if (user.role === "apuppt") {
-    ptId = user.ptId ?? undefined;
+  if (user.ptId) {
+    ptId = user.ptId;
   }
 
   const conditions: SQL[] = [];
@@ -59,7 +59,7 @@ router.post("/findings", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  if (user.role === "apuppt" && parsed.data.ptId !== user.ptId) {
+  if (user.ptId && parsed.data.ptId !== user.ptId) {
     res.status(403).json({ error: "Anda hanya bisa membuat temuan untuk PT Anda sendiri." });
     return;
   }
@@ -107,7 +107,7 @@ router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  if (user.role === "apuppt" && existing.ptId !== user.ptId) {
+  if (user.ptId && existing.ptId !== user.ptId) {
     res.status(403).json({ error: "Akses ditolak." });
     return;
   }
@@ -141,7 +141,7 @@ router.patch("/findings/:id/complete", requireAuth, async (req, res): Promise<vo
     return;
   }
 
-  if (user.role === "apuppt" && existing.ptId !== user.ptId) {
+  if (user.ptId && existing.ptId !== user.ptId) {
     res.status(403).json({ error: "Anda hanya bisa menyelesaikan temuan PT Anda sendiri." });
     return;
   }
