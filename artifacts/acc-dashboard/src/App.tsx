@@ -37,6 +37,7 @@ function RootRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Redirect to="/login" />;
+  if (user.role === "apuppt" && user.ptId) return <Redirect to={`/pt/${user.ptId}`} />;
   return <Redirect to="/dashboard" />;
 }
 

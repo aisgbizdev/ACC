@@ -1,9 +1,19 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCreateActivity, useUpdateActivity, useListActivities } from "@workspace/api-client-react";
+import {
+  useCreateActivity,
+  useUpdateActivity,
+  useListActivities,
+  getListActivitiesQueryKey,
+  CreateActivityBodyActivityType,
+  CreateActivityBodyFindingStatus,
+  UpdateActivityBodyActivityType,
+  UpdateActivityBodyFindingStatus,
+  type ErrorType,
+  type ErrorResponse,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle, Plus, Edit2 } from "lucide-react";
-import { getListActivitiesQueryKey } from "@workspace/api-client-react";
+import { CheckCircle, Edit2 } from "lucide-react";
 
 const ACTIVITY_TYPES = [
   { value: "transaction_review", label: "Review Transaksi" },
@@ -31,12 +41,19 @@ export default function Activity() {
 
   const todayActivity = activities?.[0];
 
-  const [form, setForm] = useState({
-    activityType: "transaction_review",
+  const [form, setForm] = useState<{
+    activityType: CreateActivityBodyActivityType;
+    itemsReviewed: number;
+    hasFinding: boolean;
+    findingSummary: string;
+    findingStatus: CreateActivityBodyFindingStatus;
+    notes: string;
+  }>({
+    activityType: CreateActivityBodyActivityType.transaction_review,
     itemsReviewed: 0,
     hasFinding: false,
     findingSummary: "",
-    findingStatus: "pending",
+    findingStatus: CreateActivityBodyFindingStatus.pending,
     notes: "",
   });
 
@@ -44,27 +61,27 @@ export default function Activity() {
   const [error, setError] = useState("");
   const [isEditing, setIsEditing] = useState(false);
 
-  const { mutate: createActivity, isPending: creating } = useCreateActivity({
+  const { mutate: createActivity, isPending: creating } = useCreateActivity<ErrorType<ErrorResponse>>({
     mutation: {
       onSuccess: () => {
         setSubmitted(true);
         queryClient.invalidateQueries({ queryKey: getListActivitiesQueryKey() });
       },
-      onError: (err: any) => {
-        setError(err?.data?.error ?? "Gagal menyimpan aktivitas.");
+      onError: (err) => {
+        setError(err.data?.error ?? err.message ?? "Gagal menyimpan aktivitas.");
       },
     },
   });
 
-  const { mutate: updateActivity, isPending: updating } = useUpdateActivity({
+  const { mutate: updateActivity, isPending: updating } = useUpdateActivity<ErrorType<ErrorResponse>>({
     mutation: {
       onSuccess: () => {
         setSubmitted(true);
         setIsEditing(false);
         queryClient.invalidateQueries({ queryKey: getListActivitiesQueryKey() });
       },
-      onError: (err: any) => {
-        setError(err?.data?.error ?? "Gagal memperbarui aktivitas.");
+      onError: (err) => {
+        setError(err.data?.error ?? err.message ?? "Gagal memperbarui aktivitas.");
       },
     },
   });
@@ -78,32 +95,42 @@ export default function Activity() {
       return;
     }
 
-    const payload = {
-      ptId: user.ptId,
-      date: today,
-      activityType: form.activityType as any,
-      itemsReviewed: Number(form.itemsReviewed),
-      hasFinding: form.hasFinding,
-      findingSummary: form.hasFinding ? form.findingSummary || null : null,
-      findingStatus: form.hasFinding ? (form.findingStatus as any) : null,
-      notes: form.notes || null,
-    };
-
     if (isEditing && todayActivity) {
-      updateActivity({ id: todayActivity.id, data: payload });
+      updateActivity({
+        id: todayActivity.id,
+        data: {
+          activityType: form.activityType as UpdateActivityBodyActivityType,
+          itemsReviewed: Number(form.itemsReviewed),
+          hasFinding: form.hasFinding,
+          findingSummary: form.hasFinding ? form.findingSummary || null : null,
+          findingStatus: form.hasFinding ? (form.findingStatus as UpdateActivityBodyFindingStatus) : null,
+          notes: form.notes || null,
+        },
+      });
     } else {
-      createActivity({ data: payload });
+      createActivity({
+        data: {
+          ptId: user.ptId,
+          date: today,
+          activityType: form.activityType,
+          itemsReviewed: Number(form.itemsReviewed),
+          hasFinding: form.hasFinding,
+          findingSummary: form.hasFinding ? form.findingSummary || null : null,
+          findingStatus: form.hasFinding ? form.findingStatus : null,
+          notes: form.notes || null,
+        },
+      });
     }
   };
 
   const startEdit = () => {
     if (!todayActivity) return;
     setForm({
-      activityType: todayActivity.activityType,
+      activityType: todayActivity.activityType as CreateActivityBodyActivityType,
       itemsReviewed: todayActivity.itemsReviewed,
       hasFinding: todayActivity.hasFinding,
       findingSummary: todayActivity.findingSummary ?? "",
-      findingStatus: todayActivity.findingStatus ?? "pending",
+      findingStatus: (todayActivity.findingStatus ?? CreateActivityBodyFindingStatus.pending) as CreateActivityBodyFindingStatus,
       notes: todayActivity.notes ?? "",
     });
     setSubmitted(false);
@@ -166,7 +193,7 @@ export default function Activity() {
                 <label className="block text-xs font-medium text-slate-700 mb-1.5">Jenis Aktivitas *</label>
                 <select
                   value={form.activityType}
-                  onChange={(e) => setForm({ ...form, activityType: e.target.value })}
+                  onChange={(e) => setForm({ ...form, activityType: e.target.value as CreateActivityBodyActivityType })}
                   className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   {ACTIVITY_TYPES.map((t) => (
@@ -213,8 +240,8 @@ export default function Activity() {
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1.5">Status Temuan</label>
                     <select
-                      value={form.findingStatus}
-                      onChange={(e) => setForm({ ...form, findingStatus: e.target.value })}
+                      value={form.findingStatus ?? "pending"}
+                      onChange={(e) => setForm({ ...form, findingStatus: e.target.value as CreateActivityBodyFindingStatus })}
                       className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       {FINDING_STATUSES.map((s) => (

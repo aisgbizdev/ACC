@@ -1,8 +1,17 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useListFindings, useListPts, useCreateFinding, useCompleteFinding, getListFindingsQueryKey } from "@workspace/api-client-react";
+import {
+  useListFindings,
+  useListPts,
+  useCreateFinding,
+  useCompleteFinding,
+  getListFindingsQueryKey,
+  CreateFindingBodyStatus,
+  type ErrorType,
+  type ErrorResponse,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Plus, CheckCircle, Filter } from "lucide-react";
+import { AlertTriangle, Plus, CheckCircle } from "lucide-react";
 
 const FINDING_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "text-red-600 bg-red-50 border-red-200" },
@@ -23,24 +32,31 @@ export default function Findings() {
   const { data: findings, isLoading } = useListFindings(params);
   const { data: pts } = useListPts();
 
-  const [form, setForm] = useState({
+  const defaultForm: {
+    ptId: string;
+    date: string;
+    findingText: string;
+    status: CreateFindingBodyStatus;
+    notes: string;
+  } = {
     ptId: user?.ptId ?? "",
     date: new Date().toISOString().split("T")[0],
     findingText: "",
-    status: "pending",
+    status: CreateFindingBodyStatus.pending,
     notes: "",
-  });
+  };
+  const [form, setForm] = useState(defaultForm);
   const [formError, setFormError] = useState("");
 
-  const { mutate: createFinding, isPending: creating } = useCreateFinding({
+  const { mutate: createFinding, isPending: creating } = useCreateFinding<ErrorType<ErrorResponse>>({
     mutation: {
       onSuccess: () => {
         setShowForm(false);
-        setForm({ ptId: user?.ptId ?? "", date: new Date().toISOString().split("T")[0], findingText: "", status: "pending", notes: "" });
+        setForm({ ...defaultForm });
         queryClient.invalidateQueries({ queryKey: getListFindingsQueryKey() });
       },
-      onError: (err: any) => {
-        setFormError(err?.data?.error ?? "Gagal menyimpan temuan.");
+      onError: (err) => {
+        setFormError(err.data?.error ?? err.message ?? "Gagal menyimpan temuan.");
       },
     },
   });
@@ -129,7 +145,7 @@ export default function Findings() {
                 <label className="block text-xs font-medium text-slate-700 mb-1">Status</label>
                 <select
                   value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
+                  onChange={(e) => setForm({ ...form, status: e.target.value as CreateFindingBodyStatus })}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="pending">Pending</option>
@@ -160,7 +176,7 @@ export default function Findings() {
                   onClick={() => {
                     setFormError("");
                     if (!form.findingText.trim()) { setFormError("Deskripsi temuan wajib diisi."); return; }
-                    createFinding({ data: { ptId: form.ptId || user!.ptId!, date: form.date, findingText: form.findingText, status: form.status as any, notes: form.notes || null } });
+                    createFinding({ data: { ptId: form.ptId || user!.ptId!, date: form.date, findingText: form.findingText, status: form.status, notes: form.notes || null } });
                   }}
                   disabled={creating}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition-colors"

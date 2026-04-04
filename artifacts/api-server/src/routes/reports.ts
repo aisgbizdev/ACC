@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, ptsTable, dailyActivitiesTable, findingsTable } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
 import { computeTrafficLight } from "../lib/traffic-light";
@@ -26,7 +26,7 @@ router.get("/reports/summary", requireRole("dk", "du", "owner"), async (req, res
         .select()
         .from(dailyActivitiesTable)
         .where(eq(dailyActivitiesTable.ptId, pt.id))
-        .orderBy(dailyActivitiesTable.date)
+        .orderBy(desc(dailyActivitiesTable.date))
         .limit(1);
 
       const openFindings = findings.filter((f) => f.status !== "completed");

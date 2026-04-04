@@ -20,7 +20,7 @@ export default function Login() {
 
   if (user) {
     if (user.role === "apuppt" && user.ptId) {
-      return <Redirect to="/dashboard" />;
+      return <Redirect to={`/pt/${user.ptId}`} />;
     }
     return <Redirect to="/dashboard" />;
   }
@@ -38,8 +38,8 @@ export default function Login() {
         role: data.role as UserRole,
         ptId: data.ptId ?? null,
       });
-    } catch (err: any) {
-      const msg = err?.data?.error ?? err?.message ?? "Login gagal. Periksa email dan password Anda.";
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Login gagal. Periksa email dan password Anda.";
       setError(msg);
     } finally {
       setSubmitting(false);

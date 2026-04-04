@@ -49,17 +49,17 @@ export function Navbar() {
                 const Icon = item.icon;
                 const isActive = location.startsWith(item.href);
                 return (
-                  <Link key={item.href} href={item.href}>
-                    <a
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-                        isActive
-                          ? "bg-blue-600 text-white"
-                          : "text-slate-300 hover:text-white hover:bg-slate-800"
-                      }`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {item.label}
-                    </a>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors ${
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-300 hover:text-white hover:bg-slate-800"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {item.label}
                   </Link>
                 );
               })}

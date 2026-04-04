@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, ptsTable, dailyActivitiesTable, findingsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
 import { computeTrafficLight } from "../lib/traffic-light";
@@ -26,7 +26,7 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
         .select()
         .from(dailyActivitiesTable)
         .where(eq(dailyActivitiesTable.ptId, pt.id))
-        .orderBy(dailyActivitiesTable.date)
+        .orderBy(desc(dailyActivitiesTable.date))
         .limit(1);
 
       const openFindings = await db
