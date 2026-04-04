@@ -73,12 +73,14 @@ export default function Dashboard() {
       })
     : [];
 
-  const ptName = data?.ptStatuses?.[0]?.name ?? "";
-  const ptCode = data?.ptStatuses?.[0]?.code ?? "";
+  const ptName = data?.ptStatuses?.[0]?.name;
+  const ptCode = data?.ptStatuses?.[0]?.code;
 
   const subtitle =
     user?.role === "apuppt"
-      ? `${ptCode} — ${ptName}`
+      ? ptCode && ptName
+        ? `${ptCode} — ${ptName}`
+        : "Status PT Hari Ini"
       : "Semua PT — Status Hari Ini";
 
   return (

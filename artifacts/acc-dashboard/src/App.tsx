@@ -71,7 +71,7 @@ function Router() {
           </ProtectedRoute>
         </Route>
         <Route path="/findings">
-          <ProtectedRoute allowedRoles={["apuppt", "dk", "owner", "superadmin"]}>
+          <ProtectedRoute allowedRoles={["apuppt", "dk", "du", "owner", "superadmin"]}>
             <Findings />
           </ProtectedRoute>
         </Route>
