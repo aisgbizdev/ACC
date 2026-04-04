@@ -336,3 +336,91 @@
     inset: -1px;
   }
 }
+
+@layer components {
+  .app-shell-main {
+    background:
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 28%),
+      radial-gradient(circle at top right, rgba(59, 130, 246, 0.06), transparent 24%),
+      linear-gradient(180deg, #040914 0%, #060d19 100%);
+  }
+
+  .app-shell-main .min-h-screen.bg-slate-50 {
+    background: transparent;
+  }
+
+  .app-shell-main .bg-white {
+    background-color: #0b1525 !important;
+  }
+
+  .app-shell-main .bg-slate-50 {
+    background-color: #091321 !important;
+  }
+
+  .app-shell-main .bg-slate-100 {
+    background-color: #0f1b2d !important;
+  }
+
+  .app-shell-main .bg-slate-800 {
+    background-color: #0d1728 !important;
+  }
+
+  .app-shell-main .border-slate-50,
+  .app-shell-main .border-slate-100,
+  .app-shell-main .border-slate-200,
+  .app-shell-main .border-slate-300 {
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .app-shell-main .text-slate-900,
+  .app-shell-main .text-slate-800 {
+    color: #f8fafc !important;
+  }
+
+  .app-shell-main .text-slate-700,
+  .app-shell-main .text-slate-600 {
+    color: #dbe4f0 !important;
+  }
+
+  .app-shell-main .text-slate-500 {
+    color: #94a3b8 !important;
+  }
+
+  .app-shell-main .text-slate-400,
+  .app-shell-main .text-slate-300 {
+    color: #64748b !important;
+  }
+
+  .app-shell-main .shadow-sm,
+  .app-shell-main .shadow-md,
+  .app-shell-main .shadow-lg,
+  .app-shell-main .shadow-xl {
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28) !important;
+  }
+
+  .app-shell-main input:not([type="checkbox"]):not([type="radio"]),
+  .app-shell-main select,
+  .app-shell-main textarea {
+    background-color: #0e1a2d !important;
+    color: #f8fafc !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  .app-shell-main input::placeholder,
+  .app-shell-main textarea::placeholder {
+    color: #64748b;
+  }
+
+  .app-shell-main table thead tr {
+    background-color: #0d1728 !important;
+  }
+
+  .app-shell-main table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+  }
+
+  .app-shell-main .divide-slate-50 > :not([hidden]) ~ :not([hidden]),
+  .app-shell-main .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgba(255, 255, 255, 0.06) !important;
+  }
+}

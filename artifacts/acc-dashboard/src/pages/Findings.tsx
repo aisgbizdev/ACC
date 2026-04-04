@@ -10,6 +10,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Plus, Building2, ExternalLink, Clock } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { PageChrome, Panel } from "@/components/PageChrome";
 
 const FINDING_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "text-red-600 bg-red-50 border-red-200" },
@@ -93,14 +94,12 @@ export default function Findings() {
   const branchesForForm = branches?.filter(b => b.ptId === activePtId) ?? branches ?? [];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Temuan</h1>
-            <p className="text-sm text-slate-500 mt-0.5">{findings?.length ?? 0} total temuan</p>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+    <PageChrome
+      eyebrow="Monitoring temuan"
+      title="Temuan"
+      description={`${findings?.length ?? 0} total temuan. Fokus pada tiket aktif, deadline, dan tindak lanjut.`}
+      actions={
+        <div className="flex items-center gap-2 flex-wrap justify-end">
             {isGlobalRole && pts && pts.length > 0 && (
               <select
                 value={filterPt}
@@ -125,18 +124,19 @@ export default function Findings() {
             {canCreate && (
               <button
                 onClick={() => setShowForm(!showForm)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-500 transition-colors"
+                className="flex items-center gap-1.5 rounded-2xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
               >
-                <Plus className="w-3.5 h-3.5" />
+                <Plus className="h-4 w-4" />
                 Tambah Temuan
               </button>
             )}
           </div>
-        </div>
+      }
+    >
 
         {showForm && (
-          <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">Temuan Baru</h3>
+          <Panel className="mb-6 p-5">
+            <h3 className="mb-4 text-sm font-semibold text-slate-100">Temuan Baru</h3>
             <div className="space-y-3">
               {user?.role === "dk" && !user.ptId && (
                 <div>
@@ -237,10 +237,10 @@ export default function Findings() {
                 </button>
               </div>
             </div>
-          </div>
+          </Panel>
         )}
 
-        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <Panel className="overflow-hidden">
           {isLoading ? (
             <div className="py-12 text-center text-sm text-slate-400">Memuat...</div>
           ) : !findings || findings.length === 0 ? (
@@ -301,8 +301,7 @@ export default function Findings() {
               })}
             </div>
           )}
-        </div>
-      </div>
-    </div>
+        </Panel>
+    </PageChrome>
   );
 }

@@ -46,6 +46,17 @@ if (!sessionSecret) {
   logger.warn("SESSION_SECRET is not set — using insecure default (development only).");
 }
 
+const cookieSecure =
+  process.env.COOKIE_SECURE === "true"
+    ? true
+    : process.env.COOKIE_SECURE === "false"
+      ? false
+      : process.env.NODE_ENV === "production";
+
+if (cookieSecure) {
+  app.set("trust proxy", 1);
+}
+
 app.use(
   session({
     secret: sessionSecret ?? "acc-secret-key-dev-only",
@@ -53,7 +64,8 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: cookieSecure,
+      sameSite: "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
     },
   })

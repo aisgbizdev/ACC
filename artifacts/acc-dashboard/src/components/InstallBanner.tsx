@@ -43,16 +43,16 @@ export function InstallBanner() {
   if (!visible) return null;
 
   return (
-    <div className="fixed bottom-16 sm:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-40 bg-slate-900 border border-slate-700 rounded-xl shadow-xl p-4 flex items-start gap-3 animate-in slide-in-from-bottom-2">
-      <div className="flex-shrink-0 w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+    <div className="fixed bottom-16 left-4 right-4 z-40 flex items-start gap-3 rounded-[28px] border border-sky-500/15 bg-[#0c1526] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.35)] animate-in slide-in-from-bottom-2 sm:bottom-4 sm:left-auto sm:right-4 sm:w-[380px]">
+      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-sky-500/15">
         <span className="text-white text-xs font-bold">ACC</span>
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white">Install ACC di HP Anda</p>
-        <p className="text-xs text-slate-400 mt-0.5">Akses lebih cepat tanpa membuka browser</p>
+        <p className="mt-0.5 text-xs text-slate-400">Akses lebih cepat tanpa membuka browser</p>
         <button
           onClick={handleInstall}
-          className="mt-2 flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-500 transition-colors"
+          className="mt-3 flex items-center gap-1.5 rounded-xl bg-sky-500 px-3 py-2 text-xs font-semibold text-slate-950 transition-colors hover:bg-sky-400"
         >
           <Download className="w-3.5 h-3.5" />
           Install
@@ -60,7 +60,7 @@ export function InstallBanner() {
       </div>
       <button
         onClick={handleDismiss}
-        className="flex-shrink-0 text-slate-500 hover:text-slate-300 transition-colors p-0.5"
+        className="flex-shrink-0 p-0.5 text-slate-500 transition-colors hover:text-slate-300"
         aria-label="Tutup"
       >
         <X className="w-4 h-4" />

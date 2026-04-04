@@ -41,10 +41,12 @@ const queryClient = new QueryClient({
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen bg-[#040914] text-white">
       {user && <Navbar />}
-      {user && <NotificationBanner />}
-      <main className="flex-1 pb-16 sm:pb-0">{children}</main>
+      <main className={`min-h-screen pb-16 md:pb-0 ${user ? "app-shell-main md:pl-72 md:pt-16" : ""}`}>
+        {user && <NotificationBanner />}
+        {children}
+      </main>
       {user && <BottomNav />}
       {user && <InstallBanner />}
     </div>

@@ -2,10 +2,6 @@ import { Router, type IRouter } from "express";
 import { eq, and, SQL } from "drizzle-orm";
 import { db, findingsTable, branchesTable, ticketCommentsTable, usersTable } from "@workspace/db";
 import {
-  CreateFindingBody,
-  ListFindingsQueryParams,
-  UpdateFindingParams,
-  CompleteFindingParams,
   AcknowledgeFindingBody,
 } from "@workspace/api-zod";
 import { z } from "zod";
@@ -14,6 +10,29 @@ import { logAudit } from "../lib/audit";
 import { notifyNewFinding, notifyNewComment } from "../lib/push-notify";
 
 const FindingIdSchema = z.object({ id: z.string().uuid() });
+const FindingStatusSchema = z.enum([
+  "pending",
+  "in_progress",
+  "awaiting_verification",
+  "completed",
+  "follow_up",
+]);
+
+const ListFindingsQuerySchema = z.object({
+  ptId: z.string().uuid().optional(),
+  status: FindingStatusSchema.optional(),
+});
+
+const CreateFindingBodySchema = z.object({
+  ptId: z.string().uuid(),
+  branchId: z.string().uuid().nullable().optional(),
+  date: z.union([z.string(), z.date()]),
+  findingText: z.string().min(1),
+  status: FindingStatusSchema.optional(),
+  deadline: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  assignedTo: z.string().uuid().nullable().optional(),
+});
 
 const router: IRouter = Router();
 
@@ -66,7 +85,7 @@ router.get("/findings", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const parsed = ListFindingsQueryParams.safeParse(req.query);
+  const parsed = ListFindingsQuerySchema.safeParse(req.query);
 
   let ptId = parsed.success ? parsed.data.ptId : undefined;
   const status = parsed.success ? parsed.data.status : undefined;
@@ -127,7 +146,7 @@ router.post("/findings", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const parsed = CreateFindingBody.safeParse(req.body);
+  const parsed = CreateFindingBodySchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
     return;

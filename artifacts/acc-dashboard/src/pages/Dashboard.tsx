@@ -1,141 +1,47 @@
-import { useState, type ElementType } from "react";
-import { useAuth } from "@/contexts/AuthContext";
-import { useGetDashboardSummary } from "@workspace/api-client-react";
+import { type ElementType } from "react";
 import { Link } from "wouter";
+import { useGetDashboardSummary } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/AuthContext";
 import {
-  RefreshCw, AlertTriangle, CheckCircle, Clock, TrendingUp,
-  ChevronDown, ChevronUp, Trophy, TrendingDown, Flame, CalendarX, ShieldAlert,
-  FileText, ClipboardList, ClipboardCheck, FileCheck2, BarChart2,
-  FileBarChart, Shield, Users, UserCircle,
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  CheckCircle2,
+  ClipboardCheck,
+  ClipboardList,
+  Clock3,
+  FileBarChart,
+  FileCheck2,
+  FileText,
+  RefreshCw,
+  ShieldAlert,
+  TrendingUp,
+  Users,
 } from "lucide-react";
-
-const STATUS_CONFIG = {
-  green: {
-    label: "Hijau",
-    labelLong: "Aman",
-    textColor: "text-emerald-700",
-    bgColor: "bg-emerald-50",
-    borderColor: "border-emerald-200",
-    accentBorder: "border-l-emerald-500",
-    dotColor: "bg-emerald-500",
-    icon: CheckCircle,
-    iconColor: "text-emerald-500",
-  },
-  yellow: {
-    label: "Kuning",
-    labelLong: "Perlu Perhatian",
-    textColor: "text-amber-700",
-    bgColor: "bg-amber-50",
-    borderColor: "border-amber-200",
-    accentBorder: "border-l-amber-400",
-    dotColor: "bg-amber-400",
-    icon: Clock,
-    iconColor: "text-amber-500",
-  },
-  red: {
-    label: "Merah",
-    labelLong: "Kritis",
-    textColor: "text-red-700",
-    bgColor: "bg-red-50",
-    borderColor: "border-red-200",
-    accentBorder: "border-l-red-500",
-    dotColor: "bg-red-500",
-    icon: AlertTriangle,
-    iconColor: "text-red-500",
-  },
-};
 
 const STATUS_ORDER: Record<string, number> = { red: 0, yellow: 1, green: 2 };
 
-type NavCard = {
-  href: string;
-  label: string;
-  desc: string;
-  icon: ElementType;
-  gradient: string;
-  roles: string[];
+const STATUS_THEME = {
+  green: {
+    label: "Hijau",
+    dot: "bg-emerald-400",
+    badge: "border-emerald-500/20 bg-emerald-500/10 text-emerald-300",
+    text: "text-emerald-300",
+  },
+  yellow: {
+    label: "Kuning",
+    dot: "bg-amber-400",
+    badge: "border-amber-500/20 bg-amber-500/10 text-amber-300",
+    text: "text-amber-300",
+  },
+  red: {
+    label: "Merah",
+    dot: "bg-rose-400",
+    badge: "border-rose-500/20 bg-rose-500/10 text-rose-300",
+    text: "text-rose-300",
+  },
 };
-
-const NAV_CARDS: NavCard[] = [
-  { href: "/activity",      label: "Input Aktivitas", desc: "Laporan harian",       icon: FileText,       gradient: "from-violet-500 to-purple-700",   roles: ["apuppt"] },
-  { href: "/activities",    label: "Aktivitas PT",    desc: "Semua laporan",        icon: ClipboardList,  gradient: "from-indigo-500 to-violet-700",   roles: ["dk", "superadmin"] },
-  { href: "/findings",      label: "Temuan",          desc: "Kelola temuan",        icon: AlertTriangle,  gradient: "from-rose-500 to-red-700",        roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
-  { href: "/review",        label: "Review DK",       desc: "Review aktivitas",     icon: ClipboardCheck, gradient: "from-teal-500 to-cyan-700",       roles: ["dk", "superadmin"] },
-  { href: "/signoff",       label: "Sign-Off DU",     desc: "Tanda tangan laporan", icon: FileCheck2,     gradient: "from-emerald-500 to-green-700",   roles: ["du", "superadmin"] },
-  { href: "/kpi",           label: "KPI",             desc: "Performa PT",          icon: TrendingUp,     gradient: "from-blue-500 to-indigo-700",     roles: ["dk", "du", "owner", "superadmin"] },
-  { href: "/reports",       label: "Laporan",         desc: "Laporan compliance",   icon: BarChart2,      gradient: "from-sky-500 to-blue-700",        roles: ["dk", "du", "owner", "superadmin"] },
-  { href: "/monthly-recap", label: "Rekap Bulanan",   desc: "Rekap per bulan",      icon: FileBarChart,   gradient: "from-orange-500 to-amber-700",    roles: ["dk", "du", "owner", "superadmin"] },
-  { href: "/audit-log",     label: "Audit Log",       desc: "Log aktivitas sistem", icon: Shield,         gradient: "from-gray-600 to-slate-800",      roles: ["superadmin"] },
-  { href: "/users",         label: "Manajemen User",  desc: "Kelola akun pengguna", icon: Users,          gradient: "from-blue-700 to-indigo-900",     roles: ["superadmin"] },
-  { href: "/profile",       label: "Profil Saya",     desc: "Akun & pengaturan",    icon: UserCircle,     gradient: "from-slate-500 to-slate-700",     roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
-];
-
-function MenuCardGrid({ role }: { role: string }) {
-  const cards = NAV_CARDS.filter((c) => c.roles.includes(role));
-  if (cards.length === 0) return null;
-
-  return (
-    <div className="mb-6">
-      <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Menu</p>
-      <div className="grid grid-cols-2 gap-3">
-        {cards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <Link
-              key={card.href}
-              href={card.href}
-              className={`
-                relative flex flex-col justify-between
-                bg-gradient-to-br ${card.gradient}
-                rounded-2xl p-4 shadow-md
-                active:scale-95 transition-transform duration-150 cursor-pointer
-                min-h-[100px]
-              `}
-            >
-              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-2 flex-shrink-0">
-                <Icon className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
-                <p className="text-xs text-white/70 mt-0.5 leading-tight">{card.desc}</p>
-              </div>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function formatLastUpdate(lastActivityDate: string | null | undefined): string {
-  if (!lastActivityDate) return "Belum pernah update";
-  const d = new Date(lastActivityDate + "T00:00:00");
-  return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
-}
-
-function getStatusDetail(pt: {
-  status: string;
-  lastActivityDate?: string | null;
-  overdueCount: number;
-  openFindingsCount: number;
-  consecutiveRedDays: number;
-}): { text: string; color: string } {
-  const today = new Date().toISOString().split("T")[0];
-  const isUpdatedToday = pt.lastActivityDate === today;
-
-  if (pt.status === "red") {
-    const parts: string[] = [];
-    if (!isUpdatedToday) parts.push("Belum update hari ini");
-    if (pt.overdueCount > 0) parts.push(`${pt.overdueCount} temuan overdue`);
-    return { text: parts.join(" · ") || "Status kritis", color: "text-red-500" };
-  }
-  if (pt.status === "yellow") {
-    if (pt.overdueCount > 0) return { text: `${pt.overdueCount} temuan overdue`, color: "text-amber-600" };
-    if (pt.openFindingsCount > 0) return { text: `${pt.openFindingsCount} temuan terbuka`, color: "text-amber-600" };
-    return { text: "Perlu perhatian", color: "text-amber-600" };
-  }
-  return { text: "Update hari ini · Tidak ada temuan", color: "text-emerald-600" };
-}
 
 type PtStatus = {
   id: string;
@@ -148,233 +54,144 @@ type PtStatus = {
   lastActivityDate?: string | null;
 };
 
-function CriticalPanel({ pts }: { pts: PtStatus[] }) {
-  const [collapsed, setCollapsed] = useState(false);
+type QuickAction = {
+  href: string;
+  label: string;
+  desc: string;
+  icon: ElementType;
+  roles: string[];
+};
+
+const QUICK_ACTIONS: QuickAction[] = [
+  { href: "/activity", label: "Input Aktivitas", desc: "Laporan harian", icon: FileText, roles: ["apuppt"] },
+  { href: "/activities", label: "Aktivitas", desc: "Daftar laporan", icon: ClipboardList, roles: ["dk", "superadmin"] },
+  { href: "/findings", label: "Temuan", desc: "Kelola tiket", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
+  { href: "/review", label: "Review DK", desc: "Validasi update", icon: ClipboardCheck, roles: ["dk", "superadmin"] },
+  { href: "/signoff", label: "Sign-Off DU", desc: "Final approval", icon: FileCheck2, roles: ["du", "superadmin"] },
+  { href: "/reports", label: "Laporan", desc: "Lihat ringkasan", icon: FileBarChart, roles: ["dk", "du", "owner", "superadmin"] },
+];
+
+function formatLastUpdate(lastActivityDate: string | null | undefined): string {
+  if (!lastActivityDate) return "Belum pernah update";
+  const d = new Date(`${lastActivityDate}T00:00:00`);
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function getStatusDetail(pt: PtStatus): string {
   const today = new Date().toISOString().split("T")[0];
+  const isUpdatedToday = pt.lastActivityDate === today;
 
-  const redToday = pts.filter((p) => p.status === "red");
-  const longRed = pts.filter((p) => p.consecutiveRedDays >= 2);
-  const overdue = pts.filter((p) => p.overdueCount > 0);
-  const noUpdate = pts.filter((p) => !p.lastActivityDate || p.lastActivityDate !== today);
+  if (pt.status === "red") {
+    const parts: string[] = [];
+    if (!isUpdatedToday) parts.push("Belum update hari ini");
+    if (pt.overdueCount > 0) parts.push(`${pt.overdueCount} overdue`);
+    if (pt.openFindingsCount > 0) parts.push(`${pt.openFindingsCount} terbuka`);
+    return parts.join(" • ") || "Status kritis";
+  }
 
-  const hasIssues = redToday.length > 0 || longRed.length > 0 || overdue.length > 0;
-  if (!hasIssues) return null;
+  if (pt.status === "yellow") {
+    if (pt.overdueCount > 0) return `${pt.overdueCount} temuan overdue`;
+    if (pt.openFindingsCount > 0) return `${pt.openFindingsCount} temuan terbuka`;
+    return "Perlu perhatian";
+  }
 
-  const totalIssues = redToday.length + (longRed.length > 0 ? 1 : 0) + (overdue.length > 0 ? 1 : 0) + (noUpdate.length > 0 ? 1 : 0);
+  return "Update aman";
+}
+
+function StatusMeter({
+  label,
+  value,
+  total,
+  tone,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  tone: "green" | "yellow" | "red";
+}) {
+  const pct = total === 0 ? 0 : Math.max(6, Math.round((value / total) * 100));
+  const color =
+    tone === "green"
+      ? "from-emerald-400 to-emerald-500"
+      : tone === "yellow"
+        ? "from-amber-400 to-amber-500"
+        : "from-rose-400 to-rose-500";
 
   return (
-    <div className="mb-5 rounded-xl border-2 border-red-300 bg-red-50 shadow-md overflow-hidden">
-      <button
-        type="button"
-        className="w-full flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-        onClick={() => setCollapsed(!collapsed)}
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0">
-            <AlertTriangle className="w-4 h-4 text-white" />
-          </div>
-          <span className="text-sm font-bold text-red-800 tracking-wide uppercase">⚠ Butuh Perhatian Sekarang</span>
-          <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalIssues}</span>
-        </div>
-        {collapsed
-          ? <ChevronDown className="w-4 h-4 text-red-400 flex-shrink-0" />
-          : <ChevronUp className="w-4 h-4 text-red-400 flex-shrink-0" />
-        }
-      </button>
-
-      {!collapsed && (
-        <div className="px-4 pb-4 space-y-3 border-t border-red-200">
-          {redToday.length > 0 && (
-            <div className="pt-3">
-              <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5" />
-                PT MERAH HARI INI
-              </p>
-              <div className="space-y-1.5">
-                {redToday.map((p) => (
-                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs group">
-                    <span className="font-bold bg-red-600 text-white px-2 py-0.5 rounded">{p.code}</span>
-                    <span className="text-red-800 font-medium">{p.name}</span>
-                    {p.overdueCount > 0 && (
-                      <span className="ml-auto text-red-600 font-semibold">{p.overdueCount} overdue</span>
-                    )}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {longRed.length > 0 && (
-            <div className="pt-1">
-              <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5" />
-                MERAH BERTURUT-TURUT
-              </p>
-              <div className="space-y-1.5">
-                {longRed.map((p) => (
-                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs">
-                    <span className="font-bold bg-orange-500 text-white px-2 py-0.5 rounded">{p.code}</span>
-                    <span className="text-orange-800 font-medium">{p.name}</span>
-                    <span className="ml-auto font-bold text-orange-700 bg-orange-100 border border-orange-200 px-2 py-0.5 rounded">
-                      Merah {p.consecutiveRedDays} hari 🔥
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {overdue.length > 0 && (
-            <div className="pt-1">
-              <p className="text-xs font-bold text-amber-700 mb-2 flex items-center gap-1.5">
-                <CalendarX className="w-3.5 h-3.5" />
-                TEMUAN OVERDUE
-              </p>
-              <div className="space-y-1.5">
-                {overdue.map((p) => (
-                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs">
-                    <span className="font-bold bg-amber-500 text-white px-2 py-0.5 rounded">{p.code}</span>
-                    <span className="text-amber-800 font-medium">{p.name}</span>
-                    <span className="ml-auto font-semibold text-amber-700">{p.overdueCount} temuan overdue</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {noUpdate.length > 0 && (
-            <div className="pt-1">
-              <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5" />
-                BELUM UPDATE HARI INI
-              </p>
-              <div className="space-y-1.5">
-                {noUpdate.map((p) => (
-                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs">
-                    <span className="font-bold bg-slate-500 text-white px-2 py-0.5 rounded">{p.code}</span>
-                    <span className="text-slate-700 font-medium">{p.name}</span>
-                    <span className="ml-auto text-slate-500">
-                      {p.lastActivityDate
-                        ? `Terakhir: ${formatLastUpdate(p.lastActivityDate)}`
-                        : "Belum pernah update"}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+    <div className="space-y-2">
+      <div className="flex items-center justify-between text-sm">
+        <span className="text-slate-300">{label}</span>
+        <span className="font-semibold text-white">{value}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/6">
+        <div className={`h-full rounded-full bg-gradient-to-r ${color}`} style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }
 
-function KpiMiniBar({ pts }: { pts: PtStatus[] }) {
-  const today = new Date().toISOString().split("T")[0];
-  const totalOverdue = pts.reduce((sum, p) => sum + p.overdueCount, 0);
-  const noUpdateCount = pts.filter((p) => !p.lastActivityDate || p.lastActivityDate !== today).length;
-  const redCount = pts.filter((p) => p.status === "red").length;
-  const greenCount = pts.filter((p) => p.status === "green").length;
-
-  const items = [
-    {
-      label: "Temuan Overdue",
-      value: totalOverdue,
-      color: totalOverdue > 0 ? "text-red-600" : "text-emerald-600",
-      bg: totalOverdue > 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200",
-    },
-    {
-      label: "PT Belum Update",
-      value: noUpdateCount,
-      color: noUpdateCount > 0 ? "text-orange-600" : "text-emerald-600",
-      bg: noUpdateCount > 0 ? "bg-orange-50 border-orange-200" : "bg-emerald-50 border-emerald-200",
-    },
-    {
-      label: "PT Kritis (Merah)",
-      value: redCount,
-      color: redCount > 0 ? "text-red-600" : "text-emerald-600",
-      bg: redCount > 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200",
-    },
-    {
-      label: "PT Aman (Hijau)",
-      value: greenCount,
-      color: greenCount === pts.length ? "text-emerald-700" : "text-emerald-600",
-      bg: "bg-emerald-50 border-emerald-200",
-    },
-  ];
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  tone,
+}: {
+  label: string;
+  value: number;
+  icon: ElementType;
+  tone: "blue" | "green" | "amber" | "rose";
+}) {
+  const toneClasses = {
+    blue: "bg-sky-500/10 text-sky-300",
+    green: "bg-emerald-500/10 text-emerald-300",
+    amber: "bg-amber-500/10 text-amber-300",
+    rose: "bg-rose-500/10 text-rose-300",
+  };
 
   return (
-    <div className="grid grid-cols-4 gap-2 mb-5">
-      {items.map((item) => (
-        <div key={item.label} className={`rounded-lg border px-3 py-2.5 text-center ${item.bg}`}>
-          <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
-          <p className="text-xs text-slate-500 mt-0.5 leading-tight">{item.label}</p>
+    <div className="rounded-[28px] border border-white/8 bg-[#0b1525] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
+          <p className="mt-3 text-5xl font-semibold tracking-tight text-white">{value}</p>
         </div>
-      ))}
+        <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${toneClasses[tone]}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
     </div>
   );
 }
 
-function RankingPanel({ pts }: { pts: PtStatus[] }) {
-  if (pts.length < 2) return null;
-
-  const worst = pts.slice(0, Math.min(3, pts.length));
-  const best = [...pts].slice(-Math.min(3, pts.length)).reverse();
-
-  const allSameStatus = pts.every((p) => p.status === pts[0].status);
-  if (allSameStatus && pts.every((p) => p.consecutiveRedDays === 0 && p.overdueCount === 0)) return null;
+function QuickActionRail({ role }: { role: string }) {
+  const items = QUICK_ACTIONS.filter((item) => item.roles.includes(role));
+  if (items.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-3 mb-5">
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="px-3 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-red-50">
-          <TrendingDown className="w-3.5 h-3.5 text-red-500" />
-          <span className="text-xs font-bold text-red-700 uppercase tracking-wide">Perlu Tindakan</span>
-        </div>
-        <div className="divide-y divide-slate-50">
-          {worst.map((p, i) => {
-            const conf = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.red;
-            return (
-              <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors">
-                <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
-                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${conf.dotColor}`} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-800 truncate">{p.code}</p>
-                  <p className="text-xs text-slate-400 truncate">{p.name}</p>
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group rounded-[26px] border border-white/8 bg-[#0b1525] px-5 py-4 transition-all hover:border-sky-400/30 hover:bg-[#0d192d]"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-300">
+                  <Icon className="h-5 w-5" />
                 </div>
-                {p.consecutiveRedDays >= 2 && (
-                  <span className="text-xs font-semibold text-orange-600 flex-shrink-0">{p.consecutiveRedDays}h 🔥</span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-        <div className="px-3 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-emerald-50">
-          <Trophy className="w-3.5 h-3.5 text-emerald-500" />
-          <span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Terbaik Saat Ini</span>
-        </div>
-        <div className="divide-y divide-slate-50">
-          {best.map((p, i) => {
-            const conf = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.red;
-            return (
-              <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors">
-                <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
-                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${conf.dotColor}`} />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-slate-800 truncate">{p.code}</p>
-                  <p className="text-xs text-slate-400 truncate">{p.name}</p>
+                <div>
+                  <p className="text-sm font-semibold text-white">{item.label}</p>
+                  <p className="text-xs text-slate-500">{item.desc}</p>
                 </div>
-                {p.status === "green" && (
-                  <span className="text-xs text-emerald-600 flex-shrink-0">✓</span>
-                )}
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-slate-600 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-300" />
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -382,13 +199,6 @@ function RankingPanel({ pts }: { pts: PtStatus[] }) {
 export default function Dashboard() {
   const { user } = useAuth();
   const { data, isLoading, refetch, isRefetching } = useGetDashboardSummary();
-
-  const today = new Date().toLocaleDateString("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 
   const sortedPTs: PtStatus[] = data?.ptStatuses
     ? [...data.ptStatuses].sort((a, b) => {
@@ -401,157 +211,309 @@ export default function Dashboard() {
       })
     : [];
 
-  const ptCode = data?.ptStatuses?.[0]?.code;
-  const ptName = data?.ptStatuses?.[0]?.name;
-
-  const subtitle =
+  const totalPts = sortedPTs.length;
+  const today = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const firstName = user?.name?.split(" ")[0] ?? "User";
+  const totalOpenFindings = sortedPTs.reduce((sum, pt) => sum + pt.openFindingsCount, 0);
+  const totalOverdue = sortedPTs.reduce((sum, pt) => sum + pt.overdueCount, 0);
+  const overduePts = sortedPTs.filter((pt) => pt.overdueCount > 0);
+  const redStreakPts = sortedPTs.filter((pt) => pt.consecutiveRedDays >= 2);
+  const ptSubtitle =
     user?.role === "apuppt"
-      ? ptCode && ptName
-        ? `${ptCode} — ${ptName}`
-        : "Status PT Hari Ini"
-      : "Semua PT — Status Hari Ini";
+      ? sortedPTs[0]
+        ? `${sortedPTs[0].code} • ${sortedPTs[0].name}`
+        : "Status PT Anda"
+      : "Overview tim untuk seluruh PT";
 
-  const isMultiPT = user?.role !== "apuppt";
+  if (isLoading) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-[#040914] px-4 py-6 md:px-8 md:py-8">
+        <div className="flex min-h-[60vh] items-center justify-center rounded-[32px] border border-white/6 bg-[#08111f]">
+          <p className="text-sm text-slate-500">Memuat dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-[#040914] px-4 py-6 md:px-8 md:py-8">
+        <div className="flex min-h-[60vh] items-center justify-center rounded-[32px] border border-white/6 bg-[#08111f]">
+          <p className="text-sm text-slate-500">Tidak ada data dashboard.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <p className="text-xs text-slate-400 sm:hidden">{today}</p>
-            <h1 className="text-xl font-bold text-slate-900 sm:hidden">
-              Halo, {user?.name?.split(" ")[0]} 👋
-            </h1>
-            <h1 className="text-xl font-bold text-slate-900 hidden sm:block">Dashboard</h1>
-            <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
-            <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">{today}</p>
+    <div className="min-h-[calc(100vh-4rem)] bg-[#040914] px-4 py-6 md:px-8 md:py-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="rounded-[36px] border border-white/6 bg-[#060d19] p-6 shadow-[0_40px_100px_rgba(0,0,0,0.35)] md:p-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="mb-3 text-xs uppercase tracking-[0.28em] text-slate-500">{today}</p>
+              <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+                Dashboard Operasional
+              </h1>
+              <p className="mt-3 max-w-2xl text-base text-slate-400">
+                Ringkasan cepat untuk {firstName}. {ptSubtitle}
+              </p>
+            </div>
+
+            <button
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="inline-flex items-center gap-2 self-start rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-2.5 text-sm font-medium text-slate-200 transition-colors hover:bg-white/[0.05] disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefetching ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
           </div>
-          <button
-            onClick={() => refetch()}
-            disabled={isLoading || isRefetching}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 mt-1"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Refresh</span>
-          </button>
-        </div>
+        </section>
 
-        {user && <MenuCardGrid role={user.role} />}
+        <section className="grid gap-4 xl:grid-cols-4">
+          <StatCard label="Total PT" value={totalPts} icon={Users} tone="blue" />
+          <StatCard label="Status Hijau" value={data.greenCount} icon={CheckCircle2} tone="green" />
+          <StatCard label="Perlu Perhatian" value={data.yellowCount} icon={Clock3} tone="amber" />
+          <StatCard label="Status Kritis" value={data.redCount} icon={ShieldAlert} tone="rose" />
+        </section>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-slate-400 text-sm">Memuat data...</div>
-          </div>
-        ) : !data ? (
-          <div className="text-center py-20 text-slate-400 text-sm">Tidak ada data.</div>
-        ) : (
-          <>
-            {isMultiPT && sortedPTs.length > 0 && (
-              <CriticalPanel pts={sortedPTs} />
-            )}
-
-            {isMultiPT && (
-              <>
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  {(["red", "yellow", "green"] as const).map((status) => {
-                    const config = STATUS_CONFIG[status];
-                    const count =
-                      status === "green"
-                        ? data.greenCount
-                        : status === "yellow"
-                        ? data.yellowCount
-                        : data.redCount;
-                    const Icon = config.icon;
-                    return (
-                      <div
-                        key={status}
-                        className={`rounded-xl p-4 border-2 ${config.bgColor} ${config.borderColor}`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className={`text-xs font-semibold uppercase tracking-wide ${config.textColor}`}>
-                              {config.label}
-                            </p>
-                            <p className={`text-4xl font-bold mt-1 ${config.textColor}`}>{count}</p>
-                            <p className={`text-xs mt-1 ${config.textColor} opacity-70`}>
-                              {config.labelLong}
-                            </p>
-                          </div>
-                          <Icon className={`w-9 h-9 ${config.iconColor} opacity-30`} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <KpiMiniBar pts={sortedPTs} />
-                <RankingPanel pts={sortedPTs} />
-              </>
-            )}
-
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
-              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-slate-400" />
-                  <h2 className="text-sm font-semibold text-slate-700">Status PT</h2>
-                </div>
-                <span className="text-xs text-slate-400">{sortedPTs.length} PT</span>
+        <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
+          <div className="rounded-[30px] border border-white/8 bg-[#0b1525] p-6">
+            <div className="mb-6 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Ringkasan Status</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Situasi Operasional Hari Ini</h2>
               </div>
-              <div className="divide-y divide-slate-100">
-                {sortedPTs.map((pt) => {
-                  const config =
-                    STATUS_CONFIG[pt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.red;
-                  const Icon = config.icon;
-                  const detail = getStatusDetail(pt);
-                  return (
-                    <Link
-                      key={pt.id}
-                      href={`/pt/${pt.id}`}
-                      className={`flex items-center gap-4 px-4 py-4 hover:bg-slate-50 transition-colors cursor-pointer border-l-4 ${config.accentBorder}`}
-                    >
-                      <div className="flex-shrink-0">
-                        <div className={`w-4 h-4 rounded-full ${config.dotColor}`} />
-                      </div>
-
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-sm font-bold text-slate-900">{pt.code}</span>
-                          <span className="text-xs text-slate-400 truncate hidden sm:inline">
-                            {pt.name}
-                          </span>
-                        </div>
-
-                        <p className={`text-xs font-medium ${detail.color}`}>{detail.text}</p>
-
-                        <div className="flex items-center gap-2 mt-1 flex-wrap">
-                          {pt.consecutiveRedDays >= 2 && (
-                            <span className="inline-block px-1.5 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
-                              🔥 Merah {pt.consecutiveRedDays} hari
-                            </span>
-                          )}
-                          <span className="text-xs text-slate-400">
-                            {pt.lastActivityDate
-                              ? `Update: ${formatLastUpdate(pt.lastActivityDate)}`
-                              : "Belum pernah update"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex-shrink-0">
-                        <span
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${config.bgColor} ${config.textColor} ${config.borderColor}`}
-                        >
-                          <Icon className="w-3 h-3" />
-                          {config.label}
-                        </span>
-                      </div>
-                    </Link>
-                  );
-                })}
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-300">
+                <Activity className="h-5 w-5" />
               </div>
             </div>
-          </>
+
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-5">
+                <StatusMeter label="PT Aman" value={data.greenCount} total={Math.max(totalPts, 1)} tone="green" />
+                <StatusMeter label="Perlu Perhatian" value={data.yellowCount} total={Math.max(totalPts, 1)} tone="yellow" />
+                <StatusMeter label="Kritis" value={data.redCount} total={Math.max(totalPts, 1)} tone="red" />
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="rounded-[24px] border border-white/6 bg-[#0e1a2d] p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Temuan Terbuka</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{totalOpenFindings}</p>
+                  <p className="mt-2 text-sm text-slate-400">Total tiket aktif lintas PT.</p>
+                </div>
+                <div className="rounded-[24px] border border-white/6 bg-[#0e1a2d] p-4">
+                  <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Deadline Lewat</p>
+                  <p className="mt-3 text-3xl font-semibold text-white">{totalOverdue}</p>
+                  <p className="mt-2 text-sm text-slate-400">Fokus utama untuk penanganan cepat.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[30px] border border-white/8 bg-[#0b1525] p-6">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-500/10 text-rose-300">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Perlu Perhatian</p>
+                <h2 className="text-2xl font-semibold text-white">Panel Prioritas</h2>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {overduePts.length === 0 && redStreakPts.length === 0 ? (
+                <div className="rounded-[24px] border border-emerald-500/10 bg-emerald-500/5 p-4 text-sm text-emerald-300">
+                  Tidak ada prioritas kritis saat ini.
+                </div>
+              ) : (
+                <>
+                  {redStreakPts.slice(0, 5).map((pt) => (
+                    <Link
+                      key={`red-${pt.id}`}
+                      href={`/pt/${pt.id}`}
+                      className="flex items-center justify-between rounded-[22px] border border-rose-500/10 bg-rose-500/[0.05] px-4 py-3 transition-colors hover:bg-rose-500/[0.08]"
+                    >
+                      <div>
+                        <p className="font-semibold text-white">{pt.code}</p>
+                        <p className="text-sm text-slate-400">{pt.name}</p>
+                      </div>
+                      <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">
+                        Merah {pt.consecutiveRedDays} hari
+                      </span>
+                    </Link>
+                  ))}
+
+                  {overduePts.slice(0, 5).map((pt) => (
+                    <Link
+                      key={`overdue-${pt.id}`}
+                      href={`/pt/${pt.id}`}
+                      className="flex items-center justify-between rounded-[22px] border border-amber-500/10 bg-amber-500/[0.05] px-4 py-3 transition-colors hover:bg-amber-500/[0.08]"
+                    >
+                      <div>
+                        <p className="font-semibold text-white">{pt.code}</p>
+                        <p className="text-sm text-slate-400">{pt.name}</p>
+                      </div>
+                      <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                        {pt.overdueCount} overdue
+                      </span>
+                    </Link>
+                  ))}
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {user && (
+          <section className="space-y-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Akses Cepat</p>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Navigasi Kerja Harian</h2>
+            </div>
+            <QuickActionRail role={user.role} />
+          </section>
         )}
+
+        <section className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
+          <div className="overflow-hidden rounded-[30px] border border-white/8 bg-[#0b1525]">
+            <div className="flex items-center justify-between border-b border-white/6 px-6 py-5">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Daftar PT</p>
+                <h2 className="mt-2 text-2xl font-semibold text-white">Status PT Saat Ini</h2>
+              </div>
+              <span className="rounded-full border border-white/8 bg-white/[0.03] px-3 py-1 text-xs text-slate-400">
+                {sortedPTs.length} PT
+              </span>
+            </div>
+
+            <div className="divide-y divide-white/6">
+              {sortedPTs.map((pt) => {
+                const theme =
+                  STATUS_THEME[pt.status as keyof typeof STATUS_THEME] ?? STATUS_THEME.red;
+
+                return (
+                  <Link
+                    key={pt.id}
+                    href={`/pt/${pt.id}`}
+                    className="grid gap-3 px-6 py-5 transition-colors hover:bg-white/[0.025] md:grid-cols-[140px_1fr_auto]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`h-3 w-3 rounded-full ${theme.dot}`} />
+                      <div>
+                        <p className="text-lg font-semibold text-white">{pt.code}</p>
+                        <p className="text-xs text-slate-500">{theme.label}</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="font-medium text-slate-200">{pt.name}</p>
+                      <p className="mt-1 text-sm text-slate-400">{getStatusDetail(pt)}</p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Update terakhir: {formatLastUpdate(pt.lastActivityDate)}
+                      </p>
+                    </div>
+
+                    <div className="flex items-start md:justify-end">
+                      <div className="flex flex-wrap gap-2">
+                        {pt.consecutiveRedDays >= 2 && (
+                          <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">
+                            {pt.consecutiveRedDays} hari merah
+                          </span>
+                        )}
+                        {pt.overdueCount > 0 && (
+                          <span className="rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                            {pt.overdueCount} overdue
+                          </span>
+                        )}
+                        <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${theme.badge}`}>
+                          {theme.label}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-[30px] border border-white/8 bg-[#0b1525] p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-sky-500/10 text-sky-300">
+                  <BarChart3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Distribusi</p>
+                  <h2 className="text-2xl font-semibold text-white">Status Count</h2>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {([
+                  ["Hijau", data.greenCount, "green"],
+                  ["Kuning", data.yellowCount, "yellow"],
+                  ["Merah", data.redCount, "red"],
+                ] as const).map(([label, value, tone]) => (
+                  <div key={label} className="rounded-[22px] border border-white/6 bg-[#0e1a2d] p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-sm text-slate-300">{label}</span>
+                      <span className="text-2xl font-semibold text-white">{value}</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-white/6">
+                      <div
+                        className={`h-full rounded-full ${
+                          tone === "green"
+                            ? "bg-emerald-400"
+                            : tone === "yellow"
+                              ? "bg-amber-400"
+                              : "bg-rose-400"
+                        }`}
+                        style={{
+                          width: `${totalPts === 0 ? 0 : Math.max(8, Math.round((value / totalPts) * 100))}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[30px] border border-white/8 bg-[#0b1525] p-6">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-300">
+                  <Clock3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Ringkasan Cepat</p>
+                  <h2 className="text-2xl font-semibold text-white">Highlight Operasional</h2>
+                </div>
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
+                  PT aman: <span className="font-semibold text-white">{data.greenCount}</span>
+                </div>
+                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
+                  Perlu perhatian: <span className="font-semibold text-white">{data.yellowCount}</span>
+                </div>
+                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
+                  Kritis: <span className="font-semibold text-white">{data.redCount}</span>
+                </div>
+                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
+                  Total temuan terbuka: <span className="font-semibold text-white">{totalOpenFindings}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

@@ -26,10 +26,11 @@ export function NotificationBanner() {
   };
 
   return (
-    <div className="bg-blue-50 border-b border-blue-200 px-4 py-3 flex items-center justify-between gap-3">
+    <div className="border-b border-white/6 bg-[#08111f] px-4 py-3 md:px-8">
+      <div className="flex items-center justify-between gap-3 rounded-[24px] border border-sky-500/15 bg-sky-500/[0.05] px-4 py-3">
       <div className="flex items-center gap-3 min-w-0">
-        <Bell className="w-5 h-5 text-blue-600 shrink-0" />
-        <p className="text-sm text-blue-800 leading-tight">
+        <Bell className="w-5 h-5 text-sky-300 shrink-0" />
+        <p className="text-sm text-slate-200 leading-tight">
           Aktifkan notifikasi untuk mendapat update real-time tentang aktivitas dan temuan.
         </p>
       </div>
@@ -37,17 +38,18 @@ export function NotificationBanner() {
         <button
           onClick={handleEnable}
           disabled={loading}
-          className="text-sm font-medium bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 disabled:opacity-60 transition-colors"
+          className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-slate-950 transition-colors hover:bg-sky-400 disabled:opacity-60"
         >
           {loading ? "Memproses..." : "Aktifkan"}
         </button>
         <button
           onClick={handleDismiss}
-          className="text-blue-500 hover:text-blue-700 transition-colors"
+          className="text-slate-500 hover:text-white transition-colors"
           aria-label="Tutup"
         >
           <X className="w-4 h-4" />
         </button>
+      </div>
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Edit2, Building2, ClipboardList, Users, CheckCircle2, FileCheck2 } from "lucide-react";
+import { PageChrome, Panel } from "@/components/PageChrome";
 
 const ACTIVITY_TYPES: { value: CreateActivityBodyActivityType; label: string }[] = [
   { value: CreateActivityBodyActivityType.kyc, label: "KYC (Know Your Customer)" },
@@ -286,31 +287,27 @@ export default function Activity() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">Aktivitas Harian</h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              {new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              if (showForm) { setEditingId(null); setForm(defaultForm); setError(""); }
-              setShowForm(!showForm);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-500 transition-colors"
-          >
-            <ClipboardList className="w-3.5 h-3.5" />
-            {showForm ? "Tutup Form" : "Input Aktivitas"}
-          </button>
-        </div>
+    <PageChrome
+      eyebrow={new Date().toLocaleDateString("id-ID", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+      title="Aktivitas Harian"
+      description="Input, edit, dan review aktivitas APUPPT tanpa mengubah alur data yang sudah ada."
+      actions={
+        <button
+          onClick={() => {
+            if (showForm) { setEditingId(null); setForm(defaultForm); setError(""); }
+            setShowForm(!showForm);
+          }}
+          className="flex items-center gap-1.5 rounded-2xl bg-sky-500 px-4 py-2.5 text-sm font-semibold text-slate-950 transition-colors hover:bg-sky-400"
+        >
+          <ClipboardList className="h-4 w-4" />
+          {showForm ? "Tutup Form" : "Input Aktivitas"}
+        </button>
+      }
+    >
 
         {showForm && (
-          <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 shadow-sm pb-20 sm:pb-5">
-            <h3 className="text-sm font-semibold text-slate-700 mb-4">
+          <Panel className="mb-6 p-5 pb-20 sm:pb-5">
+            <h3 className="mb-4 text-sm font-semibold text-slate-100">
               {editingId ? "Edit Aktivitas" : "Aktivitas Baru"}
             </h3>
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
@@ -447,7 +444,7 @@ export default function Activity() {
                 </button>
               </div>
             </form>
-            <div className="sm:hidden fixed bottom-16 left-0 right-0 px-4 pb-3 pt-2 bg-white border-t border-slate-100 z-30 flex gap-3">
+            <div className="sm:hidden fixed bottom-16 left-0 right-0 z-30 flex gap-3 border-t border-white/10 bg-[#08111f] px-4 pb-3 pt-2">
               {editingId && (
                 <button
                   type="button"
@@ -466,14 +463,14 @@ export default function Activity() {
                 {creating || updating ? "Menyimpan..." : editingId ? "Perbarui Aktivitas" : "Simpan Aktivitas"}
               </button>
             </div>
-          </div>
+          </Panel>
         )}
 
         {todayActivities.length > 0 && (
           <div className="mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <CheckCircle className="w-4 h-4 text-emerald-500" />
-              <h2 className="text-sm font-semibold text-slate-700">Aktivitas Hari Ini ({todayActivities.length})</h2>
+            <div className="mb-3 flex items-center gap-2">
+              <CheckCircle className="h-4 w-4 text-emerald-400" />
+              <h2 className="text-sm font-semibold text-slate-200">Aktivitas Hari Ini ({todayActivities.length})</h2>
             </div>
             <div className="space-y-2">
               {todayActivities.map(a => <ActivityCard key={a.id} a={a as ActivityItem} />)}
@@ -482,17 +479,17 @@ export default function Activity() {
         )}
 
         <div>
-          <h2 className="text-sm font-semibold text-slate-700 mb-3">Riwayat Aktivitas</h2>
-          <p className="text-xs text-slate-400 mb-3">Riwayat aktivitas tidak dapat diubah. Hanya aktivitas hari ini yang dapat diedit.</p>
+          <h2 className="mb-3 text-sm font-semibold text-slate-200">Riwayat Aktivitas</h2>
+          <p className="mb-3 text-xs text-slate-500">Riwayat aktivitas tidak dapat diubah. Hanya aktivitas hari ini yang dapat diedit.</p>
           {isLoading ? (
             <div className="text-center py-8 text-slate-400 text-sm">Memuat...</div>
           ) : pastActivities.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 py-10 text-center">
+            <Panel className="py-10 text-center">
               <ClipboardList className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <p className="text-sm text-slate-400">Belum ada riwayat aktivitas.</p>
-            </div>
+            </Panel>
           ) : (
-            <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">
+            <Panel className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50 text-xs text-slate-500">
@@ -555,10 +552,9 @@ export default function Activity() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </Panel>
           )}
         </div>
-      </div>
-    </div>
+    </PageChrome>
   );
 }
