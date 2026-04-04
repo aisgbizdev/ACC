@@ -6,11 +6,11 @@ async function seed() {
   console.log("Seeding database...");
 
   const pts = [
-    { code: "SGB", name: "PT Sinar Graha Bersama" },
-    { code: "RFB", name: "PT Ratu Fortuna Buana" },
-    { code: "BPF", name: "PT Bina Prima Finansial" },
-    { code: "KPF", name: "PT Karya Prima Finansial" },
-    { code: "EWF", name: "PT Empower Wealth Finansial" },
+    { code: "SGB", name: "Solid Gold Berjangka" },
+    { code: "RFB", name: "Rifan Financindo Berjangka" },
+    { code: "BPF", name: "Best Profit Futures" },
+    { code: "KPF", name: "Kontak Perkasa Futures" },
+    { code: "EWF", name: "Equity World Futures" },
   ];
 
   const passwordHash = await bcrypt.hash("password123", 10);
