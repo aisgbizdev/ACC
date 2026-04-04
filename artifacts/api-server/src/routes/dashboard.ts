@@ -41,6 +41,55 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
 
       const status = computeTrafficLight(lastActivity?.date ?? null, openFindings, today);
 
+      // Calculate consecutive RED days (look back up to 7 days)
+      let consecutiveRedDays = 0;
+      if (status === "red") {
+        consecutiveRedDays = 1;
+        const allPtActivities = await db
+          .select()
+          .from(dailyActivitiesTable)
+          .where(eq(dailyActivitiesTable.ptId, pt.id));
+
+        // Fetch all findings (including completed ones) for historical evaluation
+        const allFindings = await db
+          .select()
+          .from(findingsTable)
+          .where(eq(findingsTable.ptId, pt.id));
+
+        for (let i = 1; i < 7; i++) {
+          const checkDate = new Date(today);
+          checkDate.setDate(checkDate.getDate() - i);
+          const checkDateStr = checkDate.toISOString().split("T")[0];
+          const checkDateMs = checkDate.getTime();
+
+          const dayActivity = allPtActivities
+            .filter(a => a.date <= checkDateStr)
+            .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+          // A finding was "open" on checkDate if:
+          // - it was created (date) on or before checkDate
+          // - AND it was not yet completed/closed on checkDate (closedAt is null or after checkDate)
+          const findingsOpenOnDate = allFindings.filter(f => {
+            if (f.date > checkDateStr) return false;
+            if (f.status !== "completed") return true;
+            if (!f.closedAt) return false;
+            return f.closedAt.getTime() > checkDateMs + 86400000 - 1; // closed after checkDate ends
+          });
+
+          const dayStatus = computeTrafficLight(
+            dayActivity?.date ?? null,
+            findingsOpenOnDate,
+            checkDateStr
+          );
+
+          if (dayStatus === "red") {
+            consecutiveRedDays++;
+          } else {
+            break;
+          }
+        }
+      }
+
       return {
         id: pt.id,
         code: pt.code,
@@ -49,6 +98,7 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
         lastActivityDate: lastActivity?.date ?? null,
         openFindingsCount: openCount,
         overdueCount,
+        consecutiveRedDays,
       };
     })
   );

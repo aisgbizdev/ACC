@@ -186,6 +186,11 @@ export default function Dashboard() {
                         {pt.status === "green" && (
                           <p className="text-xs text-emerald-600 mt-0.5">Update hari ini · Tidak ada temuan</p>
                         )}
+                        {pt.consecutiveRedDays >= 2 && (
+                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                            Merah {pt.consecutiveRedDays} hari
+                          </span>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-3 flex-shrink-0">

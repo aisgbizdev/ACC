@@ -139,6 +139,11 @@ export const GetDashboardSummaryResponse = zod.object({
       lastActivityDate: zod.string().nullish(),
       openFindingsCount: zod.number(),
       overdueCount: zod.number(),
+      consecutiveRedDays: zod
+        .number()
+        .describe(
+          "Number of consecutive days the PT has been in RED status (0 if not currently RED)",
+        ),
     }),
   ),
 });

@@ -876,6 +876,9 @@ components:
           type: integer
         overdueCount:
           type: integer
+        consecutiveRedDays:
+          type: integer
+          description: Number of consecutive days the PT has been in RED status (0 if not currently RED)
       required:
         - id
         - code
@@ -883,6 +886,7 @@ components:
         - status
         - openFindingsCount
         - overdueCount
+        - consecutiveRedDays
 
     DailyActivity:
       type: object

@@ -113,6 +113,8 @@ export interface PtStatusCard {
   lastActivityDate?: string | null;
   openFindingsCount: number;
   overdueCount: number;
+  /** Number of consecutive days the PT has been in RED status (0 if not currently RED) */
+  consecutiveRedDays: number;
 }
 
 export interface DashboardSummary {

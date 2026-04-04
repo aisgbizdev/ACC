@@ -4,13 +4,15 @@ import {
   useListActivities,
   useListPts,
   useReviewActivity,
+  useGetDashboardSummary,
   getListActivitiesQueryKey,
   type DailyActivity,
+  type PtStatusCard,
   type ErrorType,
   type ErrorResponse,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Clock, Building2, Users, ClipboardCheck, ChevronDown, ChevronUp } from "lucide-react";
+import { CheckCircle2, Clock, Building2, Users, ClipboardCheck, ChevronDown, ChevronUp, AlertTriangle, X } from "lucide-react";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   kyc: "KYC",
@@ -43,6 +45,8 @@ export default function DKReview() {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [alertCollapsed, setAlertCollapsed] = useState(false);
+  const [alertDismissed, setAlertDismissed] = useState(false);
 
   const activityParams: Record<string, string> = {};
   if (filterPt) activityParams.ptId = filterPt;
@@ -51,6 +55,7 @@ export default function DKReview() {
 
   const { data: activities, isLoading } = useListActivities(activityParams);
   const { data: pts } = useListPts();
+  const { data: dashboardData } = useGetDashboardSummary();
 
   const { mutate: reviewActivity, isPending: reviewing } = useReviewActivity<ErrorType<ErrorResponse>>({
     mutation: {
@@ -69,6 +74,23 @@ export default function DKReview() {
   const getPtCode = (ptId: string) => pts?.find(p => p.id === ptId)?.code ?? ptId.slice(0, 8);
 
   const pendingCount = activities?.length ?? 0;
+
+  const today = new Date().toISOString().split("T")[0];
+  const consecutiveRedPts: PtStatusCard[] = dashboardData?.ptStatuses?.filter(
+    (p) => p.consecutiveRedDays >= 2
+  ) ?? [];
+  const overdueFindings: PtStatusCard[] = dashboardData?.ptStatuses?.filter(
+    (p) => p.overdueCount > 0
+  ) ?? [];
+  const notUpdatedPts: PtStatusCard[] = dashboardData?.ptStatuses?.filter((p) => {
+    if (!p.lastActivityDate) return true;
+    const lastDate = new Date(p.lastActivityDate + "T00:00:00");
+    const todayDate = new Date(today + "T00:00:00");
+    const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > 1;
+  }) ?? [];
+
+  const hasAlerts = consecutiveRedPts.length > 0 || overdueFindings.length > 0 || notUpdatedPts.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -94,6 +116,100 @@ export default function DKReview() {
             </select>
           </div>
         </div>
+
+        {hasAlerts && !alertDismissed && (
+          <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 shadow-sm overflow-hidden">
+            <div
+              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+              onClick={() => setAlertCollapsed(!alertCollapsed)}
+            >
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                <span className="text-sm font-semibold text-orange-800">Perlu Perhatian Sekarang</span>
+                {(consecutiveRedPts.length + overdueFindings.length + notUpdatedPts.length) > 0 && (
+                  <span className="bg-orange-200 text-orange-800 text-xs font-bold px-1.5 py-0.5 rounded-full">
+                    {consecutiveRedPts.length + overdueFindings.length + notUpdatedPts.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {alertCollapsed
+                  ? <ChevronDown className="w-4 h-4 text-orange-400" />
+                  : <ChevronUp className="w-4 h-4 text-orange-400" />
+                }
+                <button
+                  onClick={(e) => { e.stopPropagation(); setAlertDismissed(true); }}
+                  className="text-orange-400 hover:text-orange-600 transition-colors"
+                  title="Tutup panel"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {!alertCollapsed && (
+              <div className="px-4 pb-4 space-y-3">
+                {consecutiveRedPts.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-orange-700 mb-1.5 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+                      PT Merah Berturut-turut
+                    </p>
+                    <div className="space-y-1">
+                      {consecutiveRedPts.map((p) => (
+                        <div key={p.id} className="flex items-center gap-2 text-xs text-orange-800">
+                          <span className="font-semibold bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded">{p.code}</span>
+                          <span>{p.name}</span>
+                          <span className="ml-auto font-semibold text-orange-600">Merah {p.consecutiveRedDays} hari</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {overdueFindings.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-orange-700 mb-1.5 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                      PT dengan Temuan Overdue
+                    </p>
+                    <div className="space-y-1">
+                      {overdueFindings.map((p) => (
+                        <div key={p.id} className="flex items-center gap-2 text-xs text-orange-800">
+                          <span className="font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded">{p.code}</span>
+                          <span>{p.name}</span>
+                          <span className="ml-auto font-semibold text-amber-600">{p.overdueCount} temuan overdue</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {notUpdatedPts.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-orange-700 mb-1.5 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-slate-400 inline-block"></span>
+                      PT Belum Update (&gt; 1 hari)
+                    </p>
+                    <div className="space-y-1">
+                      {notUpdatedPts.map((p) => (
+                        <div key={p.id} className="flex items-center gap-2 text-xs text-orange-800">
+                          <span className="font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded">{p.code}</span>
+                          <span>{p.name}</span>
+                          <span className="ml-auto text-slate-500">
+                            {p.lastActivityDate
+                              ? `Terakhir ${new Date(p.lastActivityDate + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`
+                              : "Belum pernah update"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5 w-fit">
           <button
