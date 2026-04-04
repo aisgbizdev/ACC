@@ -4,6 +4,18 @@ import { Eye, EyeOff } from "lucide-react";
 import { login } from "@workspace/api-client-react";
 import { useAuth, UserRole } from "@/contexts/AuthContext";
 
+const ACCOUNTS = [
+  { username: "apuppt.sgb", label: "APUPPT — SGB" },
+  { username: "apuppt.rfb", label: "APUPPT — RFB" },
+  { username: "apuppt.bpf", label: "APUPPT — BPF" },
+  { username: "apuppt.kpf", label: "APUPPT — KPF" },
+  { username: "apuppt.ewf", label: "APUPPT — EWF" },
+  { username: "dk",         label: "DK (Dewan Komisaris)" },
+  { username: "du",         label: "DU (Direksi Utama)" },
+  { username: "owner",      label: "Owner" },
+  { username: "superadmin", label: "Superadmin" },
+];
+
 export default function Login() {
   const { user, loading, setUser } = useAuth();
   const [username, setUsername] = useState("");
@@ -64,15 +76,20 @@ export default function Login() {
         <div className="bg-slate-800 rounded-xl p-6 shadow-xl border border-slate-700">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">Jabatan / Username</label>
-              <input
-                type="text"
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">Jabatan / Akun</label>
+              <select
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
-                placeholder="apuppt.sgb"
-                className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+                className="w-full px-3 py-2.5 bg-slate-900 border border-slate-600 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all appearance-none cursor-pointer"
+              >
+                <option value="" disabled>— Pilih akun —</option>
+                {ACCOUNTS.map((acc) => (
+                  <option key={acc.username} value={acc.username}>
+                    {acc.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
@@ -130,18 +147,7 @@ export default function Login() {
           </form>
         </div>
 
-        <div className="mt-6 bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-          <p className="text-xs text-slate-400 font-medium mb-2">Akun untuk testing:</p>
-          <div className="space-y-1.5 text-xs text-slate-500">
-            <div className="flex justify-between"><span>APUPPT SGB</span><span className="font-mono">apuppt.sgb</span></div>
-            <div className="flex justify-between"><span>APUPPT RFB</span><span className="font-mono">apuppt.rfb</span></div>
-            <div className="flex justify-between"><span>DK SGB</span><span className="font-mono">dk.sgb</span></div>
-            <div className="flex justify-between"><span>DU SGB</span><span className="font-mono">du.sgb</span></div>
-            <div className="flex justify-between"><span>Owner</span><span className="font-mono">owner</span></div>
-            <div className="flex justify-between"><span>Superadmin</span><span className="font-mono">superadmin</span></div>
-            <div className="flex justify-between pt-1 border-t border-slate-700 text-slate-400"><span>Password semua:</span><span className="font-mono">password123</span></div>
-          </div>
-        </div>
+        <p className="mt-4 text-center text-xs text-slate-500">Password semua akun: <span className="font-mono text-slate-400">password123</span></p>
       </div>
     </div>
   );
