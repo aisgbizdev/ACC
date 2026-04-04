@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { logout } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield, User, UserCircle } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield, User, UserCircle, Bell } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -118,6 +118,14 @@ export function Navbar() {
                   >
                     <UserCircle className="w-3.5 h-3.5" />
                     Profil Saya
+                  </Link>
+                  <Link
+                    href="/notification-settings"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    Pengaturan Notifikasi
                   </Link>
                   <div className="border-t border-slate-700" />
                   <button

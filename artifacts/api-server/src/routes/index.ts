@@ -11,6 +11,7 @@ import reviewsRouter from "./reviews";
 import signoffsRouter from "./signoffs";
 import auditLogsRouter from "./audit-logs";
 import kpiRouter from "./kpi";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(reviewsRouter);
 router.use(signoffsRouter);
 router.use(auditLogsRouter);
 router.use(kpiRouter);
+router.use(notificationsRouter);
 
 export default router;

@@ -4,6 +4,7 @@ import { setBaseUrl } from "@workspace/api-client-react";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { NotificationBanner } from "@/components/NotificationBanner";
 import Login from "@/pages/Login";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ChangePassword from "@/pages/ChangePassword";
@@ -21,6 +22,7 @@ import KPI from "@/pages/KPI";
 import { BottomNav } from "@/components/BottomNav";
 import AuditLog from "@/pages/AuditLog";
 import { InstallBanner } from "@/components/InstallBanner";
+import NotificationSettings from "@/pages/NotificationSettings";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 setBaseUrl(API_BASE || null);
@@ -39,6 +41,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       {user && <Navbar />}
+      {user && <NotificationBanner />}
       <main className="flex-1 pb-16 sm:pb-0">{children}</main>
       {user && <BottomNav />}
       {user && <InstallBanner />}
@@ -124,6 +127,11 @@ function Router() {
         <Route path="/audit-log">
           <ProtectedRoute allowedRoles={["superadmin"]}>
             <AuditLog />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/notification-settings">
+          <ProtectedRoute>
+            <NotificationSettings />
           </ProtectedRoute>
         </Route>
         <Route>

@@ -11,6 +11,7 @@ import {
 import { z } from "zod";
 import { requireAuth } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
+import { notifyNewFinding, notifyNewComment } from "../lib/push-notify";
 
 const FindingIdSchema = z.object({ id: z.string().uuid() });
 
@@ -191,6 +192,8 @@ router.post("/findings", requireAuth, async (req, res): Promise<void> => {
     .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
     .where(eq(findingsTable.id, finding.id));
 
+  notifyNewFinding(parsed.data.ptId, parsed.data.findingText, user.id).catch(() => {});
+
   res.status(201).json(withBranch);
 });
 
@@ -355,6 +358,8 @@ router.post("/findings/:id/comments", requireAuth, async (req, res): Promise<voi
     .from(ticketCommentsTable)
     .leftJoin(usersTable, eq(ticketCommentsTable.authorId, usersTable.id))
     .where(eq(ticketCommentsTable.id, comment.id));
+
+  notifyNewComment(findingId, finding.ptId, user.id, parsed.data.content).catch(() => {});
 
   res.status(201).json(withAuthor);
 });

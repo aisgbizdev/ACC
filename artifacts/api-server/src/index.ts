@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { scheduleEscalation } from "./lib/escalation-cron";
+import { scheduleDailyNotifications } from "./lib/daily-notif-cron";
 
 const rawPort = process.env["PORT"];
 
@@ -24,4 +25,5 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   scheduleEscalation();
+  scheduleDailyNotifications();
 });

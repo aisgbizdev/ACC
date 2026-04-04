@@ -5,6 +5,7 @@ import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, Upda
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { z } from "zod";
 import { logAudit } from "../lib/audit";
+import { notifyNewActivity } from "../lib/push-notify";
 
 const router: IRouter = Router();
 
@@ -147,6 +148,8 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
     .from(dailyActivitiesTable)
     .leftJoin(branchesTable, eq(dailyActivitiesTable.branchId, branchesTable.id))
     .where(eq(dailyActivitiesTable.id, activity.id));
+
+  notifyNewActivity(data.ptId, data.activityType, user.id).catch(() => {});
 
   res.status(201).json(withBranch);
 });
