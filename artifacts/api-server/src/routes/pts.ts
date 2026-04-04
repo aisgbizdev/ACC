@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gte } from "drizzle-orm";
 import { db, ptsTable, dailyActivitiesTable, findingsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
 import { computeTrafficLight } from "../lib/traffic-light";
@@ -98,6 +98,44 @@ router.get("/pts/:id/status", requireAuth, async (req, res): Promise<void> => {
     openFindingsCount: openCount,
     overdueCount,
   });
+});
+
+router.get("/pts/:id/history", requireAuth, async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const days = parseInt(req.query.days as string ?? "7", 10) || 7;
+
+  if (user.ptId && user.ptId !== rawId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  const history: Array<{ date: string; status: string }> = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0];
+
+    const [lastActivity] = await db
+      .select()
+      .from(dailyActivitiesTable)
+      .where(and(eq(dailyActivitiesTable.ptId, rawId), gte(dailyActivitiesTable.date, dateStr)))
+      .orderBy(dailyActivitiesTable.date)
+      .limit(1);
+
+    const allFindings = await db
+      .select()
+      .from(findingsTable)
+      .where(eq(findingsTable.ptId, rawId));
+
+    const status = computeTrafficLight(lastActivity?.date ?? null, allFindings, dateStr);
+    history.push({ date: dateStr, status });
+  }
+
+  res.json(history);
 });
 
 export default router;

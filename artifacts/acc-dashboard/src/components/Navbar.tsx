@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { logout } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, KeyRound, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, KeyRound, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -41,11 +41,13 @@ export function Navbar() {
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
     { href: "/activity", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
+    { href: "/activities", label: "Aktivitas", icon: ClipboardList, roles: ["dk", "superadmin"] },
     { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
     { href: "/review", label: "Review", icon: ClipboardCheck, roles: ["dk", "superadmin"] },
     { href: "/signoff", label: "Sign-Off", icon: FileCheck2, roles: ["du", "superadmin"] },
     { href: "/kpi", label: "KPI", icon: TrendingUp, roles: ["dk", "du", "owner", "superadmin"] },
     { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner", "superadmin"] },
+    { href: "/audit-log", label: "Audit Log", icon: Shield, roles: ["superadmin"] },
   ];
 
   const visibleItems = navItems.filter((item) => item.roles.includes(user.role));

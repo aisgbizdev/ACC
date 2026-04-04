@@ -7,6 +7,9 @@ import activitiesRouter from "./activities";
 import findingsRouter from "./findings";
 import reportsRouter from "./reports";
 import branchesRouter from "./branches";
+import reviewsRouter from "./reviews";
+import signoffsRouter from "./signoffs";
+import auditLogsRouter from "./audit-logs";
 
 const router: IRouter = Router();
 
@@ -18,5 +21,8 @@ router.use(activitiesRouter);
 router.use(findingsRouter);
 router.use(reportsRouter);
 router.use(branchesRouter);
+router.use(reviewsRouter);
+router.use(signoffsRouter);
+router.use(auditLogsRouter);
 
 export default router;

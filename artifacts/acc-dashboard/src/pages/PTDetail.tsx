@@ -2,6 +2,45 @@ import { useRoute, Link } from "wouter";
 import { useGetPt, useListActivities, useListFindings } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowLeft, AlertTriangle, FileText, CheckCircle, Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/api";
+
+type DayHistory = { date: string; status: string };
+
+function useHistoryData(ptId: string) {
+  return useQuery<DayHistory[]>({
+    queryKey: ["pt-history", ptId],
+    queryFn: () => apiFetch(`/api/pts/${ptId}/history?days=7`),
+    enabled: !!ptId,
+  });
+}
+
+const DAY_STATUS_BADGE: Record<string, string> = {
+  green: "bg-emerald-500 text-white",
+  yellow: "bg-amber-400 text-white",
+  red: "bg-red-500 text-white",
+};
+
+function SevenDayHistory({ ptId }: { ptId: string }) {
+  const { data: history } = useHistoryData(ptId);
+  if (!history || history.length === 0) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 mt-3">
+      {history.map((day) => {
+        const d = new Date(day.date + "T00:00:00");
+        return (
+          <div key={day.date} className="flex flex-col items-center gap-1">
+            <div className={`w-8 h-8 rounded flex items-center justify-center text-xs font-bold ${DAY_STATUS_BADGE[day.status] ?? "bg-slate-200 text-slate-600"}`}>
+              {d.toLocaleDateString("id-ID", { weekday: "narrow" })}
+            </div>
+            <span className="text-xs text-slate-400">{d.getDate()}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 const STATUS_CONFIG = {
   green: {
@@ -92,19 +131,22 @@ export default function PTDetail() {
           <Link href="/dashboard" className="text-slate-400 hover:text-slate-600 transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="flex-1 flex items-center gap-3">
-            <div>
-              <h1 className="text-lg font-bold text-slate-900">
-                {pt.code}
-                <span className="font-normal text-slate-500 ml-2 text-base">{pt.name}</span>
-              </h1>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-lg font-bold text-slate-900">
+                  {pt.code}
+                  <span className="font-normal text-slate-500 ml-2 text-base">{pt.name}</span>
+                </h1>
+              </div>
+              <span
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}
+              >
+                <StatusIcon className="w-3 h-3" />
+                {statusCfg.label}
+              </span>
             </div>
-            <span
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${statusCfg.bg} ${statusCfg.text} ${statusCfg.border}`}
-            >
-              <StatusIcon className="w-3 h-3" />
-              {statusCfg.label}
-            </span>
+            <SevenDayHistory ptId={id} />
           </div>
         </div>
 

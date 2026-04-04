@@ -3,3 +3,7 @@ export * from "./users";
 export * from "./daily_activities";
 export * from "./findings";
 export * from "./branches";
+export * from "./activity_reviews";
+export * from "./report_signoffs";
+export * from "./ticket_comments";
+export * from "./audit_logs";

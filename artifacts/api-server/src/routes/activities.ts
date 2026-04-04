@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
 import { eq, and, SQL, isNull, isNotNull } from "drizzle-orm";
-import { db, dailyActivitiesTable, branchesTable } from "@workspace/db";
+import { db, dailyActivitiesTable, branchesTable, activityReviewsTable, usersTable } from "@workspace/db";
 import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams, ReviewActivityBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { z } from "zod";
+import { logAudit } from "../lib/audit";
 
 const router: IRouter = Router();
 
@@ -135,6 +136,11 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
       userId: user.id,
     })
     .returning();
+
+  await logAudit("submit_activity", "activity", activity.id, req, {
+    ptId: data.ptId,
+    afterData: { activityType: data.activityType, date: data.date },
+  });
 
   const [withBranch] = await db
     .select(ACTIVITY_SELECT)

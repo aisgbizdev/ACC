@@ -1,25 +1,29 @@
-import { pgTable, uuid, varchar, timestamp, date, text, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, date, text, pgEnum, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { ptsTable } from "./pts";
 import { usersTable } from "./users";
 import { branchesTable } from "./branches";
 
-export const findingRecordStatusEnum = pgEnum("finding_record_status", ["pending", "follow_up", "completed"]);
+export const findingRecordStatusEnum = pgEnum("finding_record_status", ["pending", "in_progress", "awaiting_verification", "completed", "follow_up"]);
 
 export const findingsTable = pgTable("findings", {
   id: uuid("id").primaryKey().defaultRandom(),
   ptId: uuid("pt_id").notNull().references(() => ptsTable.id),
   branchId: uuid("branch_id").references(() => branchesTable.id),
   reportedBy: uuid("reported_by").notNull().references(() => usersTable.id),
+  assignedTo: uuid("assigned_to").references(() => usersTable.id),
   date: date("date").notNull(),
   findingText: text("finding_text").notNull(),
   status: findingRecordStatusEnum("status").notNull().default("pending"),
+  deadline: date("deadline"),
   notes: text("notes"),
   // DK Acknowledgement
   dkAcknowledgedAt: timestamp("dk_acknowledged_at", { withTimezone: true }),
   dkAcknowledgedBy: uuid("dk_acknowledged_by").references(() => usersTable.id),
   dkNotes: text("dk_notes"),
+  escalatedAt: timestamp("escalated_at", { withTimezone: true }),
+  escalationLevel: integer("escalation_level").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   closedAt: timestamp("closed_at", { withTimezone: true }),

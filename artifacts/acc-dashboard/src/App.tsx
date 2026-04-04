@@ -10,12 +10,15 @@ import ChangePassword from "@/pages/ChangePassword";
 import Dashboard from "@/pages/Dashboard";
 import PTDetail from "@/pages/PTDetail";
 import Activity from "@/pages/Activity";
+import Activities from "@/pages/Activities";
 import Findings from "@/pages/Findings";
+import FindingDetail from "@/pages/FindingDetail";
 import Reports from "@/pages/Reports";
 import DKReview from "@/pages/DKReview";
 import DUSignOff from "@/pages/DUSignOff";
 import KPI from "@/pages/KPI";
 import { BottomNav } from "@/components/BottomNav";
+import AuditLog from "@/pages/AuditLog";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 setBaseUrl(API_BASE || null);
@@ -75,6 +78,16 @@ function Router() {
             <Activity />
           </ProtectedRoute>
         </Route>
+        <Route path="/activities">
+          <ProtectedRoute allowedRoles={["dk", "superadmin"]}>
+            <Activities />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/findings/:id">
+          <ProtectedRoute allowedRoles={["apuppt", "dk", "owner", "superadmin"]}>
+            <FindingDetail />
+          </ProtectedRoute>
+        </Route>
         <Route path="/findings">
           <ProtectedRoute allowedRoles={["apuppt", "dk", "du", "owner", "superadmin"]}>
             <Findings />
@@ -98,6 +111,11 @@ function Router() {
         <Route path="/kpi">
           <ProtectedRoute allowedRoles={["dk", "du", "owner", "superadmin"]}>
             <KPI />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/audit-log">
+          <ProtectedRoute allowedRoles={["superadmin"]}>
+            <AuditLog />
           </ProtectedRoute>
         </Route>
         <Route>

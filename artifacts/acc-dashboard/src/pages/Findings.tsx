@@ -1,21 +1,20 @@
 import { useState } from "react";
+import { Link } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useListFindings,
   useListPts,
   useListBranches,
-  useCreateFinding,
-  useCompleteFinding,
   getListFindingsQueryKey,
-  CreateFindingBodyStatus,
-  type ErrorType,
-  type ErrorResponse,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Plus, CheckCircle, Building2 } from "lucide-react";
+import { AlertTriangle, Plus, Building2, ExternalLink, Clock } from "lucide-react";
+import { apiFetch } from "@/lib/api";
 
 const FINDING_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "text-red-600 bg-red-50 border-red-200" },
+  in_progress: { label: "In Progress", color: "text-blue-600 bg-blue-50 border-blue-200" },
+  awaiting_verification: { label: "Menunggu Verifikasi", color: "text-amber-600 bg-amber-50 border-amber-200" },
   follow_up: { label: "Follow Up", color: "text-amber-600 bg-amber-50 border-amber-200" },
   completed: { label: "Selesai", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
 };
@@ -43,47 +42,50 @@ export default function Findings() {
     user?.ptId ? { ptId: user.ptId } : filterPt ? { ptId: filterPt } : undefined
   );
 
-  const defaultForm: {
-    ptId: string;
-    branchId: string;
-    date: string;
-    findingText: string;
-    status: CreateFindingBodyStatus;
-    notes: string;
-  } = {
+  const defaultForm = {
     ptId: user?.ptId ?? "",
     branchId: "",
     date: new Date().toISOString().split("T")[0],
+    deadline: "",
     findingText: "",
-    status: CreateFindingBodyStatus.pending,
+    status: "pending",
     notes: "",
   };
   const [form, setForm] = useState(defaultForm);
   const [formError, setFormError] = useState("");
+  const [creating, setCreating] = useState(false);
 
-  const { mutate: createFinding, isPending: creating } = useCreateFinding<ErrorType<ErrorResponse>>({
-    mutation: {
-      onSuccess: () => {
-        setShowForm(false);
-        setForm({ ...defaultForm });
-        queryClient.invalidateQueries({ queryKey: getListFindingsQueryKey() });
-      },
-      onError: (err) => {
-        setFormError(err.data?.error ?? err.message ?? "Gagal menyimpan temuan.");
-      },
-    },
-  });
-
-  const { mutate: completeFinding } = useCompleteFinding({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getListFindingsQueryKey() });
-      },
-    },
-  });
+  const handleCreate = async () => {
+    setFormError("");
+    if (!form.findingText.trim()) { setFormError("Deskripsi temuan wajib diisi."); return; }
+    const ptId = user?.ptId ?? form.ptId;
+    if (!ptId) { setFormError("Pilih PT terlebih dahulu."); return; }
+    if (!form.deadline) { setFormError("Deadline wajib diisi."); return; }
+    setCreating(true);
+    try {
+      await apiFetch("/api/findings", {
+        method: "POST",
+        body: JSON.stringify({
+          ptId,
+          branchId: form.branchId || null,
+          date: form.date,
+          deadline: form.deadline,
+          findingText: form.findingText,
+          status: form.status,
+          notes: form.notes || null,
+        }),
+      });
+      setShowForm(false);
+      setForm({ ...defaultForm });
+      queryClient.invalidateQueries({ queryKey: getListFindingsQueryKey() });
+    } catch (e: unknown) {
+      const msg = (e instanceof Error) ? e.message : "Gagal menyimpan temuan.";
+      setFormError(msg);
+    }
+    setCreating(false);
+  };
 
   const canCreate = user?.role === "apuppt" || user?.role === "dk";
-  const canComplete = user?.role === "apuppt" || user?.role === "dk";
 
   const getPtName = (ptId: string) => pts?.find((p) => p.id === ptId)?.code ?? ptId;
 
@@ -116,7 +118,8 @@ export default function Findings() {
             >
               <option value="">Semua Status</option>
               <option value="pending">Pending</option>
-              <option value="follow_up">Follow Up</option>
+              <option value="in_progress">In Progress</option>
+              <option value="awaiting_verification">Menunggu Verifikasi</option>
               <option value="completed">Selesai</option>
             </select>
             {canCreate && (
@@ -163,14 +166,26 @@ export default function Findings() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal</label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal</label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Deadline *</label>
+                  <input
+                    type="date"
+                    value={form.deadline}
+                    onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                    min={form.date}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Deskripsi Temuan *</label>
@@ -186,12 +201,12 @@ export default function Findings() {
                 <label className="block text-xs font-medium text-slate-700 mb-1">Status</label>
                 <select
                   value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value as CreateFindingBodyStatus })}
+                  onChange={(e) => setForm({ ...form, status: e.target.value })}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="pending">Pending</option>
-                  <option value="follow_up">Follow Up</option>
-                  <option value="completed">Selesai</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="awaiting_verification">Menunggu Verifikasi</option>
                 </select>
               </div>
               <div>
@@ -214,22 +229,7 @@ export default function Findings() {
                   Batal
                 </button>
                 <button
-                  onClick={() => {
-                    setFormError("");
-                    if (!form.findingText.trim()) { setFormError("Deskripsi temuan wajib diisi."); return; }
-                    const ptId = user?.ptId ?? form.ptId;
-                    if (!ptId) { setFormError("Pilih PT terlebih dahulu."); return; }
-                    createFinding({
-                      data: {
-                        ptId,
-                        branchId: form.branchId || null,
-                        date: form.date,
-                        findingText: form.findingText,
-                        status: form.status,
-                        notes: form.notes || null,
-                      },
-                    });
-                  }}
+                  onClick={handleCreate}
                   disabled={creating}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition-colors"
                 >
@@ -252,11 +252,11 @@ export default function Findings() {
             <div className="divide-y divide-slate-100">
               {findings.map((f) => {
                 const statusInfo = FINDING_STATUS[f.status] ?? FINDING_STATUS.pending;
-                const canCompleteThis = canComplete &&
-                  f.status !== "completed" &&
-                  (user?.role === "dk" || (user?.role === "apuppt" && f.ptId === user?.ptId));
+                const today = new Date().toISOString().split("T")[0];
+                const deadline = (f as { deadline?: string | null }).deadline;
+                const isOverdue = deadline && f.status !== "completed" && deadline < today;
                 return (
-                  <div key={f.id} className="px-4 py-4">
+                  <div key={f.id} className="px-4 py-4 hover:bg-slate-50/50 transition-colors">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -272,6 +272,13 @@ export default function Findings() {
                           <span className="text-xs text-slate-400">
                             {new Date(f.date).toLocaleDateString("id-ID")}
                           </span>
+                          {deadline && (
+                            <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-red-600 font-medium" : "text-slate-400"}`}>
+                              <Clock className="w-3 h-3" />
+                              Deadline: {new Date(deadline + "T00:00:00").toLocaleDateString("id-ID")}
+                              {isOverdue && " (Lewat!)"}
+                            </span>
+                          )}
                         </div>
                         <p className="text-sm text-slate-800">{f.findingText}</p>
                         {f.notes && <p className="text-xs text-slate-400 mt-1">{f.notes}</p>}
@@ -280,15 +287,13 @@ export default function Findings() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusInfo.color}`}>
                           {statusInfo.label}
                         </span>
-                        {canCompleteThis && (
-                          <button
-                            onClick={() => completeFinding({ id: f.id })}
-                            className="flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-300 text-xs text-emerald-600 hover:bg-emerald-50 transition-colors"
-                          >
-                            <CheckCircle className="w-3 h-3" />
-                            Selesaikan
-                          </button>
-                        )}
+                        <Link
+                          href={`/findings/${f.id}`}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 text-xs text-slate-600 hover:bg-slate-100 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Detail
+                        </Link>
                       </div>
                     </div>
                   </div>

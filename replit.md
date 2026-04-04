@@ -32,12 +32,24 @@ pnpm workspace monorepo using TypeScript.
 
 ## Roles and Access
 
-| Role   | Dashboard   | Aktivitas      | Temuan                   | Review (DK)   | Sign-Off (DU)  | Laporan    |
-|--------|-------------|----------------|--------------------------|---------------|----------------|------------|
-| APUPPT | Own PT only | Input/edit own | View/create own PT       | No access     | No access      | No access  |
-| DK     | All PTs     | No access      | View/acknowledge all     | Review & approve activities | No access | View all |
-| DU     | All PTs     | No access      | No access                | No access     | Sign-off DK-reviewed | View all |
-| Owner  | All PTs     | No access      | View all (read-only)     | No access     | No access      | View all   |
+| Role       | Dashboard   | Aktivitas     | Temuan                    | Review (DK)   | Sign-Off (DU)  | Laporan       | Audit Log |
+|-----------|-------------|---------------|---------------------------|---------------|----------------|---------------|-----------|
+| APUPPT    | Own PT only | Input/edit    | View/create/edit own PT   | No access     | No access      | No access     | No        |
+| DK        | All PTs     | View + Review | View/create/edit all      | Review & approve activities | No access | View all      | No        |
+| DU        | All PTs     | No access     | No access                 | No access     | Sign-off DK-reviewed | View + Signoff | No       |
+| Owner     | All PTs     | No access     | View all (read-only)      | No access     | No access      | View all      | No        |
+| Superadmin| All PTs     | View + Review | Full access               | No access     | No access      | Full access   | Yes       |
+
+## Phase 4 Features (Task #5)
+
+- **DK Review**: DK can review/acknowledge each APUPPT activity report. Badge shows "Sudah Ditinjau" after review
+- **DU Sign-Off**: DU can sign-off laporan per period (weekly/monthly). Locked after sign-off
+- **Ticketing System**: Findings now have full ticket workflow: Pending → In Progress → Menunggu Verifikasi → Selesai
+  - Deadline, assignedTo, comment thread, escalation (level 0 → 1 → 2)
+  - Automatic system log entries on status/assignment changes
+- **Audit Trail**: Full audit log in `audit_logs` table. Superadmin can view at `/audit-log`
+- **Reports with Period**: Harian/Mingguan/Bulanan tabs with date picker. Group insights
+- **PT Detail 7-Day History**: Colored badge strip showing 7-day traffic light history
 
 ## Traffic Light Logic
 
@@ -50,7 +62,11 @@ pnpm workspace monorepo using TypeScript.
 - `pts` — 5 PTs (SGB, RFB, BPF, KPF, EWF)
 - `users` — 8 seed accounts
 - `daily_activities` — unique `(pt_id, date)` constraint
-- `findings` — status: pending / follow_up / completed
+- `findings` — status: pending / in_progress / awaiting_verification / completed / follow_up. Additional cols: deadline, assigned_to, escalated_at, escalation_level
+- `activity_reviews` — DK review records for APUPPT activity reports
+- `report_signoffs` — DU sign-off records per period (weekly/monthly)
+- `ticket_comments` — comment thread per finding (system + manual entries)
+- `audit_logs` — full audit trail for all actions
 
 ## Seed Accounts (all password: `password123`)
 
@@ -86,11 +102,20 @@ pnpm workspace monorepo using TypeScript.
 - `POST /api/activities/:id/review` — DK reviews/approves activity (adds dkReviewedAt, dkNotes)
 - `POST /api/activities/:id/signoff` — DU signs off activity (adds duSignedOffAt)
 - `GET /api/findings` — list findings
+- `GET /api/findings/:id` — get finding detail
 - `POST /api/findings` — create finding
-- `PUT /api/findings/:id` — update finding
-- `POST /api/findings/:id/complete` — complete finding
+- `PUT /api/findings/:id` — update finding (findingText, status, deadline, assignedTo, notes)
+- `PATCH /api/findings/:id/complete` — complete finding (backward compat)
 - `POST /api/findings/:id/acknowledge` — DK acknowledges finding (adds dkAcknowledgedAt, dkNotes)
-- `GET /api/reports/summary` — reports summary per PT
+- `GET /api/findings/:id/comments` — get ticket comments
+- `POST /api/findings/:id/comments` — add comment to ticket
+- `GET /api/reports/summary` — reports summary per PT (supports startDate/endDate/periodType)
+- `GET /api/reports/signoff` — list DU sign-offs
+- `POST /api/reports/signoff` — DU sign-off a period
+- `GET /api/activities/:id/review` — get DK review for activity
+- `POST /api/activities/:id/review` — DK review an activity
+- `GET /api/pts/:id/history` — get 7-day traffic light history
+- `GET /api/audit-logs` — list audit logs (superadmin only)
 
 ## Review Status Filter (GET /api/activities?reviewStatus=)
 - `pending_review` — dkReviewedAt IS NULL
