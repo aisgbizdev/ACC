@@ -10,6 +10,8 @@ import type { FindingStatus } from "./findingStatus";
 export interface Finding {
   id: string;
   ptId: string;
+  branchId?: string | null;
+  branchName?: string | null;
   reportedBy: string;
   date: Date;
   findingText: string;

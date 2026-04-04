@@ -3,12 +3,14 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { ptsTable } from "./pts";
 import { usersTable } from "./users";
+import { branchesTable } from "./branches";
 
 export const findingRecordStatusEnum = pgEnum("finding_record_status", ["pending", "follow_up", "completed"]);
 
 export const findingsTable = pgTable("findings", {
   id: uuid("id").primaryKey().defaultRandom(),
   ptId: uuid("pt_id").notNull().references(() => ptsTable.id),
+  branchId: uuid("branch_id").references(() => branchesTable.id),
   reportedBy: uuid("reported_by").notNull().references(() => usersTable.id),
   date: date("date").notNull(),
   findingText: text("finding_text").notNull(),

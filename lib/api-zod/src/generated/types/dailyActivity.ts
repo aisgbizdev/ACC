@@ -6,15 +6,19 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { DailyActivityActivityType } from "./dailyActivityActivityType";
+import type { DailyActivityCustomerRiskCategoriesItem } from "./dailyActivityCustomerRiskCategoriesItem";
 import type { DailyActivityFindingStatus } from "./dailyActivityFindingStatus";
 
 export interface DailyActivity {
   id: string;
   ptId: string;
   userId: string;
+  branchId?: string | null;
+  branchName?: string | null;
   date: Date;
   activityType: DailyActivityActivityType;
   itemsReviewed: number;
+  customerRiskCategories?: DailyActivityCustomerRiskCategoriesItem[] | null;
   hasFinding: boolean;
   findingSummary?: string | null;
   findingStatus?: DailyActivityFindingStatus;

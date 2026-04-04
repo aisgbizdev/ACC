@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   useListFindings,
   useListPts,
+  useListBranches,
   useCreateFinding,
   useCompleteFinding,
   getListFindingsQueryKey,
@@ -11,7 +12,7 @@ import {
   type ErrorResponse,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Plus, CheckCircle } from "lucide-react";
+import { AlertTriangle, Plus, CheckCircle, Building2 } from "lucide-react";
 
 const FINDING_STATUS: Record<string, { label: string; color: string }> = {
   pending: { label: "Pending", color: "text-red-600 bg-red-50 border-red-200" },
@@ -23,23 +24,35 @@ export default function Findings() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterPt, setFilterPt] = useState<string>("");
   const [showForm, setShowForm] = useState(false);
 
+  const isGlobalRole = !user?.ptId;
+
   const params: Record<string, string> = {};
-  if (user?.role === "apuppt" && user.ptId) params.ptId = user.ptId;
+  if (user?.ptId) {
+    params.ptId = user.ptId;
+  } else if (filterPt) {
+    params.ptId = filterPt;
+  }
   if (filterStatus) params.status = filterStatus;
 
   const { data: findings, isLoading } = useListFindings(params);
   const { data: pts } = useListPts();
+  const { data: branches } = useListBranches(
+    user?.ptId ? { ptId: user.ptId } : filterPt ? { ptId: filterPt } : undefined
+  );
 
   const defaultForm: {
     ptId: string;
+    branchId: string;
     date: string;
     findingText: string;
     status: CreateFindingBodyStatus;
     notes: string;
   } = {
     ptId: user?.ptId ?? "",
+    branchId: "",
     date: new Date().toISOString().split("T")[0],
     findingText: "",
     status: CreateFindingBodyStatus.pending,
@@ -74,6 +87,9 @@ export default function Findings() {
 
   const getPtName = (ptId: string) => pts?.find((p) => p.id === ptId)?.code ?? ptId;
 
+  const activePtId = user?.ptId ?? form.ptId;
+  const branchesForForm = branches?.filter(b => b.ptId === activePtId) ?? branches ?? [];
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -82,7 +98,17 @@ export default function Findings() {
             <h1 className="text-xl font-bold text-slate-900">Temuan</h1>
             <p className="text-sm text-slate-500 mt-0.5">{findings?.length ?? 0} total temuan</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {isGlobalRole && pts && pts.length > 0 && (
+              <select
+                value={filterPt}
+                onChange={(e) => setFilterPt(e.target.value)}
+                className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Semua PT</option>
+                {pts.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
+              </select>
+            )}
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
@@ -109,12 +135,12 @@ export default function Findings() {
           <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6">
             <h3 className="text-sm font-semibold text-slate-700 mb-4">Temuan Baru</h3>
             <div className="space-y-3">
-              {user?.role === "dk" && (
+              {user?.role === "dk" && !user.ptId && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">PT</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">PT *</label>
                   <select
                     value={form.ptId}
-                    onChange={(e) => setForm({ ...form, ptId: e.target.value })}
+                    onChange={(e) => setForm({ ...form, ptId: e.target.value, branchId: "" })}
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Pilih PT</option>
@@ -122,6 +148,21 @@ export default function Findings() {
                   </select>
                 </div>
               )}
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  <Building2 className="w-3.5 h-3.5 inline mr-1" />Cabang (opsional)
+                </label>
+                <select
+                  value={form.branchId}
+                  onChange={(e) => setForm({ ...form, branchId: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">— Semua / Kantor Pusat —</option>
+                  {branchesForForm.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal</label>
                 <input
@@ -176,7 +217,18 @@ export default function Findings() {
                   onClick={() => {
                     setFormError("");
                     if (!form.findingText.trim()) { setFormError("Deskripsi temuan wajib diisi."); return; }
-                    createFinding({ data: { ptId: form.ptId || user!.ptId!, date: form.date, findingText: form.findingText, status: form.status, notes: form.notes || null } });
+                    const ptId = user?.ptId ?? form.ptId;
+                    if (!ptId) { setFormError("Pilih PT terlebih dahulu."); return; }
+                    createFinding({
+                      data: {
+                        ptId,
+                        branchId: form.branchId || null,
+                        date: form.date,
+                        findingText: form.findingText,
+                        status: form.status,
+                        notes: form.notes || null,
+                      },
+                    });
                   }}
                   disabled={creating}
                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 disabled:opacity-50 transition-colors"
@@ -200,14 +252,23 @@ export default function Findings() {
             <div className="divide-y divide-slate-100">
               {findings.map((f) => {
                 const statusInfo = FINDING_STATUS[f.status] ?? FINDING_STATUS.pending;
+                const canCompleteThis = canComplete &&
+                  f.status !== "completed" &&
+                  (user?.role === "dk" || (user?.role === "apuppt" && f.ptId === user?.ptId));
                 return (
                   <div key={f.id} className="px-4 py-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                             {getPtName(f.ptId)}
                           </span>
+                          {f.branchName && (
+                            <span className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded flex items-center gap-1">
+                              <Building2 className="w-3 h-3" />
+                              {f.branchName}
+                            </span>
+                          )}
                           <span className="text-xs text-slate-400">
                             {new Date(f.date).toLocaleDateString("id-ID")}
                           </span>
@@ -219,16 +280,14 @@ export default function Findings() {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusInfo.color}`}>
                           {statusInfo.label}
                         </span>
-                        {canComplete && f.status !== "completed" && (
-                          (user?.role === "dk" || (user?.role === "apuppt" && f.ptId === user.ptId)) && (
-                            <button
-                              onClick={() => completeFinding({ id: f.id })}
-                              className="flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-300 text-xs text-emerald-600 hover:bg-emerald-50 transition-colors"
-                            >
-                              <CheckCircle className="w-3 h-3" />
-                              Selesaikan
-                            </button>
-                          )
+                        {canCompleteThis && (
+                          <button
+                            onClick={() => completeFinding({ id: f.id })}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-300 text-xs text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          >
+                            <CheckCircle className="w-3 h-3" />
+                            Selesaikan
+                          </button>
                         )}
                       </div>
                     </div>

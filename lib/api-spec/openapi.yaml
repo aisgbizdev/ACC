@@ -22,6 +22,8 @@ tags:
     description: Findings operations
   - name: reports
     description: Report summary
+  - name: branches
+    description: Branch operations
 
 paths:
   /healthz:
@@ -271,6 +273,32 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /branches:
+    get:
+      operationId: listBranches
+      tags: [branches]
+      summary: List branches
+      parameters:
+        - name: ptId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of branches
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Branch"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /activities:
     get:
       operationId: listActivities
@@ -278,6 +306,10 @@ paths:
       summary: List activities
       parameters:
         - name: ptId
+          in: query
+          schema:
+            type: string
+        - name: branchId
           in: query
           schema:
             type: string
@@ -733,22 +765,33 @@ components:
           type: string
         userId:
           type: string
+        branchId:
+          type: string
+          nullable: true
+        branchName:
+          type: string
+          nullable: true
         date:
           type: string
           format: date
         activityType:
           type: string
           enum:
-            - transaction_review
-            - kyc_document_review
-            - branch_follow_up
-            - transaction_analysis
-            - source_of_fund_verification
-            - report_preparation
-            - meeting_coordination
-            - apuppt_socialization
+            - kyc
+            - cdd
+            - screening
+            - monitoring_transaksi
+            - pelaporan
+            - sosialisasi
+            - lainnya
         itemsReviewed:
           type: integer
+        customerRiskCategories:
+          type: array
+          items:
+            type: string
+            enum: [high, medium, low]
+          nullable: true
         hasFinding:
           type: boolean
         findingSummary:
@@ -783,22 +826,30 @@ components:
       properties:
         ptId:
           type: string
+        branchId:
+          type: string
+          nullable: true
         date:
           type: string
           format: date
         activityType:
           type: string
           enum:
-            - transaction_review
-            - kyc_document_review
-            - branch_follow_up
-            - transaction_analysis
-            - source_of_fund_verification
-            - report_preparation
-            - meeting_coordination
-            - apuppt_socialization
+            - kyc
+            - cdd
+            - screening
+            - monitoring_transaksi
+            - pelaporan
+            - sosialisasi
+            - lainnya
         itemsReviewed:
           type: integer
+        customerRiskCategories:
+          type: array
+          items:
+            type: string
+            enum: [high, medium, low]
+          nullable: true
         hasFinding:
           type: boolean
         findingSummary:
@@ -821,19 +872,27 @@ components:
     UpdateActivityBody:
       type: object
       properties:
+        branchId:
+          type: string
+          nullable: true
         activityType:
           type: string
           enum:
-            - transaction_review
-            - kyc_document_review
-            - branch_follow_up
-            - transaction_analysis
-            - source_of_fund_verification
-            - report_preparation
-            - meeting_coordination
-            - apuppt_socialization
+            - kyc
+            - cdd
+            - screening
+            - monitoring_transaksi
+            - pelaporan
+            - sosialisasi
+            - lainnya
         itemsReviewed:
           type: integer
+        customerRiskCategories:
+          type: array
+          items:
+            type: string
+            enum: [high, medium, low]
+          nullable: true
         hasFinding:
           type: boolean
         findingSummary:
@@ -854,6 +913,12 @@ components:
           type: string
         ptId:
           type: string
+        branchId:
+          type: string
+          nullable: true
+        branchName:
+          type: string
+          nullable: true
         reportedBy:
           type: string
         date:
@@ -892,6 +957,9 @@ components:
       properties:
         ptId:
           type: string
+        branchId:
+          type: string
+          nullable: true
         date:
           type: string
           format: date
@@ -953,3 +1021,30 @@ components:
         - openFindings
         - completedFindings
         - status
+
+    Branch:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        notes:
+          type: string
+          nullable: true
+        ptId:
+          type: string
+        ptCode:
+          type: string
+          nullable: true
+        ptName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - ptId
+        - createdAt

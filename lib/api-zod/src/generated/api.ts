@@ -144,10 +144,29 @@ export const GetDashboardSummaryResponse = zod.object({
 });
 
 /**
+ * @summary List branches
+ */
+export const ListBranchesQueryParams = zod.object({
+  ptId: zod.coerce.string().optional(),
+});
+
+export const ListBranchesResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  notes: zod.string().nullish(),
+  ptId: zod.string(),
+  ptCode: zod.string().nullish(),
+  ptName: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+});
+export const ListBranchesResponse = zod.array(ListBranchesResponseItem);
+
+/**
  * @summary List activities
  */
 export const ListActivitiesQueryParams = zod.object({
   ptId: zod.coerce.string().optional(),
+  branchId: zod.coerce.string().optional(),
   date: zod.coerce.string().optional(),
 });
 
@@ -155,18 +174,22 @@ export const ListActivitiesResponseItem = zod.object({
   id: zod.string(),
   ptId: zod.string(),
   userId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
   date: zod.coerce.date(),
   activityType: zod.enum([
-    "transaction_review",
-    "kyc_document_review",
-    "branch_follow_up",
-    "transaction_analysis",
-    "source_of_fund_verification",
-    "report_preparation",
-    "meeting_coordination",
-    "apuppt_socialization",
+    "kyc",
+    "cdd",
+    "screening",
+    "monitoring_transaksi",
+    "pelaporan",
+    "sosialisasi",
+    "lainnya",
   ]),
   itemsReviewed: zod.number(),
+  customerRiskCategories: zod
+    .array(zod.enum(["high", "medium", "low"]))
+    .nullish(),
   hasFinding: zod.boolean(),
   findingSummary: zod.string().nullish(),
   findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
@@ -181,18 +204,21 @@ export const ListActivitiesResponse = zod.array(ListActivitiesResponseItem);
  */
 export const CreateActivityBody = zod.object({
   ptId: zod.string(),
+  branchId: zod.string().nullish(),
   date: zod.coerce.date(),
   activityType: zod.enum([
-    "transaction_review",
-    "kyc_document_review",
-    "branch_follow_up",
-    "transaction_analysis",
-    "source_of_fund_verification",
-    "report_preparation",
-    "meeting_coordination",
-    "apuppt_socialization",
+    "kyc",
+    "cdd",
+    "screening",
+    "monitoring_transaksi",
+    "pelaporan",
+    "sosialisasi",
+    "lainnya",
   ]),
   itemsReviewed: zod.number(),
+  customerRiskCategories: zod
+    .array(zod.enum(["high", "medium", "low"]))
+    .nullish(),
   hasFinding: zod.boolean(),
   findingSummary: zod.string().nullish(),
   findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
@@ -207,19 +233,22 @@ export const UpdateActivityParams = zod.object({
 });
 
 export const UpdateActivityBody = zod.object({
+  branchId: zod.string().nullish(),
   activityType: zod
     .enum([
-      "transaction_review",
-      "kyc_document_review",
-      "branch_follow_up",
-      "transaction_analysis",
-      "source_of_fund_verification",
-      "report_preparation",
-      "meeting_coordination",
-      "apuppt_socialization",
+      "kyc",
+      "cdd",
+      "screening",
+      "monitoring_transaksi",
+      "pelaporan",
+      "sosialisasi",
+      "lainnya",
     ])
     .optional(),
   itemsReviewed: zod.number().optional(),
+  customerRiskCategories: zod
+    .array(zod.enum(["high", "medium", "low"]))
+    .nullish(),
   hasFinding: zod.boolean().optional(),
   findingSummary: zod.string().nullish(),
   findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
@@ -230,18 +259,22 @@ export const UpdateActivityResponse = zod.object({
   id: zod.string(),
   ptId: zod.string(),
   userId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
   date: zod.coerce.date(),
   activityType: zod.enum([
-    "transaction_review",
-    "kyc_document_review",
-    "branch_follow_up",
-    "transaction_analysis",
-    "source_of_fund_verification",
-    "report_preparation",
-    "meeting_coordination",
-    "apuppt_socialization",
+    "kyc",
+    "cdd",
+    "screening",
+    "monitoring_transaksi",
+    "pelaporan",
+    "sosialisasi",
+    "lainnya",
   ]),
   itemsReviewed: zod.number(),
+  customerRiskCategories: zod
+    .array(zod.enum(["high", "medium", "low"]))
+    .nullish(),
   hasFinding: zod.boolean(),
   findingSummary: zod.string().nullish(),
   findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
@@ -261,6 +294,8 @@ export const ListFindingsQueryParams = zod.object({
 export const ListFindingsResponseItem = zod.object({
   id: zod.string(),
   ptId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
   reportedBy: zod.string(),
   date: zod.coerce.date(),
   findingText: zod.string(),
@@ -277,6 +312,7 @@ export const ListFindingsResponse = zod.array(ListFindingsResponseItem);
  */
 export const CreateFindingBody = zod.object({
   ptId: zod.string(),
+  branchId: zod.string().nullish(),
   date: zod.coerce.date(),
   findingText: zod.string(),
   status: zod.enum(["pending", "follow_up", "completed"]),
@@ -299,6 +335,8 @@ export const UpdateFindingBody = zod.object({
 export const UpdateFindingResponse = zod.object({
   id: zod.string(),
   ptId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
   reportedBy: zod.string(),
   date: zod.coerce.date(),
   findingText: zod.string(),
@@ -319,6 +357,8 @@ export const CompleteFindingParams = zod.object({
 export const CompleteFindingResponse = zod.object({
   id: zod.string(),
   ptId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
   reportedBy: zod.string(),
   date: zod.coerce.date(),
   findingText: zod.string(),

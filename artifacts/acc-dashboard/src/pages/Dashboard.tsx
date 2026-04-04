@@ -41,7 +41,7 @@ const STATUS_CONFIG = {
 
 const STATUS_ORDER: Record<string, number> = { red: 0, yellow: 1, green: 2 };
 
-function getRedReason(pt: { lastActivityDate: string | null; overdueCount: number }): string {
+function getRedReason(pt: { lastActivityDate?: string | null; overdueCount: number }): string {
   const today = new Date().toISOString().split("T")[0];
   const parts: string[] = [];
   if (!pt.lastActivityDate || pt.lastActivityDate !== today) {

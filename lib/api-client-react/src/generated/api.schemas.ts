@@ -127,14 +127,22 @@ export type DailyActivityActivityType =
   (typeof DailyActivityActivityType)[keyof typeof DailyActivityActivityType];
 
 export const DailyActivityActivityType = {
-  transaction_review: "transaction_review",
-  kyc_document_review: "kyc_document_review",
-  branch_follow_up: "branch_follow_up",
-  transaction_analysis: "transaction_analysis",
-  source_of_fund_verification: "source_of_fund_verification",
-  report_preparation: "report_preparation",
-  meeting_coordination: "meeting_coordination",
-  apuppt_socialization: "apuppt_socialization",
+  kyc: "kyc",
+  cdd: "cdd",
+  screening: "screening",
+  monitoring_transaksi: "monitoring_transaksi",
+  pelaporan: "pelaporan",
+  sosialisasi: "sosialisasi",
+  lainnya: "lainnya",
+} as const;
+
+export type DailyActivityCustomerRiskCategoriesItem =
+  (typeof DailyActivityCustomerRiskCategoriesItem)[keyof typeof DailyActivityCustomerRiskCategoriesItem];
+
+export const DailyActivityCustomerRiskCategoriesItem = {
+  high: "high",
+  medium: "medium",
+  low: "low",
 } as const;
 
 export type DailyActivityFindingStatus =
@@ -151,9 +159,12 @@ export interface DailyActivity {
   id: string;
   ptId: string;
   userId: string;
+  branchId?: string | null;
+  branchName?: string | null;
   date: string;
   activityType: DailyActivityActivityType;
   itemsReviewed: number;
+  customerRiskCategories?: DailyActivityCustomerRiskCategoriesItem[] | null;
   hasFinding: boolean;
   findingSummary?: string | null;
   findingStatus?: DailyActivityFindingStatus;
@@ -166,14 +177,22 @@ export type CreateActivityBodyActivityType =
   (typeof CreateActivityBodyActivityType)[keyof typeof CreateActivityBodyActivityType];
 
 export const CreateActivityBodyActivityType = {
-  transaction_review: "transaction_review",
-  kyc_document_review: "kyc_document_review",
-  branch_follow_up: "branch_follow_up",
-  transaction_analysis: "transaction_analysis",
-  source_of_fund_verification: "source_of_fund_verification",
-  report_preparation: "report_preparation",
-  meeting_coordination: "meeting_coordination",
-  apuppt_socialization: "apuppt_socialization",
+  kyc: "kyc",
+  cdd: "cdd",
+  screening: "screening",
+  monitoring_transaksi: "monitoring_transaksi",
+  pelaporan: "pelaporan",
+  sosialisasi: "sosialisasi",
+  lainnya: "lainnya",
+} as const;
+
+export type CreateActivityBodyCustomerRiskCategoriesItem =
+  (typeof CreateActivityBodyCustomerRiskCategoriesItem)[keyof typeof CreateActivityBodyCustomerRiskCategoriesItem];
+
+export const CreateActivityBodyCustomerRiskCategoriesItem = {
+  high: "high",
+  medium: "medium",
+  low: "low",
 } as const;
 
 export type CreateActivityBodyFindingStatus =
@@ -188,9 +207,13 @@ export const CreateActivityBodyFindingStatus = {
 
 export interface CreateActivityBody {
   ptId: string;
+  branchId?: string | null;
   date: string;
   activityType: CreateActivityBodyActivityType;
   itemsReviewed: number;
+  customerRiskCategories?:
+    | CreateActivityBodyCustomerRiskCategoriesItem[]
+    | null;
   hasFinding: boolean;
   findingSummary?: string | null;
   findingStatus?: CreateActivityBodyFindingStatus;
@@ -201,14 +224,22 @@ export type UpdateActivityBodyActivityType =
   (typeof UpdateActivityBodyActivityType)[keyof typeof UpdateActivityBodyActivityType];
 
 export const UpdateActivityBodyActivityType = {
-  transaction_review: "transaction_review",
-  kyc_document_review: "kyc_document_review",
-  branch_follow_up: "branch_follow_up",
-  transaction_analysis: "transaction_analysis",
-  source_of_fund_verification: "source_of_fund_verification",
-  report_preparation: "report_preparation",
-  meeting_coordination: "meeting_coordination",
-  apuppt_socialization: "apuppt_socialization",
+  kyc: "kyc",
+  cdd: "cdd",
+  screening: "screening",
+  monitoring_transaksi: "monitoring_transaksi",
+  pelaporan: "pelaporan",
+  sosialisasi: "sosialisasi",
+  lainnya: "lainnya",
+} as const;
+
+export type UpdateActivityBodyCustomerRiskCategoriesItem =
+  (typeof UpdateActivityBodyCustomerRiskCategoriesItem)[keyof typeof UpdateActivityBodyCustomerRiskCategoriesItem];
+
+export const UpdateActivityBodyCustomerRiskCategoriesItem = {
+  high: "high",
+  medium: "medium",
+  low: "low",
 } as const;
 
 export type UpdateActivityBodyFindingStatus =
@@ -222,8 +253,12 @@ export const UpdateActivityBodyFindingStatus = {
 } as const;
 
 export interface UpdateActivityBody {
+  branchId?: string | null;
   activityType?: UpdateActivityBodyActivityType;
   itemsReviewed?: number;
+  customerRiskCategories?:
+    | UpdateActivityBodyCustomerRiskCategoriesItem[]
+    | null;
   hasFinding?: boolean;
   findingSummary?: string | null;
   findingStatus?: UpdateActivityBodyFindingStatus;
@@ -241,6 +276,8 @@ export const FindingStatus = {
 export interface Finding {
   id: string;
   ptId: string;
+  branchId?: string | null;
+  branchName?: string | null;
   reportedBy: string;
   date: string;
   findingText: string;
@@ -262,6 +299,7 @@ export const CreateFindingBodyStatus = {
 
 export interface CreateFindingBody {
   ptId: string;
+  branchId?: string | null;
   date: string;
   findingText: string;
   status: CreateFindingBodyStatus;
@@ -304,8 +342,23 @@ export interface PtReportSummary {
   lastActivityDate?: string | null;
 }
 
+export interface Branch {
+  id: string;
+  name: string;
+  notes?: string | null;
+  ptId: string;
+  ptCode?: string | null;
+  ptName?: string | null;
+  createdAt: string;
+}
+
+export type ListBranchesParams = {
+  ptId?: string;
+};
+
 export type ListActivitiesParams = {
   ptId?: string;
+  branchId?: string;
   date?: string;
 };
 

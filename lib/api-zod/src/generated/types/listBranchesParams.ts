@@ -6,8 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export type ListActivitiesParams = {
+export type ListBranchesParams = {
   ptId?: string;
-  branchId?: string;
-  date?: string;
 };

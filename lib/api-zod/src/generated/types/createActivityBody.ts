@@ -6,13 +6,18 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { CreateActivityBodyActivityType } from "./createActivityBodyActivityType";
+import type { CreateActivityBodyCustomerRiskCategoriesItem } from "./createActivityBodyCustomerRiskCategoriesItem";
 import type { CreateActivityBodyFindingStatus } from "./createActivityBodyFindingStatus";
 
 export interface CreateActivityBody {
   ptId: string;
+  branchId?: string | null;
   date: Date;
   activityType: CreateActivityBodyActivityType;
   itemsReviewed: number;
+  customerRiskCategories?:
+    | CreateActivityBodyCustomerRiskCategoriesItem[]
+    | null;
   hasFinding: boolean;
   findingSummary?: string | null;
   findingStatus?: CreateActivityBodyFindingStatus;

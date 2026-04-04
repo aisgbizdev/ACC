@@ -9,6 +9,7 @@ import type { CreateFindingBodyStatus } from "./createFindingBodyStatus";
 
 export interface CreateFindingBody {
   ptId: string;
+  branchId?: string | null;
   date: Date;
   findingText: string;
   status: CreateFindingBodyStatus;

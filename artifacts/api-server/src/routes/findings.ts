@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, SQL } from "drizzle-orm";
-import { db, findingsTable } from "@workspace/db";
+import { db, findingsTable, branchesTable } from "@workspace/db";
 import {
   CreateFindingBody,
   UpdateFindingBody,
@@ -11,6 +11,21 @@ import {
 import { requireAuth } from "../middlewares/auth";
 
 const router: IRouter = Router();
+
+const findingsWithBranch = {
+  id: findingsTable.id,
+  ptId: findingsTable.ptId,
+  branchId: findingsTable.branchId,
+  branchName: branchesTable.name,
+  reportedBy: findingsTable.reportedBy,
+  date: findingsTable.date,
+  findingText: findingsTable.findingText,
+  status: findingsTable.status,
+  notes: findingsTable.notes,
+  createdAt: findingsTable.createdAt,
+  updatedAt: findingsTable.updatedAt,
+  closedAt: findingsTable.closedAt,
+};
 
 router.get("/findings", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
@@ -38,8 +53,9 @@ router.get("/findings", requireAuth, async (req, res): Promise<void> => {
   }
 
   const findings = await db
-    .select()
+    .select(findingsWithBranch)
     .from(findingsTable)
+    .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(findingsTable.date);
   res.json(findings);
@@ -71,13 +87,23 @@ router.post("/findings", requireAuth, async (req, res): Promise<void> => {
   const [finding] = await db
     .insert(findingsTable)
     .values({
-      ...parsed.data,
+      ptId: parsed.data.ptId,
+      branchId: parsed.data.branchId ?? null,
       date: dateStr,
+      findingText: parsed.data.findingText,
+      status: parsed.data.status as "pending" | "follow_up" | "completed",
+      notes: parsed.data.notes ?? null,
       reportedBy: user.id,
     })
     .returning();
 
-  res.status(201).json(finding);
+  const [withBranch] = await db
+    .select(findingsWithBranch)
+    .from(findingsTable)
+    .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
+    .where(eq(findingsTable.id, finding.id));
+
+  res.status(201).json(withBranch);
 });
 
 router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
@@ -112,13 +138,22 @@ router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const [updated] = await db
+  await db
     .update(findingsTable)
-    .set(parsed.data)
-    .where(eq(findingsTable.id, params.data.id))
-    .returning();
+    .set({
+      ...(parsed.data.findingText !== undefined ? { findingText: parsed.data.findingText } : {}),
+      ...(parsed.data.status !== undefined ? { status: parsed.data.status as "pending" | "follow_up" | "completed" } : {}),
+      ...(parsed.data.notes !== undefined ? { notes: parsed.data.notes ?? null } : {}),
+    })
+    .where(eq(findingsTable.id, params.data.id));
 
-  res.json(updated);
+  const [withBranch] = await db
+    .select(findingsWithBranch)
+    .from(findingsTable)
+    .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
+    .where(eq(findingsTable.id, params.data.id));
+
+  res.json(withBranch);
 });
 
 router.patch("/findings/:id/complete", requireAuth, async (req, res): Promise<void> => {
@@ -146,13 +181,18 @@ router.patch("/findings/:id/complete", requireAuth, async (req, res): Promise<vo
     return;
   }
 
-  const [updated] = await db
+  await db
     .update(findingsTable)
     .set({ status: "completed", closedAt: new Date() })
-    .where(eq(findingsTable.id, params.data.id))
-    .returning();
+    .where(eq(findingsTable.id, params.data.id));
 
-  res.json(updated);
+  const [withBranch] = await db
+    .select(findingsWithBranch)
+    .from(findingsTable)
+    .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
+    .where(eq(findingsTable.id, params.data.id));
+
+  res.json(withBranch);
 });
 
 export default router;

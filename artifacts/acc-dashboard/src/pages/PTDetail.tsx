@@ -40,14 +40,13 @@ const FINDING_STATUS: Record<string, { label: string; color: string }> = {
 };
 
 const ACTIVITY_LABELS: Record<string, string> = {
-  transaction_review: "Review Transaksi",
-  kyc_document_review: "Review Dokumen KYC",
-  branch_follow_up: "Follow Up Cabang",
-  transaction_analysis: "Analisis Transaksi",
-  source_of_fund_verification: "Verifikasi Sumber Dana",
-  report_preparation: "Penyusunan Laporan",
-  meeting_coordination: "Koordinasi Rapat",
-  apuppt_socialization: "Sosialisasi APUPPT",
+  kyc: "KYC",
+  cdd: "CDD",
+  screening: "Screening",
+  monitoring_transaksi: "Monitoring Transaksi",
+  pelaporan: "Pelaporan",
+  sosialisasi: "Sosialisasi APUPPT",
+  lainnya: "Lainnya",
 };
 
 export default function PTDetail() {

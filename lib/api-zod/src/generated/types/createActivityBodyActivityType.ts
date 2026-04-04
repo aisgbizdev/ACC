@@ -10,12 +10,11 @@ export type CreateActivityBodyActivityType =
   (typeof CreateActivityBodyActivityType)[keyof typeof CreateActivityBodyActivityType];
 
 export const CreateActivityBodyActivityType = {
-  transaction_review: "transaction_review",
-  kyc_document_review: "kyc_document_review",
-  branch_follow_up: "branch_follow_up",
-  transaction_analysis: "transaction_analysis",
-  source_of_fund_verification: "source_of_fund_verification",
-  report_preparation: "report_preparation",
-  meeting_coordination: "meeting_coordination",
-  apuppt_socialization: "apuppt_socialization",
+  kyc: "kyc",
+  cdd: "cdd",
+  screening: "screening",
+  monitoring_transaksi: "monitoring_transaksi",
+  pelaporan: "pelaporan",
+  sosialisasi: "sosialisasi",
+  lainnya: "lainnya",
 } as const;

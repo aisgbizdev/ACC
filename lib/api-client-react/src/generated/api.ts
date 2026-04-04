@@ -18,6 +18,7 @@ import type {
 
 import type {
   AuthUser,
+  Branch,
   ChangePasswordBody,
   CreateActivityBody,
   CreateFindingBody,
@@ -27,6 +28,7 @@ import type {
   Finding,
   HealthStatus,
   ListActivitiesParams,
+  ListBranchesParams,
   ListFindingsParams,
   LoginBody,
   Pt,
@@ -820,6 +822,100 @@ export function useGetDashboardSummary<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetDashboardSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List branches
+ */
+export const getListBranchesUrl = (params?: ListBranchesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/branches?${stringifiedParams}`
+    : `/api/branches`;
+};
+
+export const listBranches = async (
+  params?: ListBranchesParams,
+  options?: RequestInit,
+): Promise<Branch[]> => {
+  return customFetch<Branch[]>(getListBranchesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListBranchesQueryKey = (params?: ListBranchesParams) => {
+  return [`/api/branches`, ...(params ? [params] : [])] as const;
+};
+
+export const getListBranchesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBranches>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListBranchesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBranches>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListBranchesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listBranches>>> = ({
+    signal,
+  }) => listBranches(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBranches>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBranchesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBranches>>
+>;
+export type ListBranchesQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary List branches
+ */
+
+export function useListBranches<
+  TData = Awaited<ReturnType<typeof listBranches>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: ListBranchesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBranches>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBranchesQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
