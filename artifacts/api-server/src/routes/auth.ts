@@ -74,6 +74,11 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  if (user.isActive === false) {
+    res.status(403).json({ error: "Akun Anda telah dinonaktifkan. Hubungi superadmin." });
+    return;
+  }
+
   if (rememberMe) {
     req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000;
   }
@@ -201,26 +206,6 @@ router.post("/auth/reset-password", requireRole("superadmin"), async (req, res):
   await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, user.id));
 
   res.json({ success: true, message: "Password berhasil direset." });
-});
-
-router.get("/users", requireAuth, async (req, res): Promise<void> => {
-  const user = req.session.user!;
-  if (user.role !== "dk" && user.role !== "superadmin" && user.role !== "apuppt") {
-    res.status(403).json({ error: "Akses ditolak." });
-    return;
-  }
-
-  const users = await db
-    .select({
-      id: usersTable.id,
-      name: usersTable.name,
-      role: usersTable.role,
-      ptId: usersTable.ptId,
-    })
-    .from(usersTable)
-    .orderBy(usersTable.name);
-
-  res.json(users);
 });
 
 export default router;

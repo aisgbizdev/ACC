@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { logout } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield, User, UserCircle, Bell, FileBarChart } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield, User, UserCircle, Bell, FileBarChart, Users } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -111,7 +111,7 @@ export function Navbar() {
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-slate-800 border border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
+                <div className="absolute right-0 top-full mt-1 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
                   <Link
                     href="/profile"
                     onClick={() => setMenuOpen(false)}
@@ -128,6 +128,19 @@ export function Navbar() {
                     <Bell className="w-3.5 h-3.5" />
                     Pengaturan Notifikasi
                   </Link>
+                  {user.role === "superadmin" && (
+                    <>
+                      <div className="border-t border-slate-700" />
+                      <Link
+                        href="/users"
+                        onClick={() => setMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                      >
+                        <Users className="w-3.5 h-3.5" />
+                        Manajemen User
+                      </Link>
+                    </>
+                  )}
                   <div className="border-t border-slate-700" />
                   <button
                     onClick={handleLogout}

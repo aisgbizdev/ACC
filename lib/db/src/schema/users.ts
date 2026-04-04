@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { ptsTable } from "./pts";
@@ -14,6 +14,7 @@ export const usersTable = pgTable("users", {
   role: userRoleEnum("role").notNull(),
   ptId: uuid("pt_id").references(() => ptsTable.id),
   avatarUrl: varchar("avatar_url", { length: 500 }),
+  isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

@@ -21,6 +21,7 @@ import DUSignOff from "@/pages/DUSignOff";
 import KPI from "@/pages/KPI";
 import { BottomNav } from "@/components/BottomNav";
 import AuditLog from "@/pages/AuditLog";
+import UserManagement from "@/pages/UserManagement";
 import { InstallBanner } from "@/components/InstallBanner";
 import NotificationSettings from "@/pages/NotificationSettings";
 import MonthlyRecap from "@/pages/MonthlyRecap";
@@ -133,6 +134,11 @@ function Router() {
         <Route path="/audit-log">
           <ProtectedRoute allowedRoles={["superadmin"]}>
             <AuditLog />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/users">
+          <ProtectedRoute allowedRoles={["superadmin"]}>
+            <UserManagement />
           </ProtectedRoute>
         </Route>
         <Route path="/notification-settings">

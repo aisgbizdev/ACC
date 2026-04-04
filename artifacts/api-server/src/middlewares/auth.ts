@@ -22,6 +22,11 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
     res.status(401).json({ error: "Tidak terautentikasi. Silakan login." });
     return;
   }
+  if ((req.session.user as SessionUser & { isActive?: boolean }).isActive === false) {
+    req.session.destroy(() => {});
+    res.status(403).json({ error: "Akun Anda telah dinonaktifkan. Hubungi superadmin." });
+    return;
+  }
   next();
 }
 
