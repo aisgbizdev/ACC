@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { logout } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield, User, UserCircle, Bell } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield, User, UserCircle, Bell, FileBarChart } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -49,6 +49,7 @@ export function Navbar() {
     { href: "/signoff", label: "Sign-Off", icon: FileCheck2, roles: ["du", "superadmin"] },
     { href: "/kpi", label: "KPI", icon: TrendingUp, roles: ["dk", "du", "owner", "superadmin"] },
     { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner", "superadmin"] },
+    { href: "/monthly-recap", label: "Rekap Bulanan", icon: FileBarChart, roles: ["dk", "du", "owner", "superadmin"] },
     { href: "/audit-log", label: "Audit Log", icon: Shield, roles: ["superadmin"] },
   ];
 

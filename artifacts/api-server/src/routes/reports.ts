@@ -187,4 +187,274 @@ router.get("/reports/export", requireRole("dk", "du", "owner", "superadmin"), as
   res.send(buf);
 });
 
+function getWorkingDays(startDate: string, endDate: string): number {
+  const start = new Date(startDate + "T00:00:00");
+  const end = new Date(endDate + "T00:00:00");
+  let count = 0;
+  const current = new Date(start);
+  while (current <= end) {
+    const day = current.getDay();
+    if (day !== 0 && day !== 6) count++;
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+}
+
+function computeKpiScore(metrics: {
+  updateRate: number;
+  findingsResolved: number;
+  findingsCreated: number;
+}): number {
+  const { updateRate, findingsResolved, findingsCreated } = metrics;
+  let score = 0;
+  score += updateRate * 0.4;
+  const resolveRate = findingsCreated > 0 ? (findingsResolved / findingsCreated) * 100 : 100;
+  score += resolveRate * 0.35;
+  score += 25;
+  return Math.min(100, Math.round(score));
+}
+
+router.get("/reports/trend", requireRole("dk", "du", "owner", "superadmin"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const ptIdParam = req.query.ptId as string | undefined;
+  const monthsParam = parseInt(req.query.months as string ?? "3", 10);
+  const months = isNaN(monthsParam) || monthsParam < 1 ? 3 : Math.min(monthsParam, 12);
+
+  let effectivePtId: string | undefined = ptIdParam;
+  if (user.ptId) {
+    effectivePtId = user.ptId;
+  }
+
+  let pts = await db.select().from(ptsTable).orderBy(ptsTable.code);
+  if (effectivePtId) {
+    pts = pts.filter((p) => p.id === effectivePtId);
+  }
+
+  const now = new Date();
+  const monthsList: { year: number; month: number; label: string; startDate: string; endDate: string }[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
+    const lastDay = new Date(year, month, 0).getDate();
+    const endDate = `${year}-${String(month).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+    const label = d.toLocaleDateString("id-ID", { month: "short", year: "numeric" });
+    monthsList.push({ year, month, label, startDate, endDate });
+  }
+
+  const trendData = await Promise.all(
+    pts.map(async (pt) => {
+      const monthlyData = await Promise.all(
+        monthsList.map(async (m) => {
+          const activities = await db
+            .select()
+            .from(dailyActivitiesTable)
+            .where(
+              and(
+                eq(dailyActivitiesTable.ptId, pt.id),
+                gte(dailyActivitiesTable.date, m.startDate),
+                lte(dailyActivitiesTable.date, m.endDate)
+              )
+            );
+
+          const findings = await db
+            .select()
+            .from(findingsTable)
+            .where(
+              and(
+                eq(findingsTable.ptId, pt.id),
+                gte(findingsTable.date, m.startDate),
+                lte(findingsTable.date, m.endDate)
+              )
+            );
+
+          const workingDays = getWorkingDays(m.startDate, m.endDate);
+          const uniqueDays = new Set(activities.map((a) => a.date)).size;
+          const updateRate = workingDays > 0 ? Math.min(100, Math.round((uniqueDays / workingDays) * 100)) : 0;
+
+          const totalActivities = activities.length;
+          const totalItemsReviewed = activities.reduce((sum, a) => sum + (a.itemsReviewed ?? 0), 0);
+          const openFindings = findings.filter((f) => f.status !== "completed").length;
+          const completedFindings = findings.filter((f) => f.status === "completed").length;
+
+          const kpiScore = computeKpiScore({
+            updateRate,
+            findingsResolved: completedFindings,
+            findingsCreated: findings.length,
+          });
+
+          return {
+            month: m.label,
+            startDate: m.startDate,
+            endDate: m.endDate,
+            updateRate,
+            totalActivities,
+            totalItemsReviewed,
+            openFindings,
+            completedFindings,
+            kpiScore,
+          };
+        })
+      );
+
+      return {
+        ptId: pt.id,
+        ptCode: pt.code,
+        ptName: pt.name,
+        months: monthlyData,
+      };
+    })
+  );
+
+  res.json({ trend: trendData });
+});
+
+router.get("/reports/monthly-recap", requireRole("dk", "du", "owner", "superadmin"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const yearParam = parseInt(req.query.year as string, 10);
+  const monthParam = parseInt(req.query.month as string, 10);
+
+  if (isNaN(yearParam) || isNaN(monthParam) || monthParam < 1 || monthParam > 12) {
+    res.status(400).json({ error: "Parameter year dan month tidak valid." });
+    return;
+  }
+
+  const startDate = `${yearParam}-${String(monthParam).padStart(2, "0")}-01`;
+  const lastDay = new Date(yearParam, monthParam, 0).getDate();
+  const endDate = `${yearParam}-${String(monthParam).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+
+  const prevMonthDate = new Date(yearParam, monthParam - 2, 1);
+  const prevYear = prevMonthDate.getFullYear();
+  const prevMonth = prevMonthDate.getMonth() + 1;
+  const prevStartDate = `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`;
+  const prevLastDay = new Date(prevYear, prevMonth, 0).getDate();
+  const prevEndDate = `${prevYear}-${String(prevMonth).padStart(2, "0")}-${String(prevLastDay).padStart(2, "0")}`;
+
+  let pts = await db.select().from(ptsTable).orderBy(ptsTable.code);
+  if (user.ptId) {
+    pts = pts.filter((p) => p.id === user.ptId);
+  }
+
+  const workingDays = getWorkingDays(startDate, endDate);
+  const prevWorkingDays = getWorkingDays(prevStartDate, prevEndDate);
+
+  const recaps = await Promise.all(
+    pts.map(async (pt) => {
+      const [activities, prevActivities, findings, prevFindings, signoffs] = await Promise.all([
+        db.select().from(dailyActivitiesTable).where(
+          and(eq(dailyActivitiesTable.ptId, pt.id), gte(dailyActivitiesTable.date, startDate), lte(dailyActivitiesTable.date, endDate))
+        ),
+        db.select().from(dailyActivitiesTable).where(
+          and(eq(dailyActivitiesTable.ptId, pt.id), gte(dailyActivitiesTable.date, prevStartDate), lte(dailyActivitiesTable.date, prevEndDate))
+        ),
+        db.select().from(findingsTable).where(
+          and(eq(findingsTable.ptId, pt.id), gte(findingsTable.date, startDate), lte(findingsTable.date, endDate))
+        ),
+        db.select().from(findingsTable).where(
+          and(eq(findingsTable.ptId, pt.id), gte(findingsTable.date, prevStartDate), lte(findingsTable.date, prevEndDate))
+        ),
+        db.select({
+          signedOffAt: reportSignoffsTable.signedOffAt,
+          signerName: usersTable.name,
+          periodType: reportSignoffsTable.periodType,
+        })
+          .from(reportSignoffsTable)
+          .leftJoin(usersTable, eq(reportSignoffsTable.signedOffBy, usersTable.id))
+          .where(
+            and(
+              eq(reportSignoffsTable.ptId, pt.id),
+              eq(reportSignoffsTable.periodType, "monthly"),
+              eq(reportSignoffsTable.periodStart, startDate),
+              eq(reportSignoffsTable.periodEnd, endDate)
+            )
+          ),
+      ]);
+
+      const uniqueDays = new Set(activities.map((a) => a.date)).size;
+      const prevUniqueDays = new Set(prevActivities.map((a) => a.date)).size;
+
+      const updateRate = workingDays > 0 ? Math.min(100, Math.round((uniqueDays / workingDays) * 100)) : 0;
+      const prevUpdateRate = prevWorkingDays > 0 ? Math.min(100, Math.round((prevUniqueDays / prevWorkingDays) * 100)) : 0;
+
+      const totalItemsReviewed = activities.reduce((sum, a) => sum + (a.itemsReviewed ?? 0), 0);
+      const prevTotalItemsReviewed = prevActivities.reduce((sum, a) => sum + (a.itemsReviewed ?? 0), 0);
+
+      const openFindings = findings.filter((f) => f.status !== "completed").length;
+      const completedFindings = findings.filter((f) => f.status === "completed").length;
+      const prevOpenFindings = prevFindings.filter((f) => f.status !== "completed").length;
+      const prevCompletedFindings = prevFindings.filter((f) => f.status === "completed").length;
+
+      let dkReviewedCount = 0;
+      if (activities.length > 0) {
+        for (const act of activities) {
+          const [rev] = await db
+            .select({ id: activityReviewsTable.id })
+            .from(activityReviewsTable)
+            .where(eq(activityReviewsTable.activityId, act.id));
+          if (rev) dkReviewedCount++;
+        }
+      }
+      const dkReviewPct = activities.length > 0 ? Math.round((dkReviewedCount / activities.length) * 100) : 0;
+
+      const kpiScore = computeKpiScore({
+        updateRate,
+        findingsResolved: completedFindings,
+        findingsCreated: findings.length,
+      });
+      const prevKpiScore = computeKpiScore({
+        updateRate: prevUpdateRate,
+        findingsResolved: prevCompletedFindings,
+        findingsCreated: prevFindings.length,
+      });
+
+      const duSignoff = signoffs[0] ?? null;
+
+      return {
+        ptId: pt.id,
+        ptCode: pt.code,
+        ptName: pt.name,
+        totalActiveDays: uniqueDays,
+        totalItemsReviewed,
+        openFindings,
+        completedFindings,
+        dkReviewPct,
+        duSignoff,
+        kpiScore,
+        updateRate,
+        delta: {
+          updateRate: updateRate - prevUpdateRate,
+          totalItemsReviewed: totalItemsReviewed - prevTotalItemsReviewed,
+          openFindings: openFindings - prevOpenFindings,
+          completedFindings: completedFindings - prevCompletedFindings,
+          kpiScore: kpiScore - prevKpiScore,
+        },
+        prev: {
+          updateRate: prevUpdateRate,
+          totalItemsReviewed: prevTotalItemsReviewed,
+          openFindings: prevOpenFindings,
+          completedFindings: prevCompletedFindings,
+          kpiScore: prevKpiScore,
+        },
+      };
+    })
+  );
+
+  res.json({
+    year: yearParam,
+    month: monthParam,
+    startDate,
+    endDate,
+    workingDays,
+    prevMonth: {
+      year: prevYear,
+      month: prevMonth,
+      startDate: prevStartDate,
+      endDate: prevEndDate,
+      workingDays: prevWorkingDays,
+    },
+    recaps,
+  });
+});
+
 export default router;

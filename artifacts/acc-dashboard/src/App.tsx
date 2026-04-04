@@ -23,6 +23,7 @@ import { BottomNav } from "@/components/BottomNav";
 import AuditLog from "@/pages/AuditLog";
 import { InstallBanner } from "@/components/InstallBanner";
 import NotificationSettings from "@/pages/NotificationSettings";
+import MonthlyRecap from "@/pages/MonthlyRecap";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 setBaseUrl(API_BASE || null);
@@ -122,6 +123,11 @@ function Router() {
         <Route path="/kpi">
           <ProtectedRoute allowedRoles={["dk", "du", "owner", "superadmin"]}>
             <KPI />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/monthly-recap">
+          <ProtectedRoute allowedRoles={["dk", "du", "owner", "superadmin"]}>
+            <MonthlyRecap />
           </ProtectedRoute>
         </Route>
         <Route path="/audit-log">

@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
-import { TrendingUp, Users, ClipboardCheck, FileCheck2, AlertTriangle, Download, RefreshCw, ChevronUp, ChevronDown } from "lucide-react";
+import { TrendingUp, Users, ClipboardCheck, FileCheck2, AlertTriangle, Download, RefreshCw, ChevronUp, ChevronDown, BarChart2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   kyc: "KYC",
@@ -75,6 +76,29 @@ type DuResponse = {
 };
 
 type PtOption = { id: string; code: string; name: string };
+
+type TrendMonth = {
+  month: string;
+  startDate: string;
+  endDate: string;
+  updateRate: number;
+  totalActivities: number;
+  totalItemsReviewed: number;
+  openFindings: number;
+  completedFindings: number;
+  kpiScore: number;
+};
+
+type PtTrend = {
+  ptId: string;
+  ptCode: string;
+  ptName: string;
+  months: TrendMonth[];
+};
+
+type TrendData = {
+  trend: PtTrend[];
+};
 
 function scoreColor(score: number): string {
   if (score >= 80) return "text-emerald-600";
@@ -238,9 +262,23 @@ export default function KPI() {
     enabled: ["dk", "du", "owner", "superadmin"].includes(user?.role ?? ""),
   });
 
+  const trendQuery = useQuery<TrendData>({
+    queryKey: ["kpi-trend", effectivePtId],
+    queryFn: async () => {
+      const p = new URLSearchParams({ months: "3" });
+      if (effectivePtId) p.set("ptId", effectivePtId);
+      const res = await fetch(`/api/reports/trend?${p.toString()}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Gagal memuat data trend");
+      return res.json();
+    },
+    staleTime: 120_000,
+    enabled: ["dk", "du", "owner", "superadmin"].includes(user?.role ?? ""),
+  });
+
   const apupptData = apupptQuery.data?.apuppt ?? [];
   const dkData = dkQuery.data?.dk ?? [];
   const duData = duQuery.data?.du ?? [];
+  const trendData = trendQuery.data?.trend ?? [];
 
   const { sorted: sortedApuppt, sortKey: apSortKey, sortDir: apSortDir, toggle: apToggle } =
     useSortedData<ApupptKpi>(apupptData, "kpiScore");
@@ -278,7 +316,7 @@ export default function KPI() {
   };
 
   const isLoading = apupptQuery.isLoading || dkQuery.isLoading || duQuery.isLoading;
-  const refetchAll = () => { apupptQuery.refetch(); dkQuery.refetch(); duQuery.refetch(); };
+  const refetchAll = () => { apupptQuery.refetch(); dkQuery.refetch(); duQuery.refetch(); trendQuery.refetch(); };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 sm:pb-6">
@@ -361,6 +399,60 @@ export default function KPI() {
             </div>
           </div>
         </div>
+
+        {["dk", "du", "owner", "superadmin"].includes(user?.role ?? "") && trendData.length > 0 && (
+          <section>
+            <div className="mb-3">
+              <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-blue-500" />
+                Tren Update Rate — 3 Bulan Terakhir
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">Persentase hari aktif tiap PT dibanding hari kerja</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {trendData.map((pt) => (
+                <div key={pt.ptId} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <span className="text-xs font-bold text-slate-800">{pt.ptCode}</span>
+                      <span className="text-xs text-slate-400 ml-1.5 truncate max-w-[120px] inline-block align-bottom">{pt.ptName}</span>
+                    </div>
+                    {pt.months.length >= 2 && (() => {
+                      const last = pt.months[pt.months.length - 1].updateRate;
+                      const prev = pt.months[pt.months.length - 2].updateRate;
+                      const delta = last - prev;
+                      if (delta === 0) return <span className="text-xs text-slate-400">—</span>;
+                      return (
+                        <span className={`text-xs font-semibold ${delta > 0 ? "text-emerald-600" : "text-red-500"}`}>
+                          {delta > 0 ? "▲" : "▼"} {Math.abs(delta)}%
+                        </span>
+                      );
+                    })()}
+                  </div>
+                  <ResponsiveContainer width="100%" height={90}>
+                    <BarChart data={pt.months} margin={{ top: 0, right: 0, left: -24, bottom: 0 }}>
+                      <XAxis dataKey="month" tick={{ fontSize: 9, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                      <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        formatter={(v: number) => [`${v}%`, "Update Rate"]}
+                        contentStyle={{ fontSize: 11, borderRadius: 8, border: "1px solid #e2e8f0", padding: "4px 8px" }}
+                        labelStyle={{ fontWeight: 600, color: "#1e293b", fontSize: 11 }}
+                      />
+                      <Bar dataKey="updateRate" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                        {pt.months.map((entry, index) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={entry.updateRate >= 80 ? "#10b981" : entry.updateRate >= 60 ? "#f59e0b" : "#ef4444"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {isLoading ? (
           <div className="text-center py-16 text-slate-400 text-sm">Memuat data KPI...</div>

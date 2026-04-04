@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, FileText, AlertTriangle, BarChart2, UserCircle } from "lucide-react";
+import { LayoutDashboard, FileText, AlertTriangle, BarChart2, UserCircle, FileBarChart } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
@@ -15,6 +15,7 @@ export function BottomNav() {
     { href: "/activity", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
     { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
     { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner", "superadmin"] },
+    { href: "/monthly-recap", label: "Rekap", icon: FileBarChart, roles: ["dk", "du", "owner", "superadmin"] },
     { href: "/profile", label: "Profil", icon: UserCircle, roles: ["apuppt", "dk", "du", "owner", "superadmin"], isProfile: true },
   ];
 
