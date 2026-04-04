@@ -40,6 +40,16 @@ pnpm workspace monorepo using TypeScript.
 | Owner     | All PTs     | No access     | View all (read-only)      | No access     | No access      | View all      | No        |
 | Superadmin| All PTs     | View + Review | Full access               | No access     | No access      | Full access   | Yes       |
 
+## Latest Features (Tasks #9–#12)
+
+- **Export Laporan** (`GET /api/reports/export`): Download laporan sebagai Excel (.xlsx) dari halaman Laporan. Tombol "Cetak PDF" dengan print layout khusus (logo, periode, tabel per PT, footer)
+- **Dashboard Alerts**: Badge "Merah N hari" di card PT jika RED berturut-turut ≥ 2 hari. `consecutiveRedDays` dihitung dari history 7 hari
+- **DK Quick Panel**: Panel "Perlu Perhatian Sekarang" di halaman Review — list PT merah berturut-turut, PT overdue, PT belum update
+- **Trend Analysis**: Chart update_rate 3 bulan terakhir di halaman KPI (Recharts bar chart)
+- **Rekap Bulanan** (`/monthly-recap`): Halaman baru dengan month/year picker, tabel rekap lengkap per PT, indikator tren (▲/▼ vs bulan lalu), Export CSV
+- New API endpoints: `GET /api/reports/trend`, `GET /api/reports/monthly-recap`, `GET /api/reports/export`
+- **Task #10 (User Management UI)** — masih dalam pengerjaan, belum merge
+
 ## Phase 7 Features (Task #8 — KPI & Rekap Cabang)
 
 - **KPI APUPPT**: Scorecard per APUPPT — update_rate, nasabah_diperiksa, temuan breakdown, avg_resolution_days, kpi_score (0-100). Ranking table di `/kpi`
