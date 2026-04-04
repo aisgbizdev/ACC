@@ -98,11 +98,12 @@ router.get("/findings/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  const findingId = req.params.id as string;
   const [finding] = await db
     .select(findingsWithBranch)
     .from(findingsTable)
     .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
-    .where(eq(findingsTable.id, req.params.id));
+    .where(eq(findingsTable.id, findingId));
 
   if (!finding) {
     res.status(404).json({ error: "Temuan tidak ditemukan." });
@@ -196,7 +197,7 @@ router.post("/findings", requireAuth, async (req, res): Promise<void> => {
 router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
 
-  if (user.role === "du" || user.role === "owner" || user.role === "apuppt_viewer") {
+  if (user.role === "du" || user.role === "owner") {
     res.status(403).json({ error: "Akses ditolak. Hanya APUPPT, DK, dan superadmin yang bisa mengubah temuan." });
     return;
   }
@@ -207,7 +208,8 @@ router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, req.params.id));
+  const findingId = req.params.id as string;
+  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, findingId));
   if (!existing) {
     res.status(404).json({ error: "Temuan tidak ditemukan." });
     return;
@@ -232,7 +234,7 @@ router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
     updateObj.closedAt = new Date();
   }
 
-  await db.update(findingsTable).set(updateObj).where(eq(findingsTable.id, req.params.id));
+  await db.update(findingsTable).set(updateObj).where(eq(findingsTable.id, findingId));
 
   // Auto-log system comments
   if (statusChanged) {
@@ -268,15 +270,16 @@ router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
     .select(findingsWithBranch)
     .from(findingsTable)
     .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
-    .where(eq(findingsTable.id, req.params.id));
+    .where(eq(findingsTable.id, findingId));
 
   res.json(withBranch);
 });
 
 router.get("/findings/:id/comments", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
+  const findingId = req.params.id as string;
 
-  const [finding] = await db.select({ ptId: findingsTable.ptId }).from(findingsTable).where(eq(findingsTable.id, req.params.id));
+  const [finding] = await db.select({ ptId: findingsTable.ptId }).from(findingsTable).where(eq(findingsTable.id, findingId));
   if (!finding) {
     res.status(404).json({ error: "Temuan tidak ditemukan." });
     return;
@@ -298,7 +301,7 @@ router.get("/findings/:id/comments", requireAuth, async (req, res): Promise<void
     })
     .from(ticketCommentsTable)
     .leftJoin(usersTable, eq(ticketCommentsTable.authorId, usersTable.id))
-    .where(eq(ticketCommentsTable.findingId, req.params.id))
+    .where(eq(ticketCommentsTable.findingId, findingId))
     .orderBy(ticketCommentsTable.createdAt);
 
   res.json(comments);
@@ -306,8 +309,9 @@ router.get("/findings/:id/comments", requireAuth, async (req, res): Promise<void
 
 router.post("/findings/:id/comments", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
+  const findingId = req.params.id as string;
 
-  const [finding] = await db.select({ ptId: findingsTable.ptId }).from(findingsTable).where(eq(findingsTable.id, req.params.id));
+  const [finding] = await db.select({ ptId: findingsTable.ptId }).from(findingsTable).where(eq(findingsTable.id, findingId));
   if (!finding) {
     res.status(404).json({ error: "Temuan tidak ditemukan." });
     return;
@@ -326,7 +330,7 @@ router.post("/findings/:id/comments", requireAuth, async (req, res): Promise<voi
   const [comment] = await db
     .insert(ticketCommentsTable)
     .values({
-      findingId: req.params.id,
+      findingId,
       authorId: user.id,
       content: parsed.data.content,
       isSystemLog: false,
@@ -358,8 +362,9 @@ router.post("/findings/:id/comments", requireAuth, async (req, res): Promise<voi
 // Keep backward-compat complete endpoint
 router.patch("/findings/:id/complete", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
+  const findingId = req.params.id as string;
 
-  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, req.params.id));
+  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, findingId));
   if (!existing) {
     res.status(404).json({ error: "Temuan tidak ditemukan." });
     return;
@@ -378,7 +383,7 @@ router.patch("/findings/:id/complete", requireAuth, async (req, res): Promise<vo
   await db
     .update(findingsTable)
     .set({ status: "completed", closedAt: new Date() })
-    .where(eq(findingsTable.id, req.params.id));
+    .where(eq(findingsTable.id, findingId));
 
   await db.insert(ticketCommentsTable).values({
     findingId: existing.id,
@@ -397,7 +402,7 @@ router.patch("/findings/:id/complete", requireAuth, async (req, res): Promise<vo
     .select(findingsWithBranch)
     .from(findingsTable)
     .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
-    .where(eq(findingsTable.id, req.params.id));
+    .where(eq(findingsTable.id, findingId));
 
   res.json(withBranch);
 });
@@ -410,8 +415,8 @@ router.post("/findings/:id/acknowledge", requireAuth, async (req, res): Promise<
     return;
   }
 
-  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-  const params = FindingIdSchema.safeParse({ id: rawId });
+  const findingId = req.params.id as string;
+  const params = FindingIdSchema.safeParse({ id: findingId });
   if (!params.success) {
     res.status(400).json({ error: "ID tidak valid." });
     return;
@@ -423,7 +428,7 @@ router.post("/findings/:id/acknowledge", requireAuth, async (req, res): Promise<
     return;
   }
 
-  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, params.data.id));
+  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, findingId));
   if (!existing) {
     res.status(404).json({ error: "Temuan tidak ditemukan." });
     return;
@@ -437,13 +442,13 @@ router.post("/findings/:id/acknowledge", requireAuth, async (req, res): Promise<
       dkNotes: parsed.data.notes ?? null,
       status: existing.status === "pending" ? "follow_up" : existing.status,
     })
-    .where(eq(findingsTable.id, params.data.id));
+    .where(eq(findingsTable.id, findingId));
 
   const [withBranch] = await db
     .select(findingsWithBranch)
     .from(findingsTable)
     .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
-    .where(eq(findingsTable.id, params.data.id));
+    .where(eq(findingsTable.id, findingId));
 
   res.json(withBranch);
 });

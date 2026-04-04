@@ -18,7 +18,7 @@ router.get("/activities/:id/review", requireAuth, async (req, res): Promise<void
     return;
   }
 
-  const activityId = req.params.id;
+  const activityId = req.params.id as string;
 
   // Verify activity exists and enforce PT scope
   const [activity] = await db
@@ -59,7 +59,7 @@ router.post("/activities/:id/review", requireAuth, async (req, res): Promise<voi
     return;
   }
 
-  const activityId = req.params.id;
+  const activityId = req.params.id as string;
 
   const [activity] = await db
     .select()
