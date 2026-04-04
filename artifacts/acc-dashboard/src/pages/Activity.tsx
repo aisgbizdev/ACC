@@ -183,6 +183,11 @@ export default function Activity() {
       return;
     }
 
+    if (!isNonCustomerActivity && form.customerRiskCategories.length === 0) {
+      setError("Kategori risiko nasabah wajib dipilih minimal satu untuk jenis kegiatan ini.");
+      return;
+    }
+
     const riskCats = form.customerRiskCategories.length > 0 ? form.customerRiskCategories : null;
 
     if (editingId) {
@@ -444,6 +449,7 @@ export default function Activity() {
 
         <div>
           <h2 className="text-sm font-semibold text-slate-700 mb-3">Riwayat Aktivitas</h2>
+          <p className="text-xs text-slate-400 mb-3">Riwayat aktivitas tidak dapat diubah. Hanya aktivitas hari ini yang dapat diedit.</p>
           {isLoading ? (
             <div className="text-center py-8 text-slate-400 text-sm">Memuat...</div>
           ) : pastActivities.length === 0 ? (
