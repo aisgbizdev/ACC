@@ -1,0 +1,145 @@
+Yes, overall your understanding is good.
+
+But before starting Phase 1, apply these corrections and lock them exactly:
+
+## Corrections
+
+1. **Do not rename PT entities**
+   Keep exactly:
+
+* SGB
+* RFB
+* BPF
+* KPF
+* EWF
+
+2. **Daily activity must remain simple and structured**
+   Do not use only a free-text description field.
+   Daily activity must include:
+
+* date
+* pt_id
+* activity_type
+* items_reviewed
+* has_finding
+* finding_summary
+* finding_status
+* notes
+
+3. **Activity type must use dropdown values**
+   Use fixed enum values such as:
+
+* transaction_review
+* kyc_document_review
+* branch_follow_up
+* transaction_analysis
+* source_of_fund_verification
+* report_preparation
+* meeting_coordination
+* apuppt_socialization
+
+4. **Findings status must not use only open/resolved**
+   Use these exact statuses:
+
+* pending
+* follow_up
+* completed
+
+5. **Traffic light logic must follow this exact rule**
+
+* Green = updated today + no finding pending more than 3 days
+* Yellow = updated today + has pending/follow_up findings, but none older than 3 days
+* Red = not updated today OR has pending/follow_up finding older than 3 days
+
+6. **One main activity log per PT per day**
+   This must be enforced.
+   APUPPT can edit the same day’s record, but should not create duplicates.
+
+7. **Role access must be stricter**
+
+* APUPPT can only access their own PT data
+* DK can access all PT data
+* DU can view dashboard, PT detail, reports
+* Owner can view all PT data and all summary views
+
+8. **PT detail page access**
+   APUPPT should only see their own PT detail page, not all PT detail pages.
+
+9. **Dashboard should stay lightweight**
+   Do not add advanced charts or complex analytics in Phase 1 or Phase 2.
+
+10. **Do not build export features yet**
+    Reports can be screen-based first.
+    PDF/Excel export can come later if needed.
+
+## Updated Database Direction
+
+Please revise schema direction like this:
+
+### users
+
+* id
+* name
+* email
+* password_hash
+* role
+* pt_id (nullable for DK/DU/Owner)
+* created_at
+* updated_at
+
+### pts
+
+* id
+* code
+* name
+* created_at
+
+### daily_activities
+
+* id
+* pt_id
+* user_id
+* date
+* activity_type
+* items_reviewed
+* has_finding
+* finding_summary
+* finding_status
+* notes
+* created_at
+* updated_at
+
+### findings
+
+* id
+* pt_id
+* reported_by
+* date
+* finding_text
+* status
+* notes
+* created_at
+* updated_at
+* closed_at
+
+## Updated API direction
+
+Make sure API supports:
+
+* auth
+* dashboard summary
+* PT status
+* daily activity create/update
+* findings create/update/complete
+* reports summary
+* PT detail
+
+## Important
+
+Do not start coding until you first show me:
+
+1. revised database schema
+2. final route list
+3. final role access matrix
+
+After that, I will approve Phase 1.
