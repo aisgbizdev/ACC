@@ -3,13 +3,26 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for ACC - APUPPT Control Center
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: pts
+    description: PT (Perusahaan Terdaftar) operations
+  - name: dashboard
+    description: Dashboard summary
+  - name: activities
+    description: Daily activity operations
+  - name: findings
+    description: Findings operations
+  - name: reports
+    description: Report summary
+
 paths:
   /healthz:
     get:
@@ -24,6 +37,413 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /pts:
+    get:
+      operationId: listPts
+      tags: [pts]
+      summary: List all PTs
+      responses:
+        "200":
+          description: List of PTs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pt"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /pts/{id}:
+    get:
+      operationId: getPt
+      tags: [pts]
+      summary: Get PT detail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PT detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PtDetail"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: PT not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /pts/{id}/status:
+    get:
+      operationId: getPtStatus
+      tags: [pts]
+      summary: Get PT traffic light status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: PT status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PtStatus"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary for all PTs
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /activities:
+    get:
+      operationId: listActivities
+      tags: [activities]
+      summary: List activities
+      parameters:
+        - name: ptId
+          in: query
+          schema:
+            type: string
+        - name: date
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of activities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DailyActivity"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createActivity
+      tags: [activities]
+      summary: Create daily activity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateActivityBody"
+      responses:
+        "201":
+          description: Activity created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyActivity"
+        "400":
+          description: Validation error or duplicate
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /activities/{id}:
+    put:
+      operationId: updateActivity
+      tags: [activities]
+      summary: Update daily activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateActivityBody"
+      responses:
+        "200":
+          description: Activity updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyActivity"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Activity not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /findings:
+    get:
+      operationId: listFindings
+      tags: [findings]
+      summary: List findings
+      parameters:
+        - name: ptId
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, follow_up, completed]
+      responses:
+        "200":
+          description: List of findings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Finding"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createFinding
+      tags: [findings]
+      summary: Create finding
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFindingBody"
+      responses:
+        "201":
+          description: Finding created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Finding"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /findings/{id}:
+    put:
+      operationId: updateFinding
+      tags: [findings]
+      summary: Update finding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFindingBody"
+      responses:
+        "200":
+          description: Finding updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Finding"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Finding not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /findings/{id}/complete:
+    patch:
+      operationId: completeFinding
+      tags: [findings]
+      summary: Mark finding as completed
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Finding completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Finding"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Finding not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /reports/summary:
+    get:
+      operationId: getReportsSummary
+      tags: [reports]
+      summary: Get reports summary per PT
+      responses:
+        "200":
+          description: Reports summary
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PtReportSummary"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +454,399 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [apuppt, dk, du, owner]
+        ptId:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - email
+        - role
+
+    Pt:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - code
+        - name
+        - createdAt
+
+    PtDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [green, yellow, red]
+        lastActivityDate:
+          type: string
+          nullable: true
+        openFindingsCount:
+          type: integer
+      required:
+        - id
+        - code
+        - name
+        - createdAt
+        - status
+        - openFindingsCount
+
+    PtStatus:
+      type: object
+      properties:
+        ptId:
+          type: string
+        status:
+          type: string
+          enum: [green, yellow, red]
+        lastActivityDate:
+          type: string
+          nullable: true
+        openFindingsCount:
+          type: integer
+        overdueCount:
+          type: integer
+      required:
+        - ptId
+        - status
+        - openFindingsCount
+        - overdueCount
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalPts:
+          type: integer
+        greenCount:
+          type: integer
+        yellowCount:
+          type: integer
+        redCount:
+          type: integer
+        ptStatuses:
+          type: array
+          items:
+            $ref: "#/components/schemas/PtStatusCard"
+      required:
+        - totalPts
+        - greenCount
+        - yellowCount
+        - redCount
+        - ptStatuses
+
+    PtStatusCard:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [green, yellow, red]
+        lastActivityDate:
+          type: string
+          nullable: true
+        openFindingsCount:
+          type: integer
+        overdueCount:
+          type: integer
+      required:
+        - id
+        - code
+        - name
+        - status
+        - openFindingsCount
+        - overdueCount
+
+    DailyActivity:
+      type: object
+      properties:
+        id:
+          type: string
+        ptId:
+          type: string
+        userId:
+          type: string
+        date:
+          type: string
+          format: date
+        activityType:
+          type: string
+          enum:
+            - transaction_review
+            - kyc_document_review
+            - branch_follow_up
+            - transaction_analysis
+            - source_of_fund_verification
+            - report_preparation
+            - meeting_coordination
+            - apuppt_socialization
+        itemsReviewed:
+          type: integer
+        hasFinding:
+          type: boolean
+        findingSummary:
+          type: string
+          nullable: true
+        findingStatus:
+          type: string
+          enum: [pending, follow_up, completed]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - ptId
+        - userId
+        - date
+        - activityType
+        - itemsReviewed
+        - hasFinding
+        - createdAt
+        - updatedAt
+
+    CreateActivityBody:
+      type: object
+      properties:
+        ptId:
+          type: string
+        date:
+          type: string
+          format: date
+        activityType:
+          type: string
+          enum:
+            - transaction_review
+            - kyc_document_review
+            - branch_follow_up
+            - transaction_analysis
+            - source_of_fund_verification
+            - report_preparation
+            - meeting_coordination
+            - apuppt_socialization
+        itemsReviewed:
+          type: integer
+        hasFinding:
+          type: boolean
+        findingSummary:
+          type: string
+          nullable: true
+        findingStatus:
+          type: string
+          enum: [pending, follow_up, completed]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - ptId
+        - date
+        - activityType
+        - itemsReviewed
+        - hasFinding
+
+    UpdateActivityBody:
+      type: object
+      properties:
+        activityType:
+          type: string
+          enum:
+            - transaction_review
+            - kyc_document_review
+            - branch_follow_up
+            - transaction_analysis
+            - source_of_fund_verification
+            - report_preparation
+            - meeting_coordination
+            - apuppt_socialization
+        itemsReviewed:
+          type: integer
+        hasFinding:
+          type: boolean
+        findingSummary:
+          type: string
+          nullable: true
+        findingStatus:
+          type: string
+          enum: [pending, follow_up, completed]
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    Finding:
+      type: object
+      properties:
+        id:
+          type: string
+        ptId:
+          type: string
+        reportedBy:
+          type: string
+        date:
+          type: string
+          format: date
+        findingText:
+          type: string
+        status:
+          type: string
+          enum: [pending, follow_up, completed]
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        closedAt:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - ptId
+        - reportedBy
+        - date
+        - findingText
+        - status
+        - createdAt
+        - updatedAt
+
+    CreateFindingBody:
+      type: object
+      properties:
+        ptId:
+          type: string
+        date:
+          type: string
+          format: date
+        findingText:
+          type: string
+        status:
+          type: string
+          enum: [pending, follow_up, completed]
+        notes:
+          type: string
+          nullable: true
+      required:
+        - ptId
+        - date
+        - findingText
+        - status
+
+    UpdateFindingBody:
+      type: object
+      properties:
+        findingText:
+          type: string
+        status:
+          type: string
+          enum: [pending, follow_up, completed]
+        notes:
+          type: string
+          nullable: true
+
+    PtReportSummary:
+      type: object
+      properties:
+        ptId:
+          type: string
+        ptCode:
+          type: string
+        ptName:
+          type: string
+        totalActivities:
+          type: integer
+        totalFindings:
+          type: integer
+        openFindings:
+          type: integer
+        completedFindings:
+          type: integer
+        status:
+          type: string
+          enum: [green, yellow, red]
+        lastActivityDate:
+          type: string
+          nullable: true
+      required:
+        - ptId
+        - ptCode
+        - ptName
+        - totalActivities
+        - totalFindings
+        - openFindings
+        - completedFindings
+        - status

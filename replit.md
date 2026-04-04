@@ -1,8 +1,19 @@
-# Workspace
+# ACC — APUPPT Control Center
 
 ## Overview
 
-pnpm workspace monorepo using TypeScript. Each package manages its own dependencies.
+Internal tool for monitoring 5 PTs (SGB, RFB, BPF, KPF, EWF) with 4 roles: APUPPT, DK, DU, Owner.
+
+pnpm workspace monorepo using TypeScript.
+
+## Architecture
+
+- **Frontend**: React + Vite (`artifacts/acc-dashboard`) — port assigned via `PORT` env
+- **Backend**: Express 5 + PostgreSQL + Drizzle ORM (`artifacts/api-server`) — port 8080
+- **API client**: Generated from OpenAPI spec via Orval (`lib/api-client-react`)
+- **Database schema**: `lib/db/src/schema/index.ts`
+- **OpenAPI spec**: `lib/api-spec/openapi.yaml`
+- **Zod schemas**: `lib/api-zod/`
 
 ## Stack
 
@@ -15,6 +26,42 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
+- **Frontend router**: wouter
+- **HTTP client**: Custom fetch with `credentials: "include"` for session cookies
+- **Auth**: express-session + bcryptjs (session-based, no JWT)
+
+## Roles and Access
+
+| Role   | Dashboard       | Aktivitas      | Temuan         | Laporan        |
+|--------|-----------------|----------------|----------------|----------------|
+| APUPPT | Own PT only     | Input/edit own | View/create    | No access      |
+| DK     | All PTs         | No access      | View/create/complete all | View all |
+| DU     | All PTs         | No access      | View only      | View all       |
+| Owner  | All PTs         | No access      | View only      | View all       |
+
+## Traffic Light Logic
+
+- **Green**: Updated today + no open findings older than 3 days
+- **Yellow**: Updated today + has open findings (≤ 3 days old)
+- **Red**: NOT updated today OR any finding overdue > 3 days
+
+## Database Tables
+
+- `pts` — 5 PTs (SGB, RFB, BPF, KPF, EWF)
+- `users` — 8 seed accounts
+- `daily_activities` — unique `(pt_id, date)` constraint
+- `findings` — status: pending / follow_up / completed
+
+## Seed Accounts (all password: `password123`)
+
+- `apuppt.sgb@acc.local` — APUPPT for SGB
+- `apuppt.rfb@acc.local` — APUPPT for RFB
+- `apuppt.bpf@acc.local` — APUPPT for BPF
+- `apuppt.kpf@acc.local` — APUPPT for KPF
+- `apuppt.ewf@acc.local` — APUPPT for EWF
+- `dk@acc.local` — DK (Dewan Komisaris)
+- `du@acc.local` — DU (Direksi Utama)
+- `owner@acc.local` — Owner
 
 ## Key Commands
 
@@ -22,6 +69,26 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
+- After rebuilding `api-client-react`: `cd lib/api-client-react && npx tsc --build` to update declaration files
 
-See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
+## API Routes (all under `/api`)
+
+- `POST /api/auth/login` — login with { email, password }
+- `POST /api/auth/logout` — logout
+- `GET /api/auth/me` — get current session user
+- `GET /api/pts` — list all PTs
+- `GET /api/pts/:id` — get PT detail
+- `GET /api/pts/:id/status` — get traffic light status
+- `GET /api/dashboard/summary` — dashboard summary with PT statuses
+- `GET /api/activities` — list activities (filtered by ptId/date)
+- `POST /api/activities` — create activity
+- `PUT /api/activities/:id` — update activity
+- `GET /api/findings` — list findings
+- `POST /api/findings` — create finding
+- `PUT /api/findings/:id` — update finding
+- `POST /api/findings/:id/complete` — complete finding
+- `GET /api/reports/summary` — reports summary per PT
+
+## Vite Proxy
+
+Frontend Vite dev server proxies `/api` requests to `http://localhost:8080` (API server).
