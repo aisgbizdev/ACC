@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "preinstall": "tsx ./scripts/src/preinstall.ts",
+    "preinstall": "node ./scripts/preinstall.mjs",
     "dev": "corepack pnpm --filter @workspace/scripts exec tsx ./src/dev.ts",
     "build": "corepack pnpm run typecheck && corepack pnpm -r --if-present run build",
     "typecheck:libs": "tsc --build",
