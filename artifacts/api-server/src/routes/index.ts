@@ -6,6 +6,7 @@ import dashboardRouter from "./dashboard";
 import activitiesRouter from "./activities";
 import findingsRouter from "./findings";
 import reportsRouter from "./reports";
+import branchesRouter from "./branches";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(dashboardRouter);
 router.use(activitiesRouter);
 router.use(findingsRouter);
 router.use(reportsRouter);
+router.use(branchesRouter);
 
 export default router;
