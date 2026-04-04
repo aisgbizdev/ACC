@@ -5,10 +5,10 @@ generated = []
 id = "Sh9q9NC7JUVO7Pq_B0gA4"
 uri = "file://docs/TECHNICAL_DOCUMENTATION.md"
 type = "text"
-title = "Technical Documentation"
+title = "Technical Documentation (Updated — Phase 6)"
 
 [[outputs]]
 id = "U_QZ-URt6V8mAhgwX-h4v"
 uri = "file://docs/USER_MANUAL.md"
 type = "text"
-title = "User Manual (Bahasa Indonesia)"
+title = "User Manual (Updated — Phase 6)"

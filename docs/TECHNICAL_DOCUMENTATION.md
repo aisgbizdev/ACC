@@ -443,13 +443,13 @@ Cron job (`artifacts/api-server/src/lib/escalation.ts`) berjalan setiap 5 menit:
 | Route | File | Role | Deskripsi |
 |-------|------|------|-----------|
 | `/login` | Login.tsx | Public | Halaman login |
-| `/dashboard` | Dashboard.tsx | All | Dashboard status PT |
+| `/dashboard` | Dashboard.tsx | All | Dashboard status PT + CriticalPanel + KpiMiniBar + RankingPanel |
 | `/pt/:id` | PTDetail.tsx | All | Detail PT + 7-day history + Rekap Cabang |
 | `/activity` | Activity.tsx | apuppt | Form isi aktivitas harian |
 | `/activities` | Activities.tsx | dk, superadmin | List aktivitas semua PT |
 | `/findings` | Findings.tsx | All | List temuan |
 | `/findings/:id` | FindingDetail.tsx | All | Detail tiket temuan |
-| `/review` | DKReview.tsx | dk, superadmin | Review aktivitas + DK Quick Panel |
+| `/review` | DKReview.tsx | dk, superadmin | Review aktivitas + Pressure Panel (always-on, tidak dismissable) |
 | `/signoff` | DUSignOff.tsx | du, superadmin | Sign-off laporan |
 | `/kpi` | KPI.tsx | dk, du, owner, superadmin | KPI scorecard + trend chart |
 | `/reports` | Reports.tsx | dk, du, owner, superadmin | Laporan + Export |
@@ -463,13 +463,21 @@ Cron job (`artifacts/api-server/src/lib/escalation.ts`) berjalan setiap 5 menit:
 
 ### Komponen Kunci
 
-| Komponen | Deskripsi |
-|---------|-----------|
-| `Navbar.tsx` | Navbar desktop: menu navigasi + dropdown user + avatar |
-| `BottomNav.tsx` | Bottom navigation bar mobile (PWA) |
-| `NotificationBanner.tsx` | Banner ajakan aktifkan push notification |
-| `InstallBanner.tsx` | Banner ajakan install PWA |
-| `ProtectedRoute.tsx` | Wrapper route yang cek auth + role |
+| Komponen | Lokasi | Deskripsi |
+|---------|--------|-----------|
+| `Navbar.tsx` | components/ | Navbar desktop: menu navigasi + dropdown user + avatar |
+| `BottomNav.tsx` | components/ | Bottom navigation bar mobile (PWA) |
+| `NotificationBanner.tsx` | components/ | Banner ajakan aktifkan push notification |
+| `InstallBanner.tsx` | components/ | Banner ajakan install PWA |
+| `ProtectedRoute.tsx` | components/ | Wrapper route yang cek auth + role |
+| `CriticalPanel` | Dashboard.tsx (inline) | Panel "⚠ Butuh Perhatian Sekarang" — collapsible, tidak dismissable. Muncul di Dashboard untuk semua role non-APUPPT |
+| `KpiMiniBar` | Dashboard.tsx (inline) | 4 angka KPI cepat: overdue, belum update, merah, hijau — dihitung dari `dashboardData` tanpa API call tambahan |
+| `RankingPanel` | Dashboard.tsx (inline) | 2-kolom ranking PT: "Perlu Tindakan" (terburuk) vs "Terbaik Saat Ini" — derivasi dari sorted PT list |
+
+**Catatan Phase 6 (Behavior Visibility Layer):**
+- Panel "⚠ Butuh Perhatian Sekarang" tampil di dua tempat: `Dashboard.tsx` dan `DKReview.tsx`
+- Di `DKReview.tsx`, panel **tidak memiliki tombol dismiss** — `alertDismissed` state dihapus, panel selalu terlihat jika ada masalah aktif
+- Semua data visibility berasal dari `useGetDashboardSummary()` — tidak ada endpoint API baru
 
 ### AuthContext
 

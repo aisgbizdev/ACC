@@ -131,17 +131,23 @@ Temuan akan otomatis masuk ke sistem tiket dan DK akan dinotifikasi.
 
 Sebagai DK (Direktur Kepatuhan), Anda bertugas mereview laporan aktivitas APUPPT dan memantau kondisi seluruh PT.
 
-### 4.1 Dashboard & Quick Panel
+### 4.1 Panel "⚠ Butuh Perhatian Sekarang"
 
-Saat membuka halaman **"Review"**, Anda akan melihat **panel "Perlu Perhatian Sekarang"** di bagian atas (jika ada masalah aktif):
+Panel peringatan ini tampil di **dua tempat**: halaman **Dashboard** dan halaman **Review** — sehingga masalah aktif selalu terlihat di mana pun Anda berada.
 
-| Kategori | Artinya |
-|---------|---------|
-| PT Merah Berturut-turut | PT yang sudah berstatus Merah ≥ 2 hari |
-| PT dengan Temuan Overdue | PT yang memiliki temuan melebihi deadline |
-| PT Belum Update | PT yang tidak mengisi aktivitas lebih dari 1 hari |
+Panel muncul otomatis jika ada masalah aktif dan mengelompokkan isu berdasarkan urgensi:
 
-Panel ini bisa di-collapse (klik header) atau di-dismiss (klik ×).
+| Kategori | Kondisi | Visual |
+|---------|---------|--------|
+| PT Merah Hari Ini | PT berstatus Merah sekarang | Badge merah |
+| Merah Berturut-turut | Sudah Merah ≥ 2 hari | Badge oranye 🔥 + jumlah hari |
+| Temuan Overdue | Ada temuan melebihi deadline | Badge kuning |
+| Belum Update | Tidak mengisi aktivitas hari ini | Badge abu |
+
+**Cara menggunakan:**
+- Klik header panel untuk menciutkan/membuka (collapse)
+- Klik nama PT di dalam panel untuk langsung ke halaman detail PT
+- Panel **tidak bisa ditutup permanen** — selalu muncul kembali selama ada masalah aktif (dirancang agar masalah tidak bisa diabaikan)
 
 ### 4.2 Mereview Aktivitas APUPPT
 
@@ -230,13 +236,30 @@ Sebagai Owner, Anda memiliki akses view-only untuk memantau semua PT.
 
 ### 6.1 Dashboard Utama
 
-Halaman **"Dashboard"** menampilkan:
-- **3 kartu ringkasan** di atas: jumlah PT dengan status Merah / Kuning / Hijau
-- **Daftar semua PT** diurutkan dari yang paling kritis (Merah) ke aman (Hijau)
-- Setiap card PT menampilkan:
-  - Status lampu lalu lintas + alasan (misal: "Belum update hari ini" atau "2 temuan overdue")
-  - Badge oranye jika merah berturut-turut ≥ 2 hari
-  - Tanggal update terakhir
+Halaman **"Dashboard"** dirancang agar masalah tidak bisa diabaikan. Tersusun dari atas ke bawah:
+
+**1. Panel "⚠ Butuh Perhatian Sekarang"** *(muncul jika ada masalah aktif)*
+- Kotak merah bold di paling atas
+- Menampilkan PT merah hari ini, PT merah berturut-turut 🔥, temuan overdue, PT belum update
+- Klik nama PT di dalam panel untuk langsung ke halaman detailnya
+- Bisa diciutkan tapi tidak bisa ditutup permanen
+
+**2. Kartu Ringkasan Warna** *(3 kotak: Merah / Kuning / Hijau)*
+- Menampilkan jumlah PT di masing-masing status
+
+**3. KPI Cepat** *(4 angka di bawah kartu warna)*
+- Total Temuan Overdue — berapa temuan yang sudah lewat deadline
+- PT Belum Update — berapa PT yang tidak mengisi hari ini
+- PT Kritis (Merah) — jumlah PT berstatus merah
+- PT Aman (Hijau) — jumlah PT berstatus hijau
+
+**4. Ranking PT** *(2 kolom berdampingan)*
+- "Perlu Tindakan" — 3 PT terburuk saat ini (paling kritis di atas)
+- "Terbaik Saat Ini" — 3 PT dengan performa terbaik
+
+**5. Daftar Semua PT**
+- Diurutkan dari paling kritis ke paling aman
+- Setiap card menampilkan: status + alasan detail + tanggal update terakhir + badge 🔥 jika merah berturut-turut
 
 Klik nama PT untuk melihat detail termasuk riwayat 7 hari dan rekap cabang.
 
