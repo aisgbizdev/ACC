@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Login from "@/pages/Login";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ChangePassword from "@/pages/ChangePassword";
+import Profile from "@/pages/Profile";
 import Dashboard from "@/pages/Dashboard";
 import PTDetail from "@/pages/PTDetail";
 import Activity from "@/pages/Activity";
@@ -60,6 +61,11 @@ function Router() {
         <Route path="/" component={RootRedirect} />
         <Route path="/login" component={Login} />
         <Route path="/forgot-password" component={ForgotPassword} />
+        <Route path="/profile">
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        </Route>
         <Route path="/change-password">
           <ProtectedRoute>
             <ChangePassword />

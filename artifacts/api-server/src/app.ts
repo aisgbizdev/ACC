@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import path from "path";
 import cors from "cors";
 import session from "express-session";
 import pinoHttp from "pino-http";
@@ -57,6 +58,9 @@ app.use(
     },
   })
 );
+
+const uploadsDir = path.join(process.cwd(), "uploads");
+app.use("/uploads", express.static(uploadsDir));
 
 app.use("/api", router);
 

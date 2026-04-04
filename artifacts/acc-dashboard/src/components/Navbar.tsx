@@ -1,7 +1,7 @@
 import { useLocation, Link } from "wouter";
 import { logout } from "@workspace/api-client-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, KeyRound, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield } from "lucide-react";
+import { LogOut, LayoutDashboard, FileText, AlertTriangle, BarChart2, ChevronDown, ClipboardCheck, FileCheck2, TrendingUp, ClipboardList, Shield, User, UserCircle } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -11,6 +11,8 @@ const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
   superadmin: "Superadmin",
 };
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export function Navbar() {
   const { user, setUser } = useAuth();
@@ -51,6 +53,7 @@ export function Navbar() {
   ];
 
   const visibleItems = navItems.filter((item) => item.roles.includes(user.role));
+  const avatarSrc = user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : null;
 
   return (
     <nav className="hidden sm:block bg-slate-900 text-white">
@@ -84,27 +87,37 @@ export function Navbar() {
               })}
             </div>
           </div>
+
           <div className="flex items-center gap-2" ref={menuRef}>
             <div className="relative">
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-slate-800 transition-colors"
               >
+                {/* Avatar */}
+                <div className="w-7 h-7 rounded-full bg-slate-600 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {avatarSrc ? (
+                    <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-3.5 h-3.5 text-slate-300" />
+                  )}
+                </div>
                 <div className="text-right hidden sm:block">
                   <div className="text-xs font-medium text-white">{user.name}</div>
                   <div className="text-xs text-slate-400">{ROLE_LABELS[user.role]}</div>
                 </div>
                 <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${menuOpen ? "rotate-180" : ""}`} />
               </button>
+
               {menuOpen && (
                 <div className="absolute right-0 top-full mt-1 w-44 bg-slate-800 border border-slate-700 rounded-lg shadow-lg overflow-hidden z-50">
                   <Link
-                    href="/change-password"
+                    href="/profile"
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
                   >
-                    <KeyRound className="w-3.5 h-3.5" />
-                    Ubah Password
+                    <UserCircle className="w-3.5 h-3.5" />
+                    Profil Saya
                   </Link>
                   <div className="border-t border-slate-700" />
                   <button

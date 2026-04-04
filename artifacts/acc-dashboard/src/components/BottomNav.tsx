@@ -1,6 +1,8 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, FileText, AlertTriangle, BarChart2 } from "lucide-react";
+import { LayoutDashboard, FileText, AlertTriangle, BarChart2, UserCircle } from "lucide-react";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 export function BottomNav() {
   const { user } = useAuth();
@@ -13,11 +15,14 @@ export function BottomNav() {
     { href: "/activity", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
     { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
     { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner", "superadmin"] },
+    { href: "/profile", label: "Profil", icon: UserCircle, roles: ["apuppt", "dk", "du", "owner", "superadmin"], isProfile: true },
   ];
 
   const items = allItems.filter(item => item.roles.includes(user.role));
 
   if (items.length === 0) return null;
+
+  const avatarSrc = user.avatarUrl ? `${API_BASE}${user.avatarUrl}` : null;
 
   return (
     <nav
@@ -36,7 +41,13 @@ export function BottomNav() {
                 isActive ? "text-blue-400" : "text-slate-500"
               }`}
             >
-              <Icon className="w-5 h-5" />
+              {item.isProfile && avatarSrc ? (
+                <div className={`w-5 h-5 rounded-full overflow-hidden border ${isActive ? "border-blue-400" : "border-slate-600"}`}>
+                  <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <Icon className="w-5 h-5" />
+              )}
               <span className="text-[10px] font-medium leading-none">{item.label}</span>
             </Link>
           );

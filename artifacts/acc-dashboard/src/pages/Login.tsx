@@ -6,7 +6,7 @@ import { useAuth, UserRole } from "@/contexts/AuthContext";
 
 const ACCOUNT_GROUPS = [
   {
-    group: "PT Sinar Graha Bersama (SGB)",
+    group: "Solid Gold Berjangka (SGB)",
     items: [
       { username: "apuppt.sgb", label: "APUPPT — SGB" },
       { username: "dk.sgb",     label: "DK — SGB" },
@@ -14,7 +14,7 @@ const ACCOUNT_GROUPS = [
     ],
   },
   {
-    group: "PT Ratu Fortuna Buana (RFB)",
+    group: "Rifan Financindo Berjangka (RFB)",
     items: [
       { username: "apuppt.rfb", label: "APUPPT — RFB" },
       { username: "dk.rfb",     label: "DK — RFB" },
@@ -22,7 +22,7 @@ const ACCOUNT_GROUPS = [
     ],
   },
   {
-    group: "PT Bina Prima Finansial (BPF)",
+    group: "Best Profit Futures (BPF)",
     items: [
       { username: "apuppt.bpf", label: "APUPPT — BPF" },
       { username: "dk.bpf",     label: "DK — BPF" },
@@ -30,7 +30,7 @@ const ACCOUNT_GROUPS = [
     ],
   },
   {
-    group: "PT Karya Prima Finansial (KPF)",
+    group: "Kontak Perkasa Futures (KPF)",
     items: [
       { username: "apuppt.kpf", label: "APUPPT — KPF" },
       { username: "dk.kpf",     label: "DK — KPF" },
@@ -38,7 +38,7 @@ const ACCOUNT_GROUPS = [
     ],
   },
   {
-    group: "PT Empower Wealth Finansial (EWF)",
+    group: "Equity World Futures (EWF)",
     items: [
       { username: "apuppt.ewf", label: "APUPPT — EWF" },
       { username: "dk.ewf",     label: "DK — EWF" },
@@ -91,6 +91,7 @@ export default function Login() {
         email: data.email,
         role: data.role as UserRole,
         ptId: data.ptId ?? null,
+        avatarUrl: ((data as unknown) as Record<string, unknown>).avatarUrl as string | null ?? null,
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Login gagal. Periksa username dan password Anda.";
