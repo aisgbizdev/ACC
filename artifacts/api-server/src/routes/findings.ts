@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, SQL } from "drizzle-orm";
 import { db, findingsTable } from "@workspace/db";
 import {
   CreateFindingBody,
@@ -23,16 +23,19 @@ router.get("/findings", requireAuth, async (req, res): Promise<void> => {
     ptId = user.ptId ?? undefined;
   }
 
-  let query = db.select().from(findingsTable).$dynamic();
-
+  const conditions: SQL[] = [];
   if (ptId) {
-    query = query.where(eq(findingsTable.ptId, ptId));
+    conditions.push(eq(findingsTable.ptId, ptId));
   }
   if (status) {
-    query = query.where(eq(findingsTable.status, status as "pending" | "follow_up" | "completed"));
+    conditions.push(eq(findingsTable.status, status as "pending" | "follow_up" | "completed"));
   }
 
-  const findings = await query.orderBy(findingsTable.date);
+  const findings = await db
+    .select()
+    .from(findingsTable)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(findingsTable.date);
   res.json(findings);
 });
 

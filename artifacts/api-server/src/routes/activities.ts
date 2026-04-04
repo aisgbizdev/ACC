@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, SQL } from "drizzle-orm";
 import { db, dailyActivitiesTable } from "@workspace/db";
 import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
@@ -17,16 +17,19 @@ router.get("/activities", requireAuth, async (req, res): Promise<void> => {
     ptId = user.ptId ?? undefined;
   }
 
-  let query = db.select().from(dailyActivitiesTable).$dynamic();
-
+  const conditions: SQL[] = [];
   if (ptId) {
-    query = query.where(eq(dailyActivitiesTable.ptId, ptId));
+    conditions.push(eq(dailyActivitiesTable.ptId, ptId));
   }
   if (date) {
-    query = query.where(eq(dailyActivitiesTable.date, date));
+    conditions.push(eq(dailyActivitiesTable.date, date));
   }
 
-  const activities = await query.orderBy(dailyActivitiesTable.date);
+  const activities = await db
+    .select()
+    .from(dailyActivitiesTable)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(dailyActivitiesTable.date);
   res.json(activities);
 });
 
