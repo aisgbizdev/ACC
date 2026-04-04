@@ -14,6 +14,8 @@ import Findings from "@/pages/Findings";
 import Reports from "@/pages/Reports";
 import DKReview from "@/pages/DKReview";
 import DUSignOff from "@/pages/DUSignOff";
+import KPI from "@/pages/KPI";
+import { BottomNav } from "@/components/BottomNav";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 setBaseUrl(API_BASE || null);
@@ -32,7 +34,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col">
       {user && <Navbar />}
-      <main className="flex-1">{children}</main>
+      <main className="flex-1 pb-16 sm:pb-0">{children}</main>
+      {user && <BottomNav />}
     </div>
   );
 }
@@ -90,6 +93,11 @@ function Router() {
         <Route path="/signoff">
           <ProtectedRoute allowedRoles={["du", "superadmin"]}>
             <DUSignOff />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/kpi">
+          <ProtectedRoute allowedRoles={["dk", "du", "owner", "superadmin"]}>
+            <KPI />
           </ProtectedRoute>
         </Route>
         <Route>
