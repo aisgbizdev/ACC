@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, type ElementType } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import { Link } from "wouter";
 import {
   RefreshCw, AlertTriangle, CheckCircle, Clock, TrendingUp,
   ChevronDown, ChevronUp, Trophy, TrendingDown, Flame, CalendarX, ShieldAlert,
+  FileText, ClipboardList, ClipboardCheck, FileCheck2, BarChart2,
+  FileBarChart, Shield, Users, UserCircle,
 } from "lucide-react";
 
 const STATUS_CONFIG = {
@@ -44,6 +46,66 @@ const STATUS_CONFIG = {
 };
 
 const STATUS_ORDER: Record<string, number> = { red: 0, yellow: 1, green: 2 };
+
+type NavCard = {
+  href: string;
+  label: string;
+  desc: string;
+  icon: ElementType;
+  gradient: string;
+  roles: string[];
+};
+
+const NAV_CARDS: NavCard[] = [
+  { href: "/activity",      label: "Input Aktivitas", desc: "Laporan harian",       icon: FileText,       gradient: "from-violet-500 to-purple-700",   roles: ["apuppt"] },
+  { href: "/activities",    label: "Aktivitas PT",    desc: "Semua laporan",        icon: ClipboardList,  gradient: "from-indigo-500 to-violet-700",   roles: ["dk", "superadmin"] },
+  { href: "/findings",      label: "Temuan",          desc: "Kelola temuan",        icon: AlertTriangle,  gradient: "from-rose-500 to-red-700",        roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
+  { href: "/review",        label: "Review DK",       desc: "Review aktivitas",     icon: ClipboardCheck, gradient: "from-teal-500 to-cyan-700",       roles: ["dk", "superadmin"] },
+  { href: "/signoff",       label: "Sign-Off DU",     desc: "Tanda tangan laporan", icon: FileCheck2,     gradient: "from-emerald-500 to-green-700",   roles: ["du", "superadmin"] },
+  { href: "/kpi",           label: "KPI",             desc: "Performa PT",          icon: TrendingUp,     gradient: "from-blue-500 to-indigo-700",     roles: ["dk", "du", "owner", "superadmin"] },
+  { href: "/reports",       label: "Laporan",         desc: "Laporan compliance",   icon: BarChart2,      gradient: "from-sky-500 to-blue-700",        roles: ["dk", "du", "owner", "superadmin"] },
+  { href: "/monthly-recap", label: "Rekap Bulanan",   desc: "Rekap per bulan",      icon: FileBarChart,   gradient: "from-orange-500 to-amber-700",    roles: ["dk", "du", "owner", "superadmin"] },
+  { href: "/audit-log",     label: "Audit Log",       desc: "Log aktivitas sistem", icon: Shield,         gradient: "from-gray-600 to-slate-800",      roles: ["superadmin"] },
+  { href: "/users",         label: "Manajemen User",  desc: "Kelola akun pengguna", icon: Users,          gradient: "from-blue-700 to-indigo-900",     roles: ["superadmin"] },
+  { href: "/profile",       label: "Profil Saya",     desc: "Akun & pengaturan",    icon: UserCircle,     gradient: "from-slate-500 to-slate-700",     roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
+];
+
+function MenuCardGrid({ role }: { role: string }) {
+  const cards = NAV_CARDS.filter((c) => c.roles.includes(role));
+  if (cards.length === 0) return null;
+
+  return (
+    <div className="mb-6">
+      <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Menu</p>
+      <div className="grid grid-cols-2 gap-3">
+        {cards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <Link
+              key={card.href}
+              href={card.href}
+              className={`
+                relative flex flex-col justify-between
+                bg-gradient-to-br ${card.gradient}
+                rounded-2xl p-4 shadow-md
+                active:scale-95 transition-transform duration-150 cursor-pointer
+                min-h-[100px]
+              `}
+            >
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center mb-2 flex-shrink-0">
+                <Icon className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white leading-tight">{card.label}</p>
+                <p className="text-xs text-white/70 mt-0.5 leading-tight">{card.desc}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function formatLastUpdate(lastActivityDate: string | null | undefined): string {
   if (!lastActivityDate) return "Belum pernah update";
@@ -356,9 +418,13 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Dashboard</h1>
+            <p className="text-xs text-slate-400 sm:hidden">{today}</p>
+            <h1 className="text-xl font-bold text-slate-900 sm:hidden">
+              Halo, {user?.name?.split(" ")[0]} 👋
+            </h1>
+            <h1 className="text-xl font-bold text-slate-900 hidden sm:block">Dashboard</h1>
             <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{today}</p>
+            <p className="text-xs text-slate-400 mt-0.5 hidden sm:block">{today}</p>
           </div>
           <button
             onClick={() => refetch()}
@@ -366,9 +432,11 @@ export default function Dashboard() {
             className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50 mt-1"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isRefetching ? "animate-spin" : ""}`} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
+
+        {user && <MenuCardGrid role={user.role} />}
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
