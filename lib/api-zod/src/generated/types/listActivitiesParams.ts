@@ -5,9 +5,11 @@
  * API specification for ACC - APUPPT Control Center
  * OpenAPI spec version: 0.1.0
  */
+import type { ListActivitiesReviewStatus } from "./listActivitiesReviewStatus";
 
 export type ListActivitiesParams = {
   ptId?: string;
   branchId?: string;
   date?: string;
+  reviewStatus?: ListActivitiesReviewStatus;
 };

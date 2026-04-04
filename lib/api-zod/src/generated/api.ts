@@ -168,6 +168,9 @@ export const ListActivitiesQueryParams = zod.object({
   ptId: zod.coerce.string().optional(),
   branchId: zod.coerce.string().optional(),
   date: zod.coerce.string().optional(),
+  reviewStatus: zod
+    .enum(["pending_review", "reviewed", "signed_off"])
+    .optional(),
 });
 
 export const ListActivitiesResponseItem = zod.object({
@@ -194,6 +197,11 @@ export const ListActivitiesResponseItem = zod.object({
   findingSummary: zod.string().nullish(),
   findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
   notes: zod.string().nullish(),
+  dkReviewedAt: zod.coerce.date().nullish(),
+  dkReviewedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
+  duSignedOffAt: zod.coerce.date().nullish(),
+  duSignedOffBy: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -279,6 +287,95 @@ export const UpdateActivityResponse = zod.object({
   findingSummary: zod.string().nullish(),
   findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
   notes: zod.string().nullish(),
+  dkReviewedAt: zod.coerce.date().nullish(),
+  dkReviewedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
+  duSignedOffAt: zod.coerce.date().nullish(),
+  duSignedOffBy: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary DK reviews/acknowledges an activity
+ */
+export const ReviewActivityParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const ReviewActivityBody = zod.object({
+  notes: zod.string().nullish(),
+});
+
+export const ReviewActivityResponse = zod.object({
+  id: zod.string(),
+  ptId: zod.string(),
+  userId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  date: zod.coerce.date(),
+  activityType: zod.enum([
+    "kyc",
+    "cdd",
+    "screening",
+    "monitoring_transaksi",
+    "pelaporan",
+    "sosialisasi",
+    "lainnya",
+  ]),
+  itemsReviewed: zod.number(),
+  customerRiskCategories: zod
+    .array(zod.enum(["high", "medium", "low"]))
+    .nullish(),
+  hasFinding: zod.boolean(),
+  findingSummary: zod.string().nullish(),
+  findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
+  notes: zod.string().nullish(),
+  dkReviewedAt: zod.coerce.date().nullish(),
+  dkReviewedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
+  duSignedOffAt: zod.coerce.date().nullish(),
+  duSignedOffBy: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary DU signs off on a reviewed activity
+ */
+export const SignOffActivityParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const SignOffActivityResponse = zod.object({
+  id: zod.string(),
+  ptId: zod.string(),
+  userId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  date: zod.coerce.date(),
+  activityType: zod.enum([
+    "kyc",
+    "cdd",
+    "screening",
+    "monitoring_transaksi",
+    "pelaporan",
+    "sosialisasi",
+    "lainnya",
+  ]),
+  itemsReviewed: zod.number(),
+  customerRiskCategories: zod
+    .array(zod.enum(["high", "medium", "low"]))
+    .nullish(),
+  hasFinding: zod.boolean(),
+  findingSummary: zod.string().nullish(),
+  findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
+  notes: zod.string().nullish(),
+  dkReviewedAt: zod.coerce.date().nullish(),
+  dkReviewedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
+  duSignedOffAt: zod.coerce.date().nullish(),
+  duSignedOffBy: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -303,6 +400,9 @@ export const ListFindingsResponseItem = zod.object({
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  dkAcknowledgedAt: zod.coerce.date().nullish(),
+  dkAcknowledgedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
   closedAt: zod.coerce.date().nullish(),
 });
 export const ListFindingsResponse = zod.array(ListFindingsResponseItem);
@@ -344,6 +444,38 @@ export const UpdateFindingResponse = zod.object({
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  dkAcknowledgedAt: zod.coerce.date().nullish(),
+  dkAcknowledgedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
+  closedAt: zod.coerce.date().nullish(),
+});
+
+/**
+ * @summary DK acknowledges a finding
+ */
+export const AcknowledgeFindingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const AcknowledgeFindingBody = zod.object({
+  notes: zod.string().nullish(),
+});
+
+export const AcknowledgeFindingResponse = zod.object({
+  id: zod.string(),
+  ptId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  reportedBy: zod.string(),
+  date: zod.coerce.date(),
+  findingText: zod.string(),
+  status: zod.enum(["pending", "follow_up", "completed"]),
+  notes: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+  dkAcknowledgedAt: zod.coerce.date().nullish(),
+  dkAcknowledgedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
   closedAt: zod.coerce.date().nullish(),
 });
 
@@ -366,6 +498,9 @@ export const CompleteFindingResponse = zod.object({
   notes: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
+  dkAcknowledgedAt: zod.coerce.date().nullish(),
+  dkAcknowledgedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
   closedAt: zod.coerce.date().nullish(),
 });
 

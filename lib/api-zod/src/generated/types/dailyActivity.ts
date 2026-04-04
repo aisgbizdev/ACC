@@ -23,6 +23,11 @@ export interface DailyActivity {
   findingSummary?: string | null;
   findingStatus?: DailyActivityFindingStatus;
   notes?: string | null;
+  dkReviewedAt?: Date | null;
+  dkReviewedBy?: string | null;
+  dkNotes?: string | null;
+  duSignedOffAt?: Date | null;
+  duSignedOffBy?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

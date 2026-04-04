@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./acknowledgeFindingBody";
 export * from "./authUser";
 export * from "./authUserRole";
 export * from "./branch";
@@ -26,6 +27,7 @@ export * from "./finding";
 export * from "./findingStatus";
 export * from "./healthStatus";
 export * from "./listActivitiesParams";
+export * from "./listActivitiesReviewStatus";
 export * from "./listBranchesParams";
 export * from "./listFindingsParams";
 export * from "./listFindingsStatus";
@@ -40,6 +42,7 @@ export * from "./ptStatusCard";
 export * from "./ptStatusCardStatus";
 export * from "./ptStatusStatus";
 export * from "./resetPasswordBody";
+export * from "./reviewActivityBody";
 export * from "./successResponse";
 export * from "./updateActivityBody";
 export * from "./updateActivityBodyActivityType";

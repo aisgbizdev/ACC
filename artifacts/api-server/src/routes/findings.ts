@@ -7,8 +7,12 @@ import {
   ListFindingsQueryParams,
   UpdateFindingParams,
   CompleteFindingParams,
+  AcknowledgeFindingBody,
 } from "@workspace/api-zod";
+import { z } from "zod";
 import { requireAuth } from "../middlewares/auth";
+
+const FindingIdSchema = z.object({ id: z.string().uuid() });
 
 const router: IRouter = Router();
 
@@ -22,6 +26,9 @@ const findingsWithBranch = {
   findingText: findingsTable.findingText,
   status: findingsTable.status,
   notes: findingsTable.notes,
+  dkAcknowledgedAt: findingsTable.dkAcknowledgedAt,
+  dkAcknowledgedBy: findingsTable.dkAcknowledgedBy,
+  dkNotes: findingsTable.dkNotes,
   createdAt: findingsTable.createdAt,
   updatedAt: findingsTable.updatedAt,
   closedAt: findingsTable.closedAt,
@@ -192,6 +199,52 @@ router.patch("/findings/:id/complete", requireAuth, async (req, res): Promise<vo
   await db
     .update(findingsTable)
     .set({ status: "completed", closedAt: new Date() })
+    .where(eq(findingsTable.id, params.data.id));
+
+  const [withBranch] = await db
+    .select(findingsWithBranch)
+    .from(findingsTable)
+    .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
+    .where(eq(findingsTable.id, params.data.id));
+
+  res.json(withBranch);
+});
+
+router.post("/findings/:id/acknowledge", requireAuth, async (req, res): Promise<void> => {
+  const user = req.session.user!;
+
+  if (user.role !== "dk" && user.role !== "superadmin") {
+    res.status(403).json({ error: "Akses ditolak. Hanya DK yang bisa mengakui temuan." });
+    return;
+  }
+
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = FindingIdSchema.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: "ID tidak valid." });
+    return;
+  }
+
+  const parsed = AcknowledgeFindingBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Data tidak valid." });
+    return;
+  }
+
+  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Temuan tidak ditemukan." });
+    return;
+  }
+
+  await db
+    .update(findingsTable)
+    .set({
+      dkAcknowledgedAt: new Date(),
+      dkAcknowledgedBy: user.id,
+      dkNotes: parsed.data.notes ?? null,
+      status: existing.status === "pending" ? "follow_up" : existing.status,
+    })
     .where(eq(findingsTable.id, params.data.id));
 
   const [withBranch] = await db

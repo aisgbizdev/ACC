@@ -23,7 +23,7 @@ pnpm workspace monorepo using TypeScript.
 - **TypeScript version**: 5.9
 - **API framework**: Express 5
 - **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
+- **Validation**: Zod v3, `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
 - **Frontend router**: wouter
@@ -32,12 +32,12 @@ pnpm workspace monorepo using TypeScript.
 
 ## Roles and Access
 
-| Role   | Dashboard       | Aktivitas      | Temuan                   | Laporan        |
-|--------|-----------------|----------------|--------------------------|----------------|
-| APUPPT | Own PT only     | Input/edit own | View/create own PT       | No access      |
-| DK     | All PTs         | No access      | View/create/complete all | View all       |
-| DU     | All PTs         | No access      | No access                | View all       |
-| Owner  | All PTs         | No access      | View all (read-only)     | View all       |
+| Role   | Dashboard   | Aktivitas      | Temuan                   | Review (DK)   | Sign-Off (DU)  | Laporan    |
+|--------|-------------|----------------|--------------------------|---------------|----------------|------------|
+| APUPPT | Own PT only | Input/edit own | View/create own PT       | No access     | No access      | No access  |
+| DK     | All PTs     | No access      | View/acknowledge all     | Review & approve activities | No access | View all |
+| DU     | All PTs     | No access      | No access                | No access     | Sign-off DK-reviewed | View all |
+| Owner  | All PTs     | No access      | View all (read-only)     | No access     | No access      | View all   |
 
 ## Traffic Light Logic
 
@@ -80,14 +80,22 @@ pnpm workspace monorepo using TypeScript.
 - `GET /api/pts/:id` — get PT detail
 - `GET /api/pts/:id/status` — get traffic light status
 - `GET /api/dashboard/summary` — dashboard summary with PT statuses
-- `GET /api/activities` — list activities (filtered by ptId/date)
+- `GET /api/activities` — list activities (filtered by ptId/date/reviewStatus)
 - `POST /api/activities` — create activity
 - `PUT /api/activities/:id` — update activity
+- `POST /api/activities/:id/review` — DK reviews/approves activity (adds dkReviewedAt, dkNotes)
+- `POST /api/activities/:id/signoff` — DU signs off activity (adds duSignedOffAt)
 - `GET /api/findings` — list findings
 - `POST /api/findings` — create finding
 - `PUT /api/findings/:id` — update finding
 - `POST /api/findings/:id/complete` — complete finding
+- `POST /api/findings/:id/acknowledge` — DK acknowledges finding (adds dkAcknowledgedAt, dkNotes)
 - `GET /api/reports/summary` — reports summary per PT
+
+## Review Status Filter (GET /api/activities?reviewStatus=)
+- `pending_review` — dkReviewedAt IS NULL
+- `reviewed` — dkReviewedAt IS NOT NULL AND duSignedOffAt IS NULL
+- `signed_off` — duSignedOffAt IS NOT NULL
 
 ## Vite Proxy
 

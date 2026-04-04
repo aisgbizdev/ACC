@@ -26,6 +26,13 @@ export const dailyActivitiesTable = pgTable(
     findingSummary: text("finding_summary"),
     findingStatus: varchar("finding_status", { length: 20 }),
     notes: text("notes"),
+    // DK Review
+    dkReviewedAt: timestamp("dk_reviewed_at", { withTimezone: true }),
+    dkReviewedBy: uuid("dk_reviewed_by").references(() => usersTable.id),
+    dkNotes: text("dk_notes"),
+    // DU Sign-off
+    duSignedOffAt: timestamp("du_signed_off_at", { withTimezone: true }),
+    duSignedOffBy: uuid("du_signed_off_by").references(() => usersTable.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   },
@@ -34,6 +41,6 @@ export const dailyActivitiesTable = pgTable(
 export const insertDailyActivitySchema = createInsertSchema(dailyActivitiesTable, {
   activityType: z.enum(ACTIVITY_TYPES),
   customerRiskCategories: z.array(z.enum(CUSTOMER_RISK_CATEGORIES)).optional(),
-}).omit({ id: true, createdAt: true, updatedAt: true });
+}).omit({ id: true, createdAt: true, updatedAt: true, dkReviewedAt: true, dkReviewedBy: true, dkNotes: true, duSignedOffAt: true, duSignedOffBy: true });
 export type InsertDailyActivity = z.infer<typeof insertDailyActivitySchema>;
 export type DailyActivity = typeof dailyActivitiesTable.$inferSelect;

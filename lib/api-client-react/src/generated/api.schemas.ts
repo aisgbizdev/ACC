@@ -169,8 +169,17 @@ export interface DailyActivity {
   findingSummary?: string | null;
   findingStatus?: DailyActivityFindingStatus;
   notes?: string | null;
+  dkReviewedAt?: string | null;
+  dkReviewedBy?: string | null;
+  dkNotes?: string | null;
+  duSignedOffAt?: string | null;
+  duSignedOffBy?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ReviewActivityBody {
+  notes?: string | null;
 }
 
 export type CreateActivityBodyActivityType =
@@ -285,7 +294,14 @@ export interface Finding {
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+  dkAcknowledgedAt?: string | null;
+  dkAcknowledgedBy?: string | null;
+  dkNotes?: string | null;
   closedAt?: string | null;
+}
+
+export interface AcknowledgeFindingBody {
+  notes?: string | null;
 }
 
 export type CreateFindingBodyStatus =
@@ -360,7 +376,17 @@ export type ListActivitiesParams = {
   ptId?: string;
   branchId?: string;
   date?: string;
+  reviewStatus?: ListActivitiesReviewStatus;
 };
+
+export type ListActivitiesReviewStatus =
+  (typeof ListActivitiesReviewStatus)[keyof typeof ListActivitiesReviewStatus];
+
+export const ListActivitiesReviewStatus = {
+  pending_review: "pending_review",
+  reviewed: "reviewed",
+  signed_off: "signed_off",
+} as const;
 
 export type ListFindingsParams = {
   ptId?: string;

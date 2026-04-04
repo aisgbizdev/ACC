@@ -12,6 +12,8 @@ import PTDetail from "@/pages/PTDetail";
 import Activity from "@/pages/Activity";
 import Findings from "@/pages/Findings";
 import Reports from "@/pages/Reports";
+import DKReview from "@/pages/DKReview";
+import DUSignOff from "@/pages/DUSignOff";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 setBaseUrl(API_BASE || null);
@@ -78,6 +80,16 @@ function Router() {
         <Route path="/reports">
           <ProtectedRoute allowedRoles={["dk", "du", "owner", "superadmin"]}>
             <Reports />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/review">
+          <ProtectedRoute allowedRoles={["dk", "superadmin"]}>
+            <DKReview />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/signoff">
+          <ProtectedRoute allowedRoles={["du", "superadmin"]}>
+            <DUSignOff />
           </ProtectedRoute>
         </Route>
         <Route>

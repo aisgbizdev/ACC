@@ -19,5 +19,8 @@ export interface Finding {
   notes?: string | null;
   createdAt: Date;
   updatedAt: Date;
+  dkAcknowledgedAt?: Date | null;
+  dkAcknowledgedBy?: string | null;
+  dkNotes?: string | null;
   closedAt?: Date | null;
 }

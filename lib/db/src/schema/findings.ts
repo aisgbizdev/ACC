@@ -16,11 +16,18 @@ export const findingsTable = pgTable("findings", {
   findingText: text("finding_text").notNull(),
   status: findingRecordStatusEnum("status").notNull().default("pending"),
   notes: text("notes"),
+  // DK Acknowledgement
+  dkAcknowledgedAt: timestamp("dk_acknowledged_at", { withTimezone: true }),
+  dkAcknowledgedBy: uuid("dk_acknowledged_by").references(() => usersTable.id),
+  dkNotes: text("dk_notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   closedAt: timestamp("closed_at", { withTimezone: true }),
 });
 
-export const insertFindingSchema = createInsertSchema(findingsTable).omit({ id: true, createdAt: true, updatedAt: true, closedAt: true });
+export const insertFindingSchema = createInsertSchema(findingsTable).omit({
+  id: true, createdAt: true, updatedAt: true, closedAt: true,
+  dkAcknowledgedAt: true, dkAcknowledgedBy: true, dkNotes: true,
+});
 export type InsertFinding = z.infer<typeof insertFindingSchema>;
 export type Finding = typeof findingsTable.$inferSelect;

@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import { eq, and, SQL } from "drizzle-orm";
+import { eq, and, SQL, isNull, isNotNull } from "drizzle-orm";
 import { db, dailyActivitiesTable, branchesTable } from "@workspace/db";
-import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams } from "@workspace/api-zod";
+import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams, ReviewActivityBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
+import { z } from "zod";
 
 const router: IRouter = Router();
 
@@ -31,9 +32,16 @@ const ACTIVITY_SELECT = {
   findingSummary: dailyActivitiesTable.findingSummary,
   findingStatus: dailyActivitiesTable.findingStatus,
   notes: dailyActivitiesTable.notes,
+  dkReviewedAt: dailyActivitiesTable.dkReviewedAt,
+  dkReviewedBy: dailyActivitiesTable.dkReviewedBy,
+  dkNotes: dailyActivitiesTable.dkNotes,
+  duSignedOffAt: dailyActivitiesTable.duSignedOffAt,
+  duSignedOffBy: dailyActivitiesTable.duSignedOffBy,
   createdAt: dailyActivitiesTable.createdAt,
   updatedAt: dailyActivitiesTable.updatedAt,
 };
+
+const ReviewParamsSchema = z.object({ id: z.string().uuid() });
 
 router.get("/activities", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
@@ -42,6 +50,7 @@ router.get("/activities", requireAuth, async (req, res): Promise<void> => {
   let ptId = parsed.success ? parsed.data.ptId : undefined;
   const date = parsed.success ? parsed.data.date : undefined;
   const branchId = parsed.success ? parsed.data.branchId : undefined;
+  const reviewStatus = parsed.success ? parsed.data.reviewStatus : undefined;
 
   if (user.ptId) {
     ptId = user.ptId;
@@ -51,6 +60,15 @@ router.get("/activities", requireAuth, async (req, res): Promise<void> => {
   if (ptId) conditions.push(eq(dailyActivitiesTable.ptId, ptId));
   if (date) conditions.push(eq(dailyActivitiesTable.date, date));
   if (branchId) conditions.push(eq(dailyActivitiesTable.branchId, branchId));
+
+  if (reviewStatus === "pending_review") {
+    conditions.push(isNull(dailyActivitiesTable.dkReviewedAt));
+  } else if (reviewStatus === "reviewed") {
+    conditions.push(isNotNull(dailyActivitiesTable.dkReviewedAt));
+    conditions.push(isNull(dailyActivitiesTable.duSignedOffAt));
+  } else if (reviewStatus === "signed_off") {
+    conditions.push(isNotNull(dailyActivitiesTable.duSignedOffAt));
+  }
 
   const rows = await db
     .select(ACTIVITY_SELECT)
@@ -131,7 +149,7 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
   const user = req.session.user!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
-  const params = UpdateActivityParams.safeParse({ id: rawId });
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
     return;
@@ -197,6 +215,84 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
       ...(data.findingSummary !== undefined ? { findingSummary: data.findingSummary ?? null } : {}),
       ...(data.findingStatus !== undefined ? { findingStatus: data.findingStatus ?? null } : {}),
       ...(data.notes !== undefined ? { notes: data.notes ?? null } : {}),
+    })
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  const [withBranch] = await db
+    .select(ACTIVITY_SELECT)
+    .from(dailyActivitiesTable)
+    .leftJoin(branchesTable, eq(dailyActivitiesTable.branchId, branchesTable.id))
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  res.json(withBranch);
+});
+
+router.post("/activities/:id/review", requireRole("dk"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: "ID tidak valid." });
+    return;
+  }
+
+  const parsed = ReviewActivityBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Data tidak valid." });
+    return;
+  }
+
+  const [existing] = await db.select().from(dailyActivitiesTable).where(eq(dailyActivitiesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  await db
+    .update(dailyActivitiesTable)
+    .set({
+      dkReviewedAt: new Date(),
+      dkReviewedBy: user.id,
+      dkNotes: parsed.data.notes ?? null,
+    })
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  const [withBranch] = await db
+    .select(ACTIVITY_SELECT)
+    .from(dailyActivitiesTable)
+    .leftJoin(branchesTable, eq(dailyActivitiesTable.branchId, branchesTable.id))
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  res.json(withBranch);
+});
+
+router.post("/activities/:id/signoff", requireRole("du"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: "ID tidak valid." });
+    return;
+  }
+
+  const [existing] = await db.select().from(dailyActivitiesTable).where(eq(dailyActivitiesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  if (!existing.dkReviewedAt) {
+    res.status(400).json({ error: "Aktivitas belum disetujui oleh DK. DU hanya bisa sign-off setelah DK mereview." });
+    return;
+  }
+
+  await db
+    .update(dailyActivitiesTable)
+    .set({
+      duSignedOffAt: new Date(),
+      duSignedOffBy: user.id,
     })
     .where(eq(dailyActivitiesTable.id, params.data.id));
 

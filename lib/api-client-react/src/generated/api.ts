@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AcknowledgeFindingBody,
   AuthUser,
   Branch,
   ChangePasswordBody,
@@ -36,6 +37,7 @@ import type {
   PtReportSummary,
   PtStatus,
   ResetPasswordBody,
+  ReviewActivityBody,
   SuccessResponse,
   UpdateActivityBody,
   UpdateFindingBody,
@@ -1192,6 +1194,177 @@ export const useUpdateActivity = <
 };
 
 /**
+ * @summary DK reviews/acknowledges an activity
+ */
+export const getReviewActivityUrl = (id: string) => {
+  return `/api/activities/${id}/review`;
+};
+
+export const reviewActivity = async (
+  id: string,
+  reviewActivityBody: ReviewActivityBody,
+  options?: RequestInit,
+): Promise<DailyActivity> => {
+  return customFetch<DailyActivity>(getReviewActivityUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(reviewActivityBody),
+  });
+};
+
+export const getReviewActivityMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewActivity>>,
+    TError,
+    { id: string; data: BodyType<ReviewActivityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof reviewActivity>>,
+  TError,
+  { id: string; data: BodyType<ReviewActivityBody> },
+  TContext
+> => {
+  const mutationKey = ["reviewActivity"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof reviewActivity>>,
+    { id: string; data: BodyType<ReviewActivityBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return reviewActivity(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ReviewActivityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof reviewActivity>>
+>;
+export type ReviewActivityMutationBody = BodyType<ReviewActivityBody>;
+export type ReviewActivityMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary DK reviews/acknowledges an activity
+ */
+export const useReviewActivity = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof reviewActivity>>,
+    TError,
+    { id: string; data: BodyType<ReviewActivityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof reviewActivity>>,
+  TError,
+  { id: string; data: BodyType<ReviewActivityBody> },
+  TContext
+> => {
+  return useMutation(getReviewActivityMutationOptions(options));
+};
+
+/**
+ * @summary DU signs off on a reviewed activity
+ */
+export const getSignOffActivityUrl = (id: string) => {
+  return `/api/activities/${id}/signoff`;
+};
+
+export const signOffActivity = async (
+  id: string,
+  options?: RequestInit,
+): Promise<DailyActivity> => {
+  return customFetch<DailyActivity>(getSignOffActivityUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getSignOffActivityMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signOffActivity>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof signOffActivity>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["signOffActivity"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof signOffActivity>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return signOffActivity(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SignOffActivityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof signOffActivity>>
+>;
+
+export type SignOffActivityMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary DU signs off on a reviewed activity
+ */
+export const useSignOffActivity = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof signOffActivity>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof signOffActivity>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getSignOffActivityMutationOptions(options));
+};
+
+/**
  * @summary List findings
  */
 export const getListFindingsUrl = (params?: ListFindingsParams) => {
@@ -1456,6 +1629,93 @@ export const useUpdateFinding = <
   TContext
 > => {
   return useMutation(getUpdateFindingMutationOptions(options));
+};
+
+/**
+ * @summary DK acknowledges a finding
+ */
+export const getAcknowledgeFindingUrl = (id: string) => {
+  return `/api/findings/${id}/acknowledge`;
+};
+
+export const acknowledgeFinding = async (
+  id: string,
+  acknowledgeFindingBody: AcknowledgeFindingBody,
+  options?: RequestInit,
+): Promise<Finding> => {
+  return customFetch<Finding>(getAcknowledgeFindingUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(acknowledgeFindingBody),
+  });
+};
+
+export const getAcknowledgeFindingMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acknowledgeFinding>>,
+    TError,
+    { id: string; data: BodyType<AcknowledgeFindingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acknowledgeFinding>>,
+  TError,
+  { id: string; data: BodyType<AcknowledgeFindingBody> },
+  TContext
+> => {
+  const mutationKey = ["acknowledgeFinding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acknowledgeFinding>>,
+    { id: string; data: BodyType<AcknowledgeFindingBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return acknowledgeFinding(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AcknowledgeFindingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acknowledgeFinding>>
+>;
+export type AcknowledgeFindingMutationBody = BodyType<AcknowledgeFindingBody>;
+export type AcknowledgeFindingMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary DK acknowledges a finding
+ */
+export const useAcknowledgeFinding = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acknowledgeFinding>>,
+    TError,
+    { id: string; data: BodyType<AcknowledgeFindingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof acknowledgeFinding>>,
+  TError,
+  { id: string; data: BodyType<AcknowledgeFindingBody> },
+  TContext
+> => {
+  return useMutation(getAcknowledgeFindingMutationOptions(options));
 };
 
 /**

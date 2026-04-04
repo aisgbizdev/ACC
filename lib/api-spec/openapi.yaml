@@ -317,6 +317,11 @@ paths:
           in: query
           schema:
             type: string
+        - name: reviewStatus
+          in: query
+          schema:
+            type: string
+            enum: [pending_review, reviewed, signed_off]
       responses:
         "200":
           description: List of activities
@@ -395,6 +400,86 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Activity not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /activities/{id}/review:
+    post:
+      operationId: reviewActivity
+      tags: [activities]
+      summary: DK reviews/acknowledges an activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewActivityBody"
+      responses:
+        "200":
+          description: Activity reviewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyActivity"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /activities/{id}/signoff:
+    post:
+      operationId: signOffActivity
+      tags: [activities]
+      summary: DU signs off on a reviewed activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Activity signed off
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyActivity"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -487,6 +572,49 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           description: Finding not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /findings/{id}/acknowledge:
+    post:
+      operationId: acknowledgeFinding
+      tags: [findings]
+      summary: DK acknowledges a finding
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AcknowledgeFindingBody"
+      responses:
+        "200":
+          description: Finding acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Finding"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
           content:
             application/json:
               schema:
@@ -804,6 +932,23 @@ components:
         notes:
           type: string
           nullable: true
+        dkReviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+        dkReviewedBy:
+          type: string
+          nullable: true
+        dkNotes:
+          type: string
+          nullable: true
+        duSignedOffAt:
+          type: string
+          format: date-time
+          nullable: true
+        duSignedOffBy:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -820,6 +965,13 @@ components:
         - hasFinding
         - createdAt
         - updatedAt
+
+    ReviewActivityBody:
+      type: object
+      properties:
+        notes:
+          type: string
+          nullable: true
 
     CreateActivityBody:
       type: object
@@ -938,6 +1090,16 @@ components:
         updatedAt:
           type: string
           format: date-time
+        dkAcknowledgedAt:
+          type: string
+          format: date-time
+          nullable: true
+        dkAcknowledgedBy:
+          type: string
+          nullable: true
+        dkNotes:
+          type: string
+          nullable: true
         closedAt:
           type: string
           format: date-time
@@ -951,6 +1113,13 @@ components:
         - status
         - createdAt
         - updatedAt
+
+    AcknowledgeFindingBody:
+      type: object
+      properties:
+        notes:
+          type: string
+          nullable: true
 
     CreateFindingBody:
       type: object
