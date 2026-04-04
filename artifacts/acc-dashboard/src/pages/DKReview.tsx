@@ -12,7 +12,7 @@ import {
   type ErrorResponse,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Clock, Building2, Users, ClipboardCheck, ChevronDown, ChevronUp, AlertTriangle, X } from "lucide-react";
+import { CheckCircle2, Clock, Building2, Users, ClipboardCheck, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   kyc: "KYC",
@@ -46,7 +46,6 @@ export default function DKReview() {
   const [reviewNotes, setReviewNotes] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [alertCollapsed, setAlertCollapsed] = useState(false);
-  const [alertDismissed, setAlertDismissed] = useState(false);
 
   const activityParams: Record<string, string> = {};
   if (filterPt) activityParams.ptId = filterPt;
@@ -91,6 +90,7 @@ export default function DKReview() {
   }) ?? [];
 
   const hasAlerts = consecutiveRedPts.length > 0 || overdueFindings.length > 0 || notUpdatedPts.length > 0;
+  const totalAlerts = consecutiveRedPts.length + overdueFindings.length + notUpdatedPts.length;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -117,50 +117,48 @@ export default function DKReview() {
           </div>
         </div>
 
-        {hasAlerts && !alertDismissed && (
-          <div className="mb-5 rounded-xl border border-orange-200 bg-orange-50 shadow-sm overflow-hidden">
-            <div
-              className="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+        {hasAlerts && (
+          <div className="mb-5 rounded-xl border-2 border-red-300 bg-red-50 shadow-md overflow-hidden">
+            <button
+              type="button"
+              className="w-full flex items-center justify-between px-4 py-3 cursor-pointer select-none"
               onClick={() => setAlertCollapsed(!alertCollapsed)}
             >
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
-                <span className="text-sm font-semibold text-orange-800">Perlu Perhatian Sekarang</span>
-                {(consecutiveRedPts.length + overdueFindings.length + notUpdatedPts.length) > 0 && (
-                  <span className="bg-orange-200 text-orange-800 text-xs font-bold px-1.5 py-0.5 rounded-full">
-                    {consecutiveRedPts.length + overdueFindings.length + notUpdatedPts.length}
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0">
+                  <AlertTriangle className="w-4 h-4 text-white" />
+                </div>
+                <span className="text-sm font-bold text-red-800 tracking-wide uppercase">⚠ Butuh Perhatian Sekarang</span>
+                {totalAlerts > 0 && (
+                  <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {totalAlerts}
                   </span>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 {alertCollapsed
-                  ? <ChevronDown className="w-4 h-4 text-orange-400" />
-                  : <ChevronUp className="w-4 h-4 text-orange-400" />
+                  ? <ChevronDown className="w-4 h-4 text-red-400" />
+                  : <ChevronUp className="w-4 h-4 text-red-400" />
                 }
-                <button
-                  onClick={(e) => { e.stopPropagation(); setAlertDismissed(true); }}
-                  className="text-orange-400 hover:text-orange-600 transition-colors"
-                  title="Tutup panel"
-                >
-                  <X className="w-4 h-4" />
-                </button>
               </div>
-            </div>
+            </button>
 
             {!alertCollapsed && (
-              <div className="px-4 pb-4 space-y-3">
+              <div className="px-4 pb-4 space-y-3 border-t border-red-200">
                 {consecutiveRedPts.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-orange-700 mb-1.5 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
-                      PT Merah Berturut-turut
+                  <div className="pt-3">
+                    <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1.5 uppercase">
+                      <span className="w-2.5 h-2.5 rounded-full bg-orange-500 inline-block flex-shrink-0"></span>
+                      Merah Berturut-turut
                     </p>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {consecutiveRedPts.map((p) => (
-                        <div key={p.id} className="flex items-center gap-2 text-xs text-orange-800">
-                          <span className="font-semibold bg-red-100 text-red-700 border border-red-200 px-1.5 py-0.5 rounded">{p.code}</span>
-                          <span>{p.name}</span>
-                          <span className="ml-auto font-semibold text-orange-600">Merah {p.consecutiveRedDays} hari</span>
+                        <div key={p.id} className="flex items-center gap-2 text-xs">
+                          <span className="font-bold bg-red-600 text-white px-2 py-0.5 rounded">{p.code}</span>
+                          <span className="text-red-800 font-medium">{p.name}</span>
+                          <span className="ml-auto font-bold text-orange-700 bg-orange-100 border border-orange-200 px-2 py-0.5 rounded">
+                            🔥 Merah {p.consecutiveRedDays} hari
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -168,17 +166,17 @@ export default function DKReview() {
                 )}
 
                 {overdueFindings.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-orange-700 mb-1.5 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
-                      PT dengan Temuan Overdue
+                  <div className={consecutiveRedPts.length > 0 ? "" : "pt-3"}>
+                    <p className="text-xs font-bold text-amber-700 mb-2 flex items-center gap-1.5 uppercase">
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block flex-shrink-0"></span>
+                      Temuan Overdue
                     </p>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {overdueFindings.map((p) => (
-                        <div key={p.id} className="flex items-center gap-2 text-xs text-orange-800">
-                          <span className="font-semibold bg-amber-100 text-amber-700 border border-amber-200 px-1.5 py-0.5 rounded">{p.code}</span>
-                          <span>{p.name}</span>
-                          <span className="ml-auto font-semibold text-amber-600">{p.overdueCount} temuan overdue</span>
+                        <div key={p.id} className="flex items-center gap-2 text-xs">
+                          <span className="font-bold bg-amber-500 text-white px-2 py-0.5 rounded">{p.code}</span>
+                          <span className="text-amber-800 font-medium">{p.name}</span>
+                          <span className="ml-auto font-semibold text-amber-700">{p.overdueCount} temuan overdue</span>
                         </div>
                       ))}
                     </div>
@@ -187,15 +185,15 @@ export default function DKReview() {
 
                 {notUpdatedPts.length > 0 && (
                   <div>
-                    <p className="text-xs font-semibold text-orange-700 mb-1.5 flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-slate-400 inline-block"></span>
-                      PT Belum Update (&gt; 1 hari)
+                    <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5 uppercase">
+                      <span className="w-2.5 h-2.5 rounded-full bg-slate-400 inline-block flex-shrink-0"></span>
+                      Belum Update (&gt;1 hari)
                     </p>
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {notUpdatedPts.map((p) => (
-                        <div key={p.id} className="flex items-center gap-2 text-xs text-orange-800">
-                          <span className="font-semibold bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.5 rounded">{p.code}</span>
-                          <span>{p.name}</span>
+                        <div key={p.id} className="flex items-center gap-2 text-xs">
+                          <span className="font-bold bg-slate-500 text-white px-2 py-0.5 rounded">{p.code}</span>
+                          <span className="text-slate-700 font-medium">{p.name}</span>
                           <span className="ml-auto text-slate-500">
                             {p.lastActivityDate
                               ? `Terakhir ${new Date(p.lastActivityDate + "T00:00:00").toLocaleDateString("id-ID", { day: "numeric", month: "short" })}`

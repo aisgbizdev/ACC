@@ -1,7 +1,11 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useGetDashboardSummary } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { RefreshCw, AlertTriangle, CheckCircle, Clock, TrendingUp } from "lucide-react";
+import {
+  RefreshCw, AlertTriangle, CheckCircle, Clock, TrendingUp,
+  ChevronDown, ChevronUp, Trophy, TrendingDown, Flame, CalendarX, ShieldAlert,
+} from "lucide-react";
 
 const STATUS_CONFIG = {
   green: {
@@ -41,16 +45,276 @@ const STATUS_CONFIG = {
 
 const STATUS_ORDER: Record<string, number> = { red: 0, yellow: 1, green: 2 };
 
-function getRedReason(pt: { lastActivityDate?: string | null; overdueCount: number }): string {
+function formatLastUpdate(lastActivityDate: string | null | undefined): string {
+  if (!lastActivityDate) return "Belum pernah update";
+  const d = new Date(lastActivityDate + "T00:00:00");
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function getStatusDetail(pt: {
+  status: string;
+  lastActivityDate?: string | null;
+  overdueCount: number;
+  openFindingsCount: number;
+  consecutiveRedDays: number;
+}): { text: string; color: string } {
   const today = new Date().toISOString().split("T")[0];
-  const parts: string[] = [];
-  if (!pt.lastActivityDate || pt.lastActivityDate !== today) {
-    parts.push("Belum update hari ini");
+  const isUpdatedToday = pt.lastActivityDate === today;
+
+  if (pt.status === "red") {
+    const parts: string[] = [];
+    if (!isUpdatedToday) parts.push("Belum update hari ini");
+    if (pt.overdueCount > 0) parts.push(`${pt.overdueCount} temuan overdue`);
+    return { text: parts.join(" · ") || "Status kritis", color: "text-red-500" };
   }
-  if (pt.overdueCount > 0) {
-    parts.push(`${pt.overdueCount} temuan overdue`);
+  if (pt.status === "yellow") {
+    if (pt.overdueCount > 0) return { text: `${pt.overdueCount} temuan overdue`, color: "text-amber-600" };
+    if (pt.openFindingsCount > 0) return { text: `${pt.openFindingsCount} temuan terbuka`, color: "text-amber-600" };
+    return { text: "Perlu perhatian", color: "text-amber-600" };
   }
-  return parts.join(" · ");
+  return { text: "Update hari ini · Tidak ada temuan", color: "text-emerald-600" };
+}
+
+type PtStatus = {
+  id: string;
+  code: string;
+  name: string;
+  status: string;
+  consecutiveRedDays: number;
+  overdueCount: number;
+  openFindingsCount: number;
+  lastActivityDate?: string | null;
+};
+
+function CriticalPanel({ pts }: { pts: PtStatus[] }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const today = new Date().toISOString().split("T")[0];
+
+  const redToday = pts.filter((p) => p.status === "red");
+  const longRed = pts.filter((p) => p.consecutiveRedDays >= 2);
+  const overdue = pts.filter((p) => p.overdueCount > 0);
+  const noUpdate = pts.filter((p) => !p.lastActivityDate || p.lastActivityDate !== today);
+
+  const hasIssues = redToday.length > 0 || longRed.length > 0 || overdue.length > 0;
+  if (!hasIssues) return null;
+
+  const totalIssues = redToday.length + (longRed.length > 0 ? 1 : 0) + (overdue.length > 0 ? 1 : 0) + (noUpdate.length > 0 ? 1 : 0);
+
+  return (
+    <div className="mb-5 rounded-xl border-2 border-red-300 bg-red-50 shadow-md overflow-hidden">
+      <button
+        type="button"
+        className="w-full flex items-center justify-between px-4 py-3 cursor-pointer select-none"
+        onClick={() => setCollapsed(!collapsed)}
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0">
+            <AlertTriangle className="w-4 h-4 text-white" />
+          </div>
+          <span className="text-sm font-bold text-red-800 tracking-wide uppercase">⚠ Butuh Perhatian Sekarang</span>
+          <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalIssues}</span>
+        </div>
+        {collapsed
+          ? <ChevronDown className="w-4 h-4 text-red-400 flex-shrink-0" />
+          : <ChevronUp className="w-4 h-4 text-red-400 flex-shrink-0" />
+        }
+      </button>
+
+      {!collapsed && (
+        <div className="px-4 pb-4 space-y-3 border-t border-red-200">
+          {redToday.length > 0 && (
+            <div className="pt-3">
+              <p className="text-xs font-bold text-red-700 mb-2 flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                PT MERAH HARI INI
+              </p>
+              <div className="space-y-1.5">
+                {redToday.map((p) => (
+                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs group">
+                    <span className="font-bold bg-red-600 text-white px-2 py-0.5 rounded">{p.code}</span>
+                    <span className="text-red-800 font-medium">{p.name}</span>
+                    {p.overdueCount > 0 && (
+                      <span className="ml-auto text-red-600 font-semibold">{p.overdueCount} overdue</span>
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {longRed.length > 0 && (
+            <div className="pt-1">
+              <p className="text-xs font-bold text-orange-700 mb-2 flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5" />
+                MERAH BERTURUT-TURUT
+              </p>
+              <div className="space-y-1.5">
+                {longRed.map((p) => (
+                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs">
+                    <span className="font-bold bg-orange-500 text-white px-2 py-0.5 rounded">{p.code}</span>
+                    <span className="text-orange-800 font-medium">{p.name}</span>
+                    <span className="ml-auto font-bold text-orange-700 bg-orange-100 border border-orange-200 px-2 py-0.5 rounded">
+                      Merah {p.consecutiveRedDays} hari 🔥
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {overdue.length > 0 && (
+            <div className="pt-1">
+              <p className="text-xs font-bold text-amber-700 mb-2 flex items-center gap-1.5">
+                <CalendarX className="w-3.5 h-3.5" />
+                TEMUAN OVERDUE
+              </p>
+              <div className="space-y-1.5">
+                {overdue.map((p) => (
+                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs">
+                    <span className="font-bold bg-amber-500 text-white px-2 py-0.5 rounded">{p.code}</span>
+                    <span className="text-amber-800 font-medium">{p.name}</span>
+                    <span className="ml-auto font-semibold text-amber-700">{p.overdueCount} temuan overdue</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {noUpdate.length > 0 && (
+            <div className="pt-1">
+              <p className="text-xs font-bold text-slate-600 mb-2 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5" />
+                BELUM UPDATE HARI INI
+              </p>
+              <div className="space-y-1.5">
+                {noUpdate.map((p) => (
+                  <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 text-xs">
+                    <span className="font-bold bg-slate-500 text-white px-2 py-0.5 rounded">{p.code}</span>
+                    <span className="text-slate-700 font-medium">{p.name}</span>
+                    <span className="ml-auto text-slate-500">
+                      {p.lastActivityDate
+                        ? `Terakhir: ${formatLastUpdate(p.lastActivityDate)}`
+                        : "Belum pernah update"}
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function KpiMiniBar({ pts }: { pts: PtStatus[] }) {
+  const today = new Date().toISOString().split("T")[0];
+  const totalOverdue = pts.reduce((sum, p) => sum + p.overdueCount, 0);
+  const noUpdateCount = pts.filter((p) => !p.lastActivityDate || p.lastActivityDate !== today).length;
+  const redCount = pts.filter((p) => p.status === "red").length;
+  const greenCount = pts.filter((p) => p.status === "green").length;
+
+  const items = [
+    {
+      label: "Temuan Overdue",
+      value: totalOverdue,
+      color: totalOverdue > 0 ? "text-red-600" : "text-emerald-600",
+      bg: totalOverdue > 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200",
+    },
+    {
+      label: "PT Belum Update",
+      value: noUpdateCount,
+      color: noUpdateCount > 0 ? "text-orange-600" : "text-emerald-600",
+      bg: noUpdateCount > 0 ? "bg-orange-50 border-orange-200" : "bg-emerald-50 border-emerald-200",
+    },
+    {
+      label: "PT Kritis (Merah)",
+      value: redCount,
+      color: redCount > 0 ? "text-red-600" : "text-emerald-600",
+      bg: redCount > 0 ? "bg-red-50 border-red-200" : "bg-emerald-50 border-emerald-200",
+    },
+    {
+      label: "PT Aman (Hijau)",
+      value: greenCount,
+      color: greenCount === pts.length ? "text-emerald-700" : "text-emerald-600",
+      bg: "bg-emerald-50 border-emerald-200",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-4 gap-2 mb-5">
+      {items.map((item) => (
+        <div key={item.label} className={`rounded-lg border px-3 py-2.5 text-center ${item.bg}`}>
+          <p className={`text-2xl font-bold ${item.color}`}>{item.value}</p>
+          <p className="text-xs text-slate-500 mt-0.5 leading-tight">{item.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RankingPanel({ pts }: { pts: PtStatus[] }) {
+  if (pts.length < 2) return null;
+
+  const worst = pts.slice(0, Math.min(3, pts.length));
+  const best = [...pts].slice(-Math.min(3, pts.length)).reverse();
+
+  const allSameStatus = pts.every((p) => p.status === pts[0].status);
+  if (allSameStatus && pts.every((p) => p.consecutiveRedDays === 0 && p.overdueCount === 0)) return null;
+
+  return (
+    <div className="grid grid-cols-2 gap-3 mb-5">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="px-3 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-red-50">
+          <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+          <span className="text-xs font-bold text-red-700 uppercase tracking-wide">Perlu Tindakan</span>
+        </div>
+        <div className="divide-y divide-slate-50">
+          {worst.map((p, i) => {
+            const conf = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.red;
+            return (
+              <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors">
+                <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${conf.dotColor}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-800 truncate">{p.code}</p>
+                  <p className="text-xs text-slate-400 truncate">{p.name}</p>
+                </div>
+                {p.consecutiveRedDays >= 2 && (
+                  <span className="text-xs font-semibold text-orange-600 flex-shrink-0">{p.consecutiveRedDays}h 🔥</span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="px-3 py-2.5 border-b border-slate-100 flex items-center gap-2 bg-emerald-50">
+          <Trophy className="w-3.5 h-3.5 text-emerald-500" />
+          <span className="text-xs font-bold text-emerald-700 uppercase tracking-wide">Terbaik Saat Ini</span>
+        </div>
+        <div className="divide-y divide-slate-50">
+          {best.map((p, i) => {
+            const conf = STATUS_CONFIG[p.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.red;
+            return (
+              <Link key={p.id} href={`/pt/${p.id}`} className="flex items-center gap-2 px-3 py-2.5 hover:bg-slate-50 transition-colors">
+                <span className="text-xs font-bold text-slate-400 w-4">{i + 1}</span>
+                <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${conf.dotColor}`} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-slate-800 truncate">{p.code}</p>
+                  <p className="text-xs text-slate-400 truncate">{p.name}</p>
+                </div>
+                {p.status === "green" && (
+                  <span className="text-xs text-emerald-600 flex-shrink-0">✓</span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Dashboard() {
@@ -64,17 +328,19 @@ export default function Dashboard() {
     year: "numeric",
   });
 
-  const sortedPTs = data?.ptStatuses
+  const sortedPTs: PtStatus[] = data?.ptStatuses
     ? [...data.ptStatuses].sort((a, b) => {
         const aOrder = STATUS_ORDER[a.status] ?? 2;
         const bOrder = STATUS_ORDER[b.status] ?? 2;
         if (aOrder !== bOrder) return aOrder - bOrder;
+        if (a.consecutiveRedDays !== b.consecutiveRedDays) return b.consecutiveRedDays - a.consecutiveRedDays;
+        if (a.overdueCount !== b.overdueCount) return b.overdueCount - a.overdueCount;
         return a.code.localeCompare(b.code);
       })
     : [];
 
-  const ptName = data?.ptStatuses?.[0]?.name;
   const ptCode = data?.ptStatuses?.[0]?.code;
+  const ptName = data?.ptStatuses?.[0]?.name;
 
   const subtitle =
     user?.role === "apuppt"
@@ -82,6 +348,8 @@ export default function Dashboard() {
         ? `${ptCode} — ${ptName}`
         : "Status PT Hari Ini"
       : "Semua PT — Status Hari Ini";
+
+  const isMultiPT = user?.role !== "apuppt";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -110,38 +378,47 @@ export default function Dashboard() {
           <div className="text-center py-20 text-slate-400 text-sm">Tidak ada data.</div>
         ) : (
           <>
-            {user?.role !== "apuppt" && (
-              <div className="grid grid-cols-3 gap-3 mb-5">
-                {(["red", "yellow", "green"] as const).map((status) => {
-                  const config = STATUS_CONFIG[status];
-                  const count =
-                    status === "green"
-                      ? data.greenCount
-                      : status === "yellow"
-                      ? data.yellowCount
-                      : data.redCount;
-                  const Icon = config.icon;
-                  return (
-                    <div
-                      key={status}
-                      className={`rounded-xl p-4 border-2 ${config.bgColor} ${config.borderColor}`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className={`text-xs font-semibold uppercase tracking-wide ${config.textColor}`}>
-                            {config.label}
-                          </p>
-                          <p className={`text-4xl font-bold mt-1 ${config.textColor}`}>{count}</p>
-                          <p className={`text-xs mt-1 ${config.textColor} opacity-70`}>
-                            {config.labelLong}
-                          </p>
+            {isMultiPT && sortedPTs.length > 0 && (
+              <CriticalPanel pts={sortedPTs} />
+            )}
+
+            {isMultiPT && (
+              <>
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  {(["red", "yellow", "green"] as const).map((status) => {
+                    const config = STATUS_CONFIG[status];
+                    const count =
+                      status === "green"
+                        ? data.greenCount
+                        : status === "yellow"
+                        ? data.yellowCount
+                        : data.redCount;
+                    const Icon = config.icon;
+                    return (
+                      <div
+                        key={status}
+                        className={`rounded-xl p-4 border-2 ${config.bgColor} ${config.borderColor}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className={`text-xs font-semibold uppercase tracking-wide ${config.textColor}`}>
+                              {config.label}
+                            </p>
+                            <p className={`text-4xl font-bold mt-1 ${config.textColor}`}>{count}</p>
+                            <p className={`text-xs mt-1 ${config.textColor} opacity-70`}>
+                              {config.labelLong}
+                            </p>
+                          </div>
+                          <Icon className={`w-9 h-9 ${config.iconColor} opacity-30`} />
                         </div>
-                        <Icon className={`w-9 h-9 ${config.iconColor} opacity-30`} />
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+
+                <KpiMiniBar pts={sortedPTs} />
+                <RankingPanel pts={sortedPTs} />
+              </>
             )}
 
             <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
@@ -157,7 +434,7 @@ export default function Dashboard() {
                   const config =
                     STATUS_CONFIG[pt.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.red;
                   const Icon = config.icon;
-                  const redReason = pt.status === "red" ? getRedReason(pt) : null;
+                  const detail = getStatusDetail(pt);
                   return (
                     <Link
                       key={pt.id}
@@ -169,39 +446,30 @@ export default function Dashboard() {
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 mb-0.5">
                           <span className="text-sm font-bold text-slate-900">{pt.code}</span>
                           <span className="text-xs text-slate-400 truncate hidden sm:inline">
                             {pt.name}
                           </span>
                         </div>
-                        {redReason && (
-                          <p className="text-xs text-red-500 mt-0.5">{redReason}</p>
-                        )}
-                        {pt.status === "yellow" && pt.openFindingsCount > 0 && (
-                          <p className="text-xs text-amber-600 mt-0.5">
-                            {pt.openFindingsCount} temuan terbuka
-                          </p>
-                        )}
-                        {pt.status === "green" && (
-                          <p className="text-xs text-emerald-600 mt-0.5">Update hari ini · Tidak ada temuan</p>
-                        )}
-                        {pt.consecutiveRedDays >= 2 && (
-                          <span className="inline-block mt-1 px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
-                            Merah {pt.consecutiveRedDays} hari
+
+                        <p className={`text-xs font-medium ${detail.color}`}>{detail.text}</p>
+
+                        <div className="flex items-center gap-2 mt-1 flex-wrap">
+                          {pt.consecutiveRedDays >= 2 && (
+                            <span className="inline-block px-1.5 py-0.5 rounded text-xs font-bold bg-orange-100 text-orange-700 border border-orange-200">
+                              🔥 Merah {pt.consecutiveRedDays} hari
+                            </span>
+                          )}
+                          <span className="text-xs text-slate-400">
+                            {pt.lastActivityDate
+                              ? `Update: ${formatLastUpdate(pt.lastActivityDate)}`
+                              : "Belum pernah update"}
                           </span>
-                        )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        {pt.lastActivityDate && (
-                          <span className="text-xs text-slate-400 hidden md:inline">
-                            {new Date(pt.lastActivityDate + "T00:00:00").toLocaleDateString("id-ID", {
-                              day: "numeric",
-                              month: "short",
-                            })}
-                          </span>
-                        )}
+                      <div className="flex-shrink-0">
                         <span
                           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border ${config.bgColor} ${config.textColor} ${config.borderColor}`}
                         >
