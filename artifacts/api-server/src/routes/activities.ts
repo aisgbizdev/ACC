@@ -43,13 +43,17 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
     return;
   }
 
+  const dateStr = parsed.data.date instanceof Date
+    ? parsed.data.date.toISOString().split("T")[0]
+    : String(parsed.data.date);
+
   const existing = await db
     .select()
     .from(dailyActivitiesTable)
     .where(
       and(
         eq(dailyActivitiesTable.ptId, parsed.data.ptId),
-        eq(dailyActivitiesTable.date, parsed.data.date)
+        eq(dailyActivitiesTable.date, dateStr)
       )
     );
 
@@ -62,6 +66,7 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
     .insert(dailyActivitiesTable)
     .values({
       ...parsed.data,
+      date: dateStr,
       userId: user.id,
     })
     .returning();

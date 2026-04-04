@@ -37,11 +37,17 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const sessionSecret = process.env.SESSION_SECRET ?? "acc-secret-key-dev-only";
+const sessionSecret = process.env.SESSION_SECRET;
+if (!sessionSecret) {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("SESSION_SECRET environment variable is required in production.");
+  }
+  logger.warn("SESSION_SECRET is not set — using insecure default (development only).");
+}
 
 app.use(
   session({
-    secret: sessionSecret,
+    secret: sessionSecret ?? "acc-secret-key-dev-only",
     resave: false,
     saveUninitialized: false,
     cookie: {

@@ -55,10 +55,15 @@ router.post("/findings", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
+  const dateStr = parsed.data.date instanceof Date
+    ? parsed.data.date.toISOString().split("T")[0]
+    : String(parsed.data.date);
+
   const [finding] = await db
     .insert(findingsTable)
     .values({
       ...parsed.data,
+      date: dateStr,
       reportedBy: user.id,
     })
     .returning();
