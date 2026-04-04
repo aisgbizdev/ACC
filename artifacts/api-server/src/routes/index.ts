@@ -10,6 +10,7 @@ import branchesRouter from "./branches";
 import reviewsRouter from "./reviews";
 import signoffsRouter from "./signoffs";
 import auditLogsRouter from "./audit-logs";
+import kpiRouter from "./kpi";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(branchesRouter);
 router.use(reviewsRouter);
 router.use(signoffsRouter);
 router.use(auditLogsRouter);
+router.use(kpiRouter);
 
 export default router;
