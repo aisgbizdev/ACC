@@ -19,6 +19,7 @@ import DUSignOff from "@/pages/DUSignOff";
 import KPI from "@/pages/KPI";
 import { BottomNav } from "@/components/BottomNav";
 import AuditLog from "@/pages/AuditLog";
+import { InstallBanner } from "@/components/InstallBanner";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "";
 setBaseUrl(API_BASE || null);
@@ -39,6 +40,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       {user && <Navbar />}
       <main className="flex-1 pb-16 sm:pb-0">{children}</main>
       {user && <BottomNav />}
+      {user && <InstallBanner />}
     </div>
   );
 }

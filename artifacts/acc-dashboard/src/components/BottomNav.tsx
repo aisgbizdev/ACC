@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { LayoutDashboard, FileText, AlertTriangle, ClipboardCheck, FileCheck2, BarChart2, TrendingUp } from "lucide-react";
+import { LayoutDashboard, FileText, AlertTriangle, BarChart2 } from "lucide-react";
 
 export function BottomNav() {
   const { user } = useAuth();
@@ -12,13 +12,12 @@ export function BottomNav() {
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
     { href: "/activity", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
     { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
-    { href: "/review", label: "Review", icon: ClipboardCheck, roles: ["dk", "superadmin"] },
-    { href: "/signoff", label: "Sign-Off", icon: FileCheck2, roles: ["du", "superadmin"] },
-    { href: "/kpi", label: "KPI", icon: TrendingUp, roles: ["dk", "du", "owner", "superadmin"] },
     { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner", "superadmin"] },
   ];
 
-  const items = allItems.filter(item => item.roles.includes(user.role)).slice(0, 5);
+  const items = allItems.filter(item => item.roles.includes(user.role));
+
+  if (items.length === 0) return null;
 
   return (
     <nav
@@ -33,7 +32,7 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-0.5 transition-colors ${
+              className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 min-h-[56px] transition-colors active:opacity-70 ${
                 isActive ? "text-blue-400" : "text-slate-500"
               }`}
             >

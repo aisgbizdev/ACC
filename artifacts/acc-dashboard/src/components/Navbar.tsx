@@ -53,7 +53,7 @@ export function Navbar() {
   const visibleItems = navItems.filter((item) => item.roles.includes(user.role));
 
   return (
-    <nav className="bg-slate-900 text-white">
+    <nav className="hidden sm:block bg-slate-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-6">

@@ -179,7 +179,7 @@ export default function PTDetail() {
                 <span className="text-xs text-slate-400">{activities?.length ?? 0} record</span>
               </div>
             </div>
-            <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+            <div className="divide-y divide-slate-100 sm:max-h-72 overflow-y-auto">
               {!activities || activities.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-slate-400">Belum ada aktivitas.</div>
               ) : (
@@ -247,7 +247,7 @@ export default function PTDetail() {
                 <span className="text-xs text-slate-400">{findings?.length ?? 0} total</span>
               </div>
             </div>
-            <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto">
+            <div className="divide-y divide-slate-100 sm:max-h-72 overflow-y-auto">
               {!findings || findings.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-slate-400">Tidak ada temuan.</div>
               ) : (

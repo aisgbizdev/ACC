@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useCreateActivity,
@@ -114,6 +114,7 @@ export default function Activity() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const { mutate: createActivity, isPending: creating } = useCreateActivity<ErrorType<ErrorResponse>>({
     mutation: {
@@ -308,11 +309,11 @@ export default function Activity() {
         </div>
 
         {showForm && (
-          <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 shadow-sm">
+          <div className="bg-white rounded-xl border border-slate-200 p-5 mb-6 shadow-sm pb-20 sm:pb-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-4">
               {editingId ? "Edit Aktivitas" : "Aktivitas Baru"}
             </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
 
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1.5">
@@ -427,7 +428,7 @@ export default function Activity() {
                 <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-xs text-red-600">{error}</div>
               )}
 
-              <div className="flex gap-3 pt-1">
+              <div className="hidden sm:flex gap-3 pt-1">
                 {editingId && (
                   <button
                     type="button"
@@ -446,6 +447,25 @@ export default function Activity() {
                 </button>
               </div>
             </form>
+            <div className="sm:hidden fixed bottom-16 left-0 right-0 px-4 pb-3 pt-2 bg-white border-t border-slate-100 z-30 flex gap-3">
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={() => { setEditingId(null); setShowForm(false); setForm(defaultForm); setError(""); }}
+                  className="flex-1 px-4 py-3 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
+                >
+                  Batal
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => formRef.current?.requestSubmit()}
+                disabled={creating || updating}
+                className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-500 disabled:opacity-50 transition-colors"
+              >
+                {creating || updating ? "Menyimpan..." : editingId ? "Perbarui Aktivitas" : "Simpan Aktivitas"}
+              </button>
+            </div>
           </div>
         )}
 
