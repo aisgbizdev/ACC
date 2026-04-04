@@ -1,0 +1,477 @@
+# ACC — APUPPT Control Center
+# Buku Panduan Pengguna
+
+**Versi:** 1.0  
+**Tanggal:** April 2026  
+**Bahasa:** Indonesia
+
+---
+
+## Daftar Isi
+
+1. [Pengenalan Sistem](#1-pengenalan-sistem)
+2. [Cara Masuk (Login)](#2-cara-masuk-login)
+3. [Panduan APUPPT — Mengisi Aktivitas Harian](#3-panduan-apuppt--mengisi-aktivitas-harian)
+4. [Panduan DK — Review & Monitoring](#4-panduan-dk--review--monitoring)
+5. [Panduan DU — Sign-Off Laporan](#5-panduan-du--sign-off-laporan)
+6. [Panduan Owner — Monitoring Keseluruhan](#6-panduan-owner--monitoring-keseluruhan)
+7. [Panduan Superadmin — Manajemen Sistem](#7-panduan-superadmin--manajemen-sistem)
+8. [Fitur Umum — Semua Pengguna](#8-fitur-umum--semua-pengguna)
+9. [Sistem Temuan (Ticketing)](#9-sistem-temuan-ticketing)
+10. [Notifikasi Push](#10-notifikasi-push)
+11. [Pertanyaan Umum (FAQ)](#11-pertanyaan-umum-faq)
+
+---
+
+## 1. Pengenalan Sistem
+
+ACC (APUPPT Control Center) adalah sistem pemantauan kepatuhan untuk 5 Perusahaan Terdaftar (PT) dalam industri perdagangan berjangka.
+
+### Fungsi Utama
+- Pencatatan aktivitas kepatuhan harian oleh APUPPT
+- Review dan penilaian oleh DK (Direktur Kepatuhan)
+- Sign-off periodik oleh DU (Direktur Utama)
+- Pemantauan KPI dan laporan oleh Owner dan Superadmin
+- Sistem tiket untuk temuan kepatuhan
+
+### 5 PT yang Dipantau
+| Kode | Nama Perusahaan |
+|------|----------------|
+| SGB | Solid Gold Berjangka |
+| RFB | Rifan Financindo Berjangka |
+| BPF | Best Profit Futures |
+| KPF | Kontak Perkasa Futures |
+| EWF | Equity World Futures |
+
+### Sistem Lampu Lalu Lintas
+Status setiap PT ditampilkan dalam 3 warna:
+
+| Warna | Artinya | Kondisi |
+|-------|---------|---------|
+| 🟢 **Hijau** | Aman | Update hari ini + tidak ada temuan terbuka |
+| 🟡 **Kuning** | Perlu Perhatian | Update hari ini + ada temuan terbuka (belum overdue) |
+| 🔴 **Merah** | Kritis | Belum update hari ini ATAU ada temuan overdue (>3 hari) |
+
+> **Penting:** Jika PT berwarna Merah 2 hari atau lebih berturut-turut, akan muncul badge oranye "Merah N hari" sebagai peringatan khusus.
+
+---
+
+## 2. Cara Masuk (Login)
+
+### Langkah Login
+1. Buka aplikasi ACC di browser
+2. Pilih akun dari dropdown **"Jabatan / Akun"**
+3. Masukkan password
+4. Centang **"Ingat Saya"** jika ingin tetap login selama 30 hari
+5. Klik **"Masuk"**
+
+### Lupa Password
+1. Klik tautan **"Lupa Password?"** di halaman login
+2. Hubungi Superadmin untuk reset password
+
+### Logout
+- Klik nama Anda di pojok kanan atas → pilih **"Keluar"**
+
+---
+
+## 3. Panduan APUPPT — Mengisi Aktivitas Harian
+
+Sebagai APUPPT, tugas utama Anda adalah mengisi laporan aktivitas kepatuhan setiap hari kerja.
+
+### 3.1 Mengisi Aktivitas Harian
+
+**Cara mengisi:**
+1. Klik menu **"Aktivitas"** di navigasi
+2. Klik tombol **"+ Tambah Aktivitas"**
+3. Isi formulir:
+   - **Tanggal**: pilih tanggal (default hari ini)
+   - **Jenis Aktivitas**: pilih dari daftar (lihat tabel di bawah)
+   - **Jumlah Nasabah Diperiksa**: isi jumlah nasabah yang diperiksa
+   - **Kategori Risiko Nasabah**: pilih kategori (Rendah/Menengah/Tinggi)
+   - **Ada Temuan?**: centang jika ditemukan pelanggaran/masalah
+   - **Catatan**: tambahkan keterangan jika diperlukan
+4. Klik **"Simpan"**
+
+### Jenis Aktivitas
+| Kode | Nama | Perlu Data Nasabah? |
+|------|------|---------------------|
+| KYC | Know Your Customer | Ya |
+| CDD | Customer Due Diligence | Ya |
+| Screening | Pemeriksaan/Screening | Ya |
+| Monitoring Transaksi | Pemantauan transaksi | Ya |
+| Sosialisasi | Sosialisasi/edukasi | **Tidak** |
+| Lainnya | Aktivitas lain | Ya |
+
+> **Perhatian:** Semua jenis aktivitas **KECUALI Sosialisasi** WAJIB mengisi jumlah nasabah diperiksa (minimal 1) dan kategori risiko nasabah.
+
+### 3.2 Melihat Riwayat Aktivitas
+
+- Menu **"Aktivitas"** menampilkan semua aktivitas yang sudah diisi
+- Filter berdasarkan bulan untuk melihat riwayat lama
+- Status review DK ditampilkan: "Sudah Ditinjau" (hijau) atau "Belum Ditinjau"
+
+### 3.3 Membuat Temuan
+
+Jika dalam aktivitas Anda menemukan masalah atau pelanggaran:
+1. Klik menu **"Temuan"** → **"+ Buat Temuan"**
+2. Pilih PT (otomatis PT Anda)
+3. Isi deskripsi temuan dengan jelas dan detail
+4. Klik **"Buat Temuan"**
+
+Temuan akan otomatis masuk ke sistem tiket dan DK akan dinotifikasi.
+
+### 3.4 Melihat Status PT Anda
+
+- Menu **"Dashboard"** menampilkan status real-time PT Anda
+- Cek warna lampu lalu lintas setiap hari untuk memastikan status Hijau
+
+---
+
+## 4. Panduan DK — Review & Monitoring
+
+Sebagai DK (Direktur Kepatuhan), Anda bertugas mereview laporan aktivitas APUPPT dan memantau kondisi seluruh PT.
+
+### 4.1 Dashboard & Quick Panel
+
+Saat membuka halaman **"Review"**, Anda akan melihat **panel "Perlu Perhatian Sekarang"** di bagian atas (jika ada masalah aktif):
+
+| Kategori | Artinya |
+|---------|---------|
+| PT Merah Berturut-turut | PT yang sudah berstatus Merah ≥ 2 hari |
+| PT dengan Temuan Overdue | PT yang memiliki temuan melebihi deadline |
+| PT Belum Update | PT yang tidak mengisi aktivitas lebih dari 1 hari |
+
+Panel ini bisa di-collapse (klik header) atau di-dismiss (klik ×).
+
+### 4.2 Mereview Aktivitas APUPPT
+
+**Cara review:**
+1. Buka menu **"Review"**
+2. Tab **"Perlu Direview"** menampilkan aktivitas yang belum direview
+3. Klik aktivitas yang ingin direview
+4. Periksa data aktivitas: jenis, jumlah nasabah, kategori risiko
+5. Pilih status: **"Disetujui"** atau **"Perlu Revisi"**
+6. Tambahkan catatan jika diperlukan
+7. Klik **"Simpan Review"**
+
+> **Target:** Review sebaiknya dilakukan dalam 24 jam setelah APUPPT mengisi laporan.
+
+### 4.3 Mengelola Temuan
+
+**Melihat semua temuan:**
+1. Klik menu **"Temuan"**
+2. Filter berdasarkan status: Pending, Sedang Dikerjakan, Menunggu Verifikasi, Selesai
+
+**Mengelola tiket temuan:**
+1. Klik temuan yang ingin ditangani
+2. Bisa:
+   - **Acknowledge**: DK mengakui temuan dengan catatan
+   - **Update Status**: ubah dari Pending → Sedang Dikerjakan → Menunggu Verifikasi → Selesai
+   - **Assign**: tugaskan ke anggota tim
+   - **Set Deadline**: tentukan batas waktu penyelesaian
+   - **Tambah Komentar**: komunikasi dalam tiket
+
+### 4.4 Memantau KPI
+
+Menu **"KPI"** menampilkan:
+- **Scorecard APUPPT**: ranking semua APUPPT berdasarkan kpi_score (0–100)
+  - Hijau ≥ 80: performa baik
+  - Kuning 60–79: perlu perhatian
+  - Merah < 60: perlu tindakan
+- **KPI DK Anda**: review rate, rata-rata waktu review, respons tiket
+- **Tren 3 Bulan**: chart update_rate per PT untuk 3 bulan terakhir
+
+### 4.5 Melihat Laporan
+
+Menu **"Laporan"**:
+- Pilih periode (Harian/Mingguan/Bulanan)
+- Lihat ringkasan per PT: total aktivitas, nasabah diperiksa, temuan
+- Tombol **"Export Excel"**: download laporan ke file Excel
+- Tombol **"Cetak PDF"**: print/simpan sebagai PDF
+
+Menu **"Rekap Bulanan"**:
+- Pilih bulan dan tahun
+- Lihat rekap lengkap + indikator tren (▲/▼ vs bulan lalu)
+
+---
+
+## 5. Panduan DU — Sign-Off Laporan
+
+Sebagai DU (Direktur Utama), tugas utama Anda adalah memberikan sign-off pada laporan periode tertentu setelah direview oleh DK.
+
+### 5.1 Melakukan Sign-Off
+
+1. Buka menu **"Sign-Off"**
+2. Pilih PT yang ingin di-sign-off
+3. Pilih jenis periode:
+   - **Mingguan**: pilih minggu spesifik
+   - **Bulanan**: pilih bulan
+4. Periksa data: total aktivitas, % review DK, temuan
+5. Tambahkan catatan jika diperlukan
+6. Klik **"Sign-Off Laporan"**
+
+> **Catatan:** Sign-off mengunci laporan periode tersebut. Pastikan DK sudah mereview cukup aktivitas sebelum sign-off.
+
+### 5.2 Melihat KPI
+
+Menu **"KPI"** → tab **"DU"** menampilkan:
+- Sign-off rate: persentase periode yang sudah di-sign-off
+- Total laporan yang sudah ditandatangani
+
+### 5.3 Melihat Laporan
+
+Menu **"Laporan"**: lihat status sign-off semua PT untuk periode yang dipilih.
+
+---
+
+## 6. Panduan Owner — Monitoring Keseluruhan
+
+Sebagai Owner, Anda memiliki akses view-only untuk memantau semua PT.
+
+### 6.1 Dashboard Utama
+
+Halaman **"Dashboard"** menampilkan:
+- **3 kartu ringkasan** di atas: jumlah PT dengan status Merah / Kuning / Hijau
+- **Daftar semua PT** diurutkan dari yang paling kritis (Merah) ke aman (Hijau)
+- Setiap card PT menampilkan:
+  - Status lampu lalu lintas + alasan (misal: "Belum update hari ini" atau "2 temuan overdue")
+  - Badge oranye jika merah berturut-turut ≥ 2 hari
+  - Tanggal update terakhir
+
+Klik nama PT untuk melihat detail termasuk riwayat 7 hari dan rekap cabang.
+
+### 6.2 KPI Menyeluruh
+
+Menu **"KPI"** menampilkan performa semua PT dan semua APUPPT dalam satu tampilan.
+
+Gunakan **filter periode** untuk membandingkan minggu/bulan tertentu.
+
+### 6.3 Rekap Bulanan
+
+Menu **"Rekap Bulanan"**: ringkasan lengkap semua PT per bulan, termasuk:
+- Update rate, nasabah diperiksa, temuan
+- Status sign-off DU
+- Indikator tren vs bulan sebelumnya (▲ naik = membaik, ▼ turun = perlu perhatian)
+  - Khusus temuan terbuka: ▼ justru berarti membaik (berkurang)
+
+---
+
+## 7. Panduan Superadmin — Manajemen Sistem
+
+Superadmin memiliki akses penuh termasuk manajemen user dan audit log.
+
+### 7.1 Manajemen User
+
+Menu **"Manajemen User"** (dropdown atas kanan):
+
+**Melihat semua user:**
+- Tabel berisi semua pengguna: nama, username, email, jabatan, PT, status aktif
+
+**Membuat user baru:**
+1. Klik **"+ Tambah User"**
+2. Isi formulir:
+   - Nama lengkap
+   - Username (unik, tidak bisa diubah setelah dibuat)
+   - Email (unik)
+   - Jabatan: pilih role
+   - PT: wajib diisi jika role adalah APUPPT, DK, atau DU
+   - Password awal (minimal 6 karakter)
+3. Klik **"Buat User"**
+4. Sampaikan username dan password awal ke pengguna tersebut
+
+**Mengedit user:**
+1. Klik ikon edit (pensil) pada baris user
+2. Bisa mengubah: nama, jabatan, PT, email
+3. Klik **"Simpan"**
+
+**Menonaktifkan user:**
+- Klik tombol **"Nonaktifkan"** pada baris user
+- User tidak bisa login lagi, tapi data historisnya tetap tersimpan
+- User yang sudah nonaktif bisa diaktifkan kembali kapan saja
+
+> **Catatan:** Superadmin tidak bisa menonaktifkan akun dirinya sendiri.
+
+**Reset password user lain:**
+- Klik ikon kunci pada baris user (atau melalui menu reset password)
+- Masukkan password baru
+- Sampaikan password baru ke user yang bersangkutan
+
+### 7.2 Audit Log
+
+Menu **"Audit Log"** mencatat semua aksi penting dalam sistem:
+- Siapa yang melakukan aksi
+- Aksi apa yang dilakukan
+- Kapan dilakukan
+- Data sebelum dan sesudah perubahan
+
+Gunakan Audit Log untuk investigasi jika ada data yang berubah tidak seharusnya.
+
+### 7.3 Akses Penuh
+
+Superadmin juga bisa:
+- Melihat dan mengelola semua temuan semua PT
+- Mereview aktivitas seperti DK
+- Sign-off laporan seperti DU
+- Mengakses semua halaman laporan dan KPI
+
+---
+
+## 8. Fitur Umum — Semua Pengguna
+
+### 8.1 Profil & Avatar
+
+1. Klik nama Anda di pojok kanan atas → **"Profil Saya"**
+2. Di halaman profil:
+   - **Ganti Foto**: klik foto atau ikon kamera → pilih file (JPG/PNG, maks 2MB)
+   - **Edit Nama**: klik ikon pensil di samping nama → ketik nama baru → Enter atau klik ✓
+   - **Ganti Password**: isi password lama + password baru (min 6 karakter) → klik "Ganti Password"
+
+### 8.2 Detail PT
+
+Klik nama PT manapun di dashboard untuk melihat:
+- **Tab Overview**: status detail + riwayat 7 hari terakhir (strip warna)
+- **Tab Rekap Cabang** (DK, DU, Owner, Superadmin): tabel per cabang dengan update_rate, nasabah diperiksa, temuan terbuka, dan status lampu lalu lintas cabang
+
+### 8.3 Riwayat 7 Hari
+
+Di halaman detail PT, strip warna menunjukkan status tiap hari selama 7 hari terakhir:
+- 🟢 Kotak hijau = hari itu status Hijau
+- 🟡 Kotak kuning = hari itu status Kuning
+- 🔴 Kotak merah = hari itu status Merah
+- ⬜ Kotak abu = tidak ada data (hari libur atau sebelum sistem digunakan)
+
+### 8.4 Filter Laporan & KPI
+
+Halaman Laporan, KPI, dan Rekap Bulanan memiliki filter:
+- **Mingguan**: pilih minggu spesifik
+- **Bulanan**: pilih bulan
+- **Kustom**: pilih rentang tanggal bebas
+- **Filter PT** (Owner/Superadmin): lihat data untuk PT tertentu saja
+
+---
+
+## 9. Sistem Temuan (Ticketing)
+
+Temuan adalah catatan formal atas pelanggaran atau masalah kepatuhan yang ditemukan.
+
+### 9.1 Status Temuan
+
+```
+Pending → Sedang Dikerjakan → Menunggu Verifikasi → Selesai
+                ↓
+          Follow Up (jika perlu tindak lanjut lebih lanjut)
+```
+
+| Status | Artinya |
+|--------|---------|
+| Pending | Baru dilaporkan, belum ada yang menangani |
+| Sedang Dikerjakan | Sudah diassign, sedang dalam proses penyelesaian |
+| Menunggu Verifikasi | Sudah diselesaikan, menunggu verifikasi DK |
+| Selesai | Temuan sudah terverifikasi selesai |
+| Follow Up | Perlu tindak lanjut tambahan |
+
+### 9.2 Eskalasi Otomatis
+
+Sistem otomatis meningkatkan level eskalasi temuan jika tidak ditangani:
+- **Level 0 → 1**: temuan overdue > 3 hari tanpa respons
+- **Level 1 → 2**: sudah diescalate ke level 1 tapi belum ada aksi 24 jam
+
+> Temuan dengan eskalasi tinggi mendapat notifikasi ke DK dan Owner/Superadmin.
+
+### 9.3 Komentar Tiket
+
+Di dalam halaman detail temuan:
+- Lihat riwayat semua komentar (termasuk komentar sistem otomatis)
+- Tambah komentar baru untuk komunikasi antar tim
+- Komentar sistem (warna berbeda) mencatat perubahan status otomatis
+
+### 9.4 Overdue Findings
+
+Temuan dianggap **overdue** jika:
+- Status bukan "Selesai"
+- DAN sudah lebih dari 3 hari sejak dibuat
+
+Temuan overdue menjadikan PT berstatus Merah dan mendapat perhatian khusus di dashboard.
+
+---
+
+## 10. Notifikasi Push
+
+ACC mendukung notifikasi push langsung ke browser (PWA).
+
+### 10.1 Mengaktifkan Notifikasi
+
+1. Setelah login, muncul banner biru **"Aktifkan Notifikasi"**
+2. Klik banner tersebut atau buka menu **"Pengaturan Notifikasi"** (dropdown atas kanan)
+3. Klik tombol **"Aktifkan Notifikasi"**
+4. Izinkan notifikasi saat browser meminta konfirmasi
+5. Notifikasi akan aktif di perangkat tersebut
+
+### 10.2 Jenis Notifikasi per Role
+
+| Role | Jenis Notifikasi yang Diterima |
+|------|-------------------------------|
+| APUPPT | Komentar baru pada temuan di PT Anda |
+| DK | Aktivitas harian baru dari APUPPT, temuan baru, perlu review |
+| DU | Laporan siap di-sign-off |
+| Owner | Ringkasan harian, notifikasi PT kritis |
+| Superadmin | Ringkasan harian, notifikasi PT kritis |
+
+### 10.3 Notifikasi Harian
+
+Setiap hari pukul **17:00 WIB**, sistem mengirim:
+- DK: peringatan jika PT-nya berstatus Merah
+- Owner & Superadmin: ringkasan kondisi semua PT
+
+### 10.4 Menonaktifkan Notifikasi
+
+Buka **"Pengaturan Notifikasi"** → klik **"Nonaktifkan Notifikasi"**.
+
+---
+
+## 11. Pertanyaan Umum (FAQ)
+
+**Q: Saya lupa password, bagaimana cara resetnya?**  
+A: Hubungi Superadmin untuk meminta reset password. Superadmin bisa reset melalui menu Manajemen User.
+
+**Q: Saya sudah mengisi aktivitas hari ini tapi PT masih berwarna Merah, kenapa?**  
+A: Ada kemungkinan PT Anda memiliki temuan overdue (lebih dari 3 hari belum selesai). Cek halaman Temuan dan selesaikan yang sudah overdue.
+
+**Q: Bisakah saya mengisi aktivitas untuk hari kemarin?**  
+A: Ya, bisa. Pilih tanggal yang diinginkan saat mengisi aktivitas. Namun pastikan mengisi untuk hari-hari yang terlewat sesegera mungkin.
+
+**Q: Berapa jenis aktivitas yang bisa diisi dalam satu hari?**  
+A: Bisa lebih dari satu, tapi masing-masing jenis aktivitas hanya bisa diisi sekali per hari. Misalnya: KYC 1 kali, CDD 1 kali, Screening 1 kali dalam hari yang sama.
+
+**Q: Kenapa ada badge oranye "Merah 3 hari" di PT saya?**  
+A: PT tersebut sudah berstatus Merah selama 3 hari berturut-turut. Ini adalah peringatan prioritas tinggi yang memerlukan tindakan segera.
+
+**Q: Apa itu "Rekap Cabang" di detail PT?**  
+A: Ini menampilkan data kepatuhan per cabang dari PT tersebut, bukan per PT keseluruhan. Berguna untuk melihat cabang mana yang butuh perhatian lebih.
+
+**Q: Bagaimana cara mengunduh laporan?**  
+A: Buka menu **"Laporan"**, pilih periode yang diinginkan, lalu klik **"Export Excel"** untuk file Excel atau **"Cetak PDF"** untuk print/PDF.
+
+**Q: Apa bedanya "Rekap Bulanan" dengan "Laporan"?**  
+A: Laporan menampilkan data periode yang dipilih saja. Rekap Bulanan menampilkan data per bulan **plus perbandingan** (tren naik/turun) dengan bulan sebelumnya, cocok untuk evaluasi bulanan manajemen.
+
+**Q: Apakah data yang sudah di-sign-off oleh DU bisa diubah?**  
+A: Tidak. Setelah DU melakukan sign-off, laporan periode tersebut dikunci dan tidak bisa diubah. Ini untuk menjaga integritas data kepatuhan.
+
+**Q: Apakah user yang dinonaktifkan bisa diaktifkan kembali?**  
+A: Ya. Superadmin bisa mengaktifkan kembali user yang sudah dinonaktifkan kapan saja melalui menu Manajemen User.
+
+**Q: Apa yang terjadi jika saya tidak mengisi aktivitas hari ini?**  
+A: PT Anda akan otomatis berstatus **Merah** (Kritis) karena tidak ada update hari ini. DK dan Owner/Superadmin akan melihat PT Anda dalam daftar perhatian.
+
+**Q: Notifikasi tidak muncul meski sudah diaktifkan, apa solusinya?**  
+A: Pastikan:
+1. Browser mengizinkan notifikasi (cek pengaturan browser)
+2. Perangkat tidak dalam mode "Jangan Ganggu"
+3. Coba nonaktifkan dan aktifkan ulang dari menu Pengaturan Notifikasi
+
+---
+
+*Dokumen ini dibuat untuk membantu pengguna ACC dalam memahami dan menggunakan sistem secara optimal. Untuk pertanyaan teknis lebih lanjut, hubungi Superadmin.*
+
+*Sistem ACC — APUPPT Control Center | April 2026*

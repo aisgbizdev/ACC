@@ -98,7 +98,7 @@ router.post("/users", requireRole("superadmin"), async (req, res): Promise<void>
 });
 
 router.put("/users/:id", requireRole("superadmin"), async (req, res): Promise<void> => {
-  const { id } = req.params;
+  const id = req.params.id as string;
   const parsed = UpdateUserBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.errors.map((e) => e.message).join(", ") });
@@ -147,7 +147,7 @@ router.put("/users/:id", requireRole("superadmin"), async (req, res): Promise<vo
 });
 
 router.patch("/users/:id/deactivate", requireRole("superadmin"), async (req, res): Promise<void> => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   if (id === req.session.user!.id) {
     res.status(400).json({ error: "Tidak bisa menonaktifkan akun sendiri." });
@@ -172,7 +172,7 @@ router.patch("/users/:id/deactivate", requireRole("superadmin"), async (req, res
 });
 
 router.patch("/users/:id/activate", requireRole("superadmin"), async (req, res): Promise<void> => {
-  const { id } = req.params;
+  const id = req.params.id as string;
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, id));
   if (!existing) {
