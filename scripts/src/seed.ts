@@ -1,4 +1,4 @@
-import { db, ptsTable, usersTable } from "@workspace/db";
+import { db, pool, ptsTable, usersTable } from "@workspace/db";
 import bcrypt from "bcryptjs";
 import { eq, inArray } from "drizzle-orm";
 
@@ -74,10 +74,11 @@ async function seed() {
   }
 
   console.log("Seeding complete!");
-  process.exit(0);
+  await pool.end();
 }
 
-seed().catch((err) => {
+seed().catch(async (err) => {
   console.error("Seed failed:", err);
+  await pool.end().catch(() => {});
   process.exit(1);
 });

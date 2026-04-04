@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type NextFunction, type Request, type Response } from "express";
 import path from "path";
 import cors from "cors";
 import session from "express-session";
@@ -63,5 +63,12 @@ const uploadsDir = path.join(process.cwd(), "uploads");
 app.use("/uploads", express.static(uploadsDir));
 
 app.use("/api", router);
+
+app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+  const status = (err as { status?: number; statusCode?: number })?.status ?? (err as { statusCode?: number })?.statusCode ?? 500;
+  const message = err instanceof Error ? err.message : "Internal Server Error";
+  logger.error({ err, req: { method: req.method, url: req.url } }, "Unhandled error");
+  res.status(status).json({ error: message });
+});
 
 export default app;
