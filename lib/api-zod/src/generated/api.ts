@@ -193,6 +193,7 @@ export const ListActivitiesResponseItem = zod.object({
     "pelaporan",
     "sosialisasi",
     "lainnya",
+    "libur",
   ]),
   itemsReviewed: zod.number(),
   customerRiskCategories: zod
@@ -227,6 +228,7 @@ export const CreateActivityBody = zod.object({
     "pelaporan",
     "sosialisasi",
     "lainnya",
+    "libur",
   ]),
   itemsReviewed: zod.number(),
   customerRiskCategories: zod
@@ -283,6 +285,7 @@ export const UpdateActivityResponse = zod.object({
     "pelaporan",
     "sosialisasi",
     "lainnya",
+    "libur",
   ]),
   itemsReviewed: zod.number(),
   customerRiskCategories: zod
@@ -327,6 +330,7 @@ export const ReviewActivityResponse = zod.object({
     "pelaporan",
     "sosialisasi",
     "lainnya",
+    "libur",
   ]),
   itemsReviewed: zod.number(),
   customerRiskCategories: zod
@@ -367,6 +371,7 @@ export const SignOffActivityResponse = zod.object({
     "pelaporan",
     "sosialisasi",
     "lainnya",
+    "libur",
   ]),
   itemsReviewed: zod.number(),
   customerRiskCategories: zod
