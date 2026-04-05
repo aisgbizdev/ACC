@@ -43,7 +43,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#040914] text-white">
       {user && <Navbar />}
-      <main className={`min-h-screen pb-16 sm:pb-0 ${user ? "sm:pt-14" : ""}`}>
+      <main className={`min-h-screen pb-16 sm:pb-0 ${user ? "sm:pl-40" : ""}`}>
         {user && <NotificationBanner />}
         {children}
       </main>
