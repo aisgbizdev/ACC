@@ -180,7 +180,7 @@ export default function FindingDetail() {
   const isOverdue = finding.deadline && finding.status !== "completed" && finding.deadline < today;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-20 sm:pb-6">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         <div className="flex items-center gap-3 mb-5">
           <Link href="/findings" className="text-slate-400 hover:text-slate-600 transition-colors">

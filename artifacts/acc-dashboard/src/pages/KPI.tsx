@@ -321,10 +321,10 @@ export default function KPI() {
   return (
     <div className="min-h-screen bg-slate-50 pb-20 sm:pb-6">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
+              <TrendingUp className="w-5 h-5 text-blue-600 flex-shrink-0" />
               KPI & Analitik
             </h1>
             <p className="text-sm text-slate-500 mt-0.5">Pantau kinerja APUPPT, DK, dan DU</p>

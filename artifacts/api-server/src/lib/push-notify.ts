@@ -151,6 +151,22 @@ export async function notifyDailyMissing(ptId: string, ptName: string): Promise<
   }
 }
 
+export async function notifyApupptReminder(ptId: string, ptName: string): Promise<void> {
+  try {
+    const payload: PushPayload = {
+      title: "⏰ Pengingat Input Aktivitas",
+      body: `Aktivitas hari ini belum diinput. Harap segera isi sebelum jam 17.00 WIB.`,
+      url: "/activity",
+      tag: `reminder-apuppt-${ptId}`,
+    };
+
+    const apupptIds = await getUsersByRole(["apuppt"], ptId);
+    await sendToUsers(apupptIds, payload);
+  } catch (err) {
+    logger.error({ err }, "notifyApupptReminder failed");
+  }
+}
+
 export async function notifyDailySummary(summary: { totalPts: number; redCount: number; greenCount: number }): Promise<void> {
   try {
     const payload: PushPayload = {

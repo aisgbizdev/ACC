@@ -8,3 +8,4 @@ export * from "./report_signoffs";
 export * from "./ticket_comments";
 export * from "./audit_logs";
 export * from "./push_subscriptions";
+export * from "./activity_comments";

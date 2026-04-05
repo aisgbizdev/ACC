@@ -60,26 +60,28 @@ export default function DUSignOff() {
   const count = activities?.length ?? 0;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-20 sm:pb-6">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <FileCheck2 className="w-5 h-5 text-violet-600" />
-              Sign-Off Aktivitas
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              DU — berikan persetujuan akhir untuk aktivitas yang sudah di-review DK
-            </p>
+        <div className="mb-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <FileCheck2 className="w-5 h-5 text-violet-600 flex-shrink-0" />
+                Sign-Off Aktivitas
+              </h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                DU — berikan persetujuan akhir untuk aktivitas yang sudah di-review DK
+              </p>
+            </div>
+            <select
+              value={filterPt}
+              onChange={(e) => setFilterPt(e.target.value)}
+              className="w-full sm:w-auto px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Semua PT</option>
+              {pts?.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
+            </select>
           </div>
-          <select
-            value={filterPt}
-            onChange={(e) => setFilterPt(e.target.value)}
-            className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Semua PT</option>
-            {pts?.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-          </select>
         </div>
 
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5 w-fit">

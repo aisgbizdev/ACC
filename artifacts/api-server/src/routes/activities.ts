@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, and, SQL, isNull, isNotNull } from "drizzle-orm";
-import { db, dailyActivitiesTable, branchesTable, activityReviewsTable, usersTable } from "@workspace/db";
+import { eq, and, SQL, isNull, isNotNull, inArray } from "drizzle-orm";
+import { db, dailyActivitiesTable, branchesTable, activityReviewsTable, usersTable, activityCommentsTable } from "@workspace/db";
 import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams, ReviewActivityBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { z } from "zod";
@@ -312,6 +312,109 @@ router.post("/activities/:id/signoff", requireRole("du"), async (req, res): Prom
     .where(eq(dailyActivitiesTable.id, params.data.id));
 
   res.json(withBranch);
+});
+
+router.post("/activities/batch-review", requireRole("dk"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const schema = z.object({ ids: z.array(z.string().uuid()).min(1), notes: z.string().optional() });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Data tidak valid." });
+    return;
+  }
+
+  const { ids, notes } = parsed.data;
+
+  const activities = await db
+    .select({ id: dailyActivitiesTable.id, ptId: dailyActivitiesTable.ptId, dkReviewedAt: dailyActivitiesTable.dkReviewedAt })
+    .from(dailyActivitiesTable)
+    .where(inArray(dailyActivitiesTable.id, ids));
+
+  const accessible = user.ptId
+    ? activities.filter(a => a.ptId === user.ptId)
+    : activities;
+
+  const toReview = accessible.filter(a => !a.dkReviewedAt);
+
+  if (toReview.length === 0) {
+    res.status(400).json({ error: "Tidak ada aktivitas yang bisa direview (sudah direview atau tidak ditemukan)." });
+    return;
+  }
+
+  const reviewedAt = new Date();
+  await db
+    .update(dailyActivitiesTable)
+    .set({ dkReviewedAt: reviewedAt, dkReviewedBy: user.id, dkNotes: notes ?? null })
+    .where(inArray(dailyActivitiesTable.id, toReview.map(a => a.id)));
+
+  res.json({ reviewedCount: toReview.length });
+});
+
+router.get("/activities/:id/comments", requireAuth, async (req, res): Promise<void> => {
+  const rawId = req.params.id as string;
+  const comments = await db
+    .select({
+      id: activityCommentsTable.id,
+      activityId: activityCommentsTable.activityId,
+      content: activityCommentsTable.content,
+      createdAt: activityCommentsTable.createdAt,
+      authorId: activityCommentsTable.authorId,
+      authorName: usersTable.name,
+      authorRole: usersTable.role,
+    })
+    .from(activityCommentsTable)
+    .leftJoin(usersTable, eq(activityCommentsTable.authorId, usersTable.id))
+    .where(eq(activityCommentsTable.activityId, rawId))
+    .orderBy(activityCommentsTable.createdAt);
+
+  res.json(comments);
+});
+
+router.post("/activities/:id/comments", requireAuth, async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = req.params.id as string;
+  const schema = z.object({ content: z.string().min(1).max(1000) });
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Komentar tidak boleh kosong." });
+    return;
+  }
+
+  const [activity] = await db
+    .select({ id: dailyActivitiesTable.id, ptId: dailyActivitiesTable.ptId })
+    .from(dailyActivitiesTable)
+    .where(eq(dailyActivitiesTable.id, rawId));
+
+  if (!activity) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  if (user.ptId && activity.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  const [comment] = await db
+    .insert(activityCommentsTable)
+    .values({ activityId: rawId, authorId: user.id, content: parsed.data.content })
+    .returning();
+
+  const [withAuthor] = await db
+    .select({
+      id: activityCommentsTable.id,
+      activityId: activityCommentsTable.activityId,
+      content: activityCommentsTable.content,
+      createdAt: activityCommentsTable.createdAt,
+      authorId: activityCommentsTable.authorId,
+      authorName: usersTable.name,
+      authorRole: usersTable.role,
+    })
+    .from(activityCommentsTable)
+    .leftJoin(usersTable, eq(activityCommentsTable.authorId, usersTable.id))
+    .where(eq(activityCommentsTable.id, comment.id));
+
+  res.status(201).json(withAuthor);
 });
 
 export default router;

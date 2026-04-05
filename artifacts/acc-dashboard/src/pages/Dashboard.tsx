@@ -52,6 +52,9 @@ type PtStatus = {
   overdueCount: number;
   openFindingsCount: number;
   lastActivityDate?: string | null;
+  complianceRate?: number;
+  workingDaysTotal?: number;
+  workingDaysFilled?: number;
 };
 
 type QuickAction = {
@@ -162,27 +165,27 @@ function StatCard({
   };
 
   const inner = (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
-        <p className="mt-3 text-5xl font-semibold tracking-tight text-white">{value}</p>
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-slate-500 leading-tight">{label}</p>
+        <p className="mt-2 text-3xl font-semibold tracking-tight text-white md:text-4xl xl:text-5xl">{value}</p>
       </div>
-      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${toneClasses[tone]}`}>
-        <Icon className="h-5 w-5" />
+      <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-2xl md:h-11 md:w-11 ${toneClasses[tone]}`}>
+        <Icon className="h-4 w-4 md:h-5 md:w-5" />
       </div>
     </div>
   );
 
   if (href) {
     return (
-      <Link href={href} className="block rounded-[28px] border border-white/8 bg-[#0b1525] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)] transition-colors hover:border-white/14 hover:bg-[#0d1a2f]">
+      <Link href={href} className="block rounded-[24px] border border-white/8 bg-[#0b1525] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.28)] transition-colors hover:border-white/14 hover:bg-[#0d1a2f] md:rounded-[28px] md:p-5">
         {inner}
       </Link>
     );
   }
 
   return (
-    <div className="rounded-[28px] border border-white/8 bg-[#0b1525] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
+    <div className="rounded-[24px] border border-white/8 bg-[#0b1525] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.28)] md:rounded-[28px] md:p-5">
       {inner}
     </div>
   );
@@ -282,7 +285,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="mb-3 text-xs uppercase tracking-[0.28em] text-slate-500">{today}</p>
-              <h1 className="text-4xl font-semibold tracking-tight text-white md:text-5xl">
+              <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl md:text-4xl xl:text-5xl">
                 Dashboard Operasional
               </h1>
               <p className="mt-3 max-w-2xl text-base text-slate-400">
@@ -301,7 +304,7 @@ export default function Dashboard() {
           </div>
         </section>
 
-        <section className="grid gap-4 xl:grid-cols-4">
+        <section className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
           {user?.role === "apuppt" && sortedPTs[0] ? (
             <>
               <StatCard label="PT Saya" value={1} icon={Users} tone="blue" href={`/pt/${sortedPTs[0].id}`} />
@@ -455,6 +458,19 @@ export default function Dashboard() {
                       <p className="mt-2 text-xs text-slate-500">
                         Update terakhir: {formatLastUpdate(pt.lastActivityDate)}
                       </p>
+                      {pt.complianceRate !== undefined && (
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-white/10">
+                            <div
+                              className={`h-full rounded-full transition-all ${
+                                pt.complianceRate >= 80 ? "bg-emerald-400" : pt.complianceRate >= 50 ? "bg-amber-400" : "bg-rose-400"
+                              }`}
+                              style={{ width: `${pt.complianceRate}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-slate-400">{pt.complianceRate}% bulan ini</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex items-start md:justify-end">

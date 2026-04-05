@@ -133,7 +133,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-lg mx-auto px-4 py-8 pb-24 sm:pb-8 space-y-6">
       <h1 className="text-xl font-bold text-slate-800">Profil Saya</h1>
 
       {/* Avatar & Identity */}

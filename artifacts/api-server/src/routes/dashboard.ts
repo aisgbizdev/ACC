@@ -4,6 +4,17 @@ import { db, ptsTable, dailyActivitiesTable, findingsTable, branchesTable } from
 import { requireAuth } from "../middlewares/auth";
 import { computeTrafficLight, isWeekend } from "../lib/traffic-light";
 
+function getWorkingDaysInMonth(year: number, month: number, upToDay: number): string[] {
+  const days: string[] = [];
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const limit = Math.min(upToDay, daysInMonth);
+  for (let d = 1; d <= limit; d++) {
+    const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+    if (!isWeekend(dateStr)) days.push(dateStr);
+  }
+  return days;
+}
+
 const router: IRouter = Router();
 
 router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> => {
@@ -41,20 +52,20 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
 
       const status = computeTrafficLight(lastActivity?.date ?? null, openFindings, today);
 
+      const allPtActivities = await db
+        .select()
+        .from(dailyActivitiesTable)
+        .where(eq(dailyActivitiesTable.ptId, pt.id));
+
+      const allFindings = await db
+        .select()
+        .from(findingsTable)
+        .where(eq(findingsTable.ptId, pt.id));
+
       // Calculate consecutive RED days (look back up to 7 days)
       let consecutiveRedDays = 0;
       if (status === "red") {
         consecutiveRedDays = 1;
-        const allPtActivities = await db
-          .select()
-          .from(dailyActivitiesTable)
-          .where(eq(dailyActivitiesTable.ptId, pt.id));
-
-        // Fetch all findings (including completed ones) for historical evaluation
-        const allFindings = await db
-          .select()
-          .from(findingsTable)
-          .where(eq(findingsTable.ptId, pt.id));
 
         for (let i = 1; i < 7; i++) {
           const checkDate = new Date(today);
@@ -75,14 +86,11 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
             .filter(a => a.date <= checkDateStr)
             .sort((a, b) => b.date.localeCompare(a.date))[0];
 
-          // A finding was "open" on checkDate if:
-          // - it was created (date) on or before checkDate
-          // - AND it was not yet completed/closed on checkDate (closedAt is null or after checkDate)
           const findingsOpenOnDate = allFindings.filter(f => {
             if (f.date > checkDateStr) return false;
             if (f.status !== "completed") return true;
             if (!f.closedAt) return false;
-            return f.closedAt.getTime() > checkDateMs + 86400000 - 1; // closed after checkDate ends
+            return f.closedAt.getTime() > checkDateMs + 86400000 - 1;
           });
 
           const dayStatus = computeTrafficLight(
@@ -99,6 +107,15 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
         }
       }
 
+      const todayDate = new Date(today);
+      const workingDays = getWorkingDaysInMonth(todayDate.getFullYear(), todayDate.getMonth() + 1, todayDate.getDate());
+      const submittedDates = new Set(
+        allPtActivities.filter(a => workingDays.includes(a.date)).map(a => a.date)
+      );
+      const complianceRate = workingDays.length > 0
+        ? Math.round((submittedDates.size / workingDays.length) * 100)
+        : 100;
+
       return {
         id: pt.id,
         code: pt.code,
@@ -108,6 +125,9 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
         openFindingsCount: openCount,
         overdueCount,
         consecutiveRedDays,
+        complianceRate,
+        workingDaysTotal: workingDays.length,
+        workingDaysFilled: submittedDates.size,
       };
     })
   );

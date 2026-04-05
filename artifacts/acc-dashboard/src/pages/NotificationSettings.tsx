@@ -51,7 +51,7 @@ export default function NotificationSettings() {
   const roleInfo = user ? ROLE_DESCRIPTIONS[user.role] : null;
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8">
+    <div className="max-w-lg mx-auto px-4 py-8 pb-24 sm:pb-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Pengaturan Notifikasi</h1>
 
       {!isSupported && (

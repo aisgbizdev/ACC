@@ -497,70 +497,125 @@ export default function Activity() {
               <p className="text-sm text-slate-400">Belum ada riwayat aktivitas.</p>
             </Panel>
           ) : (
-            <Panel className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50 text-xs text-slate-500">
-                    <th className="text-left px-4 py-2.5 font-medium">Tanggal</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Cabang</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Jenis Kegiatan</th>
-                    <th className="text-right px-4 py-2.5 font-medium">Nasabah</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Kategori Risiko</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Temuan</th>
-                    <th className="text-left px-4 py-2.5 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {pastActivities.map(a => (
-                    <tr key={a.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                        {new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {a.branchName
-                          ? <span className="flex items-center gap-1"><Building2 className="w-3 h-3 text-slate-400" />{a.branchName}</span>
-                          : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs font-medium text-blue-700 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded">
-                          {ACTIVITY_LABELS[a.activityType] ?? a.activityType}
+            <>
+              {/* Card view — mobile */}
+              <div className="space-y-2 sm:hidden">
+                {pastActivities.map(a => {
+                  const ai = a as ActivityItem;
+                  return (
+                    <Panel key={a.id} className="px-4 py-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-xs text-slate-400">
+                          {new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-right text-slate-700 font-medium">{a.itemsReviewed}</td>
-                      <td className="px-4 py-3">
-                        {a.customerRiskCategories && a.customerRiskCategories.length > 0
-                          ? <div className="flex gap-1 flex-wrap">
-                              {a.customerRiskCategories.map(rc => (
-                                <span key={rc} className={`px-1.5 py-0.5 rounded border text-xs ${RISK_COLOR[rc] ?? ""}`}>
-                                  {RISK_LABEL[rc] ?? rc}
-                                </span>
-                              ))}
-                            </div>
-                          : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        {a.hasFinding
-                          ? <span className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">Ada</span>
-                          : <span className="text-xs text-slate-300">—</span>}
-                      </td>
-                      <td className="px-4 py-3">
-                        {(a as ActivityItem).duSignedOffAt ? (
-                          <span className="text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
+                        {ai.duSignedOffAt ? (
+                          <span className="text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded flex items-center gap-1">
                             <FileCheck2 className="w-3 h-3" />Sign-Off DU
                           </span>
-                        ) : (a as ActivityItem).dkReviewedAt ? (
-                          <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
-                            <CheckCircle2 className="w-3 h-3" />DK
+                        ) : ai.dkReviewedAt ? (
+                          <span className="text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />Review DK
                           </span>
                         ) : (
-                          <span className="text-xs text-slate-400">Pending</span>
+                          <span className="text-xs text-slate-500">Pending</span>
                         )}
-                      </td>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
+                          {ACTIVITY_LABELS[a.activityType] ?? a.activityType}
+                        </span>
+                        {a.branchName && (
+                          <span className="text-xs text-slate-400 flex items-center gap-1">
+                            <Building2 className="w-3 h-3" />{a.branchName}
+                          </span>
+                        )}
+                        {a.hasFinding && (
+                          <span className="text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">Ada Temuan</span>
+                        )}
+                      </div>
+                      {a.itemsReviewed > 0 && (
+                        <p className="text-xs text-slate-400">{a.itemsReviewed} nasabah diperiksa</p>
+                      )}
+                      {a.customerRiskCategories && a.customerRiskCategories.length > 0 && (
+                        <div className="flex gap-1 flex-wrap">
+                          {a.customerRiskCategories.map(rc => (
+                            <span key={rc} className={`px-1.5 py-0.5 rounded border text-xs ${RISK_COLOR[rc] ?? ""}`}>
+                              {RISK_LABEL[rc] ?? rc}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </Panel>
+                  );
+                })}
+              </div>
+
+              {/* Table view — desktop */}
+              <Panel className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/8 text-xs text-slate-500">
+                      <th className="text-left px-4 py-2.5 font-medium">Tanggal</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Cabang</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Jenis Kegiatan</th>
+                      <th className="text-right px-4 py-2.5 font-medium">Nasabah</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Kategori Risiko</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Temuan</th>
+                      <th className="text-left px-4 py-2.5 font-medium">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </Panel>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {pastActivities.map(a => (
+                      <tr key={a.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="px-4 py-3 text-slate-400 whitespace-nowrap text-xs">
+                          {new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                        </td>
+                        <td className="px-4 py-3 text-slate-400 text-xs">
+                          {a.branchName
+                            ? <span className="flex items-center gap-1"><Building2 className="w-3 h-3 text-slate-500" />{a.branchName}</span>
+                            : <span className="text-slate-600">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs font-medium text-blue-300 bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded">
+                            {ACTIVITY_LABELS[a.activityType] ?? a.activityType}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right text-slate-300 font-medium text-xs">{a.itemsReviewed}</td>
+                        <td className="px-4 py-3">
+                          {a.customerRiskCategories && a.customerRiskCategories.length > 0
+                            ? <div className="flex gap-1 flex-wrap">
+                                {a.customerRiskCategories.map(rc => (
+                                  <span key={rc} className={`px-1.5 py-0.5 rounded border text-xs ${RISK_COLOR[rc] ?? ""}`}>
+                                    {RISK_LABEL[rc] ?? rc}
+                                  </span>
+                                ))}
+                              </div>
+                            : <span className="text-slate-600">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {a.hasFinding
+                            ? <span className="text-xs font-medium text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">Ada</span>
+                            : <span className="text-xs text-slate-600">—</span>}
+                        </td>
+                        <td className="px-4 py-3">
+                          {(a as ActivityItem).duSignedOffAt ? (
+                            <span className="text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
+                              <FileCheck2 className="w-3 h-3" />Sign-Off DU
+                            </span>
+                          ) : (a as ActivityItem).dkReviewedAt ? (
+                            <span className="text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded flex items-center gap-1 w-fit">
+                              <CheckCircle2 className="w-3 h-3" />DK
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-500">Pending</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </Panel>
+            </>
           )}
         </div>
     </PageChrome>

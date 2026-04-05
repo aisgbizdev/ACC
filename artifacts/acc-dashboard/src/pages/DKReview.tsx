@@ -93,23 +93,23 @@ export default function DKReview() {
   const totalAlerts = consecutiveRedPts.length + overdueFindings.length + notUpdatedPts.length;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-20 sm:pb-6">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-              <ClipboardCheck className="w-5 h-5 text-blue-600" />
-              Review Aktivitas
-            </h1>
-            <p className="text-sm text-slate-500 mt-0.5">
-              DK — tinjau dan setujui laporan aktivitas harian APUPPT
-            </p>
-          </div>
-          <div className="flex gap-2 flex-wrap">
+        <div className="mb-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-blue-600 flex-shrink-0" />
+                Review Aktivitas
+              </h1>
+              <p className="text-sm text-slate-500 mt-0.5">
+                DK — tinjau dan setujui laporan aktivitas harian APUPPT
+              </p>
+            </div>
             <select
               value={filterPt}
               onChange={(e) => setFilterPt(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-auto px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Semua PT</option>
               {pts?.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
