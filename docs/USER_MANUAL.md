@@ -1,7 +1,7 @@
 # ACC — APUPPT Control Center
 # Buku Panduan Pengguna
 
-**Versi:** 1.0  
+**Versi:** 1.1  
 **Tanggal:** April 2026  
 **Bahasa:** Indonesia
 
@@ -78,21 +78,32 @@ Status setiap PT ditampilkan dalam 3 warna:
 
 Sebagai APUPPT, tugas utama Anda adalah mengisi laporan aktivitas kepatuhan setiap hari kerja.
 
-### 3.1 Mengisi Aktivitas Harian
+### 3.1 Tampilan Halaman Aktivitas
+
+Halaman **"Aktivitas"** terdiri dari dua bagian:
+
+**Banner Status Hari Ini** (di bagian atas)
+- **Oranye/Amber**: belum ada aktivitas hari ini — tombol **"+ Isi Aktivitas Hari Ini"** ditampilkan di sini dan juga mengambang di pojok kanan bawah (mobile)
+- **Hijau**: sudah mengisi aktivitas hari ini — menampilkan jumlah aktivitas yang sudah tercatat
+
+**Riwayat Aktivitas** (di bawah banner)
+- Daftar semua aktivitas yang sudah diisi, diurutkan dari terbaru
+- Klik kartu untuk **membuka detail** termasuk data lengkap + **thread komentar** bersama DK
+
+### 3.2 Mengisi Aktivitas Harian
 
 **Cara mengisi:**
 1. Klik menu **"Aktivitas"** di navigasi
-2. Klik tombol **"+ Tambah Aktivitas"**
-3. Isi formulir:
-   - **Tanggal**: pilih tanggal (default hari ini)
-   - **Jenis Aktivitas**: pilih dari daftar (lihat tabel di bawah)
-   - **Jumlah Nasabah Diperiksa**: isi jumlah nasabah yang diperiksa
-   - **Kategori Risiko Nasabah**: pilih kategori (Rendah/Menengah/Tinggi)
-   - **Ada Temuan?**: centang jika ditemukan pelanggaran/masalah
+2. Klik tombol **"+ Isi Aktivitas Hari Ini"** (dari banner atau tombol mengambang)
+3. Pilih **Jenis Kegiatan** dari grid visual (klik kartu dengan emoji + label)
+4. Isi formulir yang muncul:
+   - **Jumlah Nasabah Diperiksa**: isi jumlah (wajib untuk tipe yang memerlukan data nasabah)
+   - **Kategori Risiko Nasabah**: pilih satu atau lebih (Rendah / Menengah / Tinggi)
+   - **Ada Temuan?**: aktifkan jika ditemukan pelanggaran/masalah
    - **Catatan**: tambahkan keterangan jika diperlukan
-4. Klik **"Simpan"**
+5. Klik **"Simpan Aktivitas"**
 
-### Jenis Aktivitas
+### Jenis Kegiatan
 | Kode | Nama | Perlu Data Nasabah? |
 |------|------|---------------------|
 | KYC | Know Your Customer | Ya |
@@ -100,17 +111,26 @@ Sebagai APUPPT, tugas utama Anda adalah mengisi laporan aktivitas kepatuhan seti
 | Screening | Pemeriksaan/Screening | Ya |
 | Monitoring Transaksi | Pemantauan transaksi | Ya |
 | Sosialisasi | Sosialisasi/edukasi | **Tidak** |
+| Pelaporan | Laporan kepatuhan | Ya |
 | Lainnya | Aktivitas lain | Ya |
+| Libur | Hari Libur / Tidak Masuk | **Tidak** |
 
-> **Perhatian:** Semua jenis aktivitas **KECUALI Sosialisasi** WAJIB mengisi jumlah nasabah diperiksa (minimal 1) dan kategori risiko nasabah.
+> **Perhatian:** Semua jenis kegiatan **KECUALI Sosialisasi dan Libur** WAJIB mengisi jumlah nasabah diperiksa (minimal 1) dan kategori risiko nasabah.
 
-### 3.2 Melihat Riwayat Aktivitas
+> **Catatan:** Aktivitas hanya bisa diisi untuk **hari ini** (tanggal sistem). Satu jenis kegiatan hanya bisa diisi satu kali per hari.
 
-- Menu **"Aktivitas"** menampilkan semua aktivitas yang sudah diisi
-- Filter berdasarkan bulan untuk melihat riwayat lama
-- Status review DK ditampilkan: "Sudah Ditinjau" (hijau) atau "Belum Ditinjau"
+### 3.3 Membaca Komentar dari DK
 
-### 3.3 Membuat Temuan
+DK dapat memberikan komentar atau catatan langsung pada aktivitas Anda.
+
+1. Buka halaman **"Aktivitas"**
+2. Klik kartu aktivitas yang ingin dibaca → kartu akan terbuka/expand
+3. Gulir ke bawah untuk melihat **thread komentar**
+4. Anda bisa membalas komentar DK — ketik pesan → tekan **Enter** atau klik tombol kirim
+
+Komentar ditampilkan dalam format chat-bubble: pesan Anda di kanan (biru), pesan DK di kiri (abu).
+
+### 3.4 Membuat Temuan
 
 Jika dalam aktivitas Anda menemukan masalah atau pelanggaran:
 1. Klik menu **"Temuan"** → **"+ Buat Temuan"**
@@ -120,7 +140,7 @@ Jika dalam aktivitas Anda menemukan masalah atau pelanggaran:
 
 Temuan akan otomatis masuk ke sistem tiket dan DK akan dinotifikasi.
 
-### 3.4 Melihat Status PT Anda
+### 3.5 Melihat Status PT Anda
 
 - Menu **"Dashboard"** menampilkan status real-time PT Anda
 - Cek warna lampu lalu lintas setiap hari untuk memastikan status Hijau
@@ -151,16 +171,43 @@ Panel muncul otomatis jika ada masalah aktif dan mengelompokkan isu berdasarkan 
 
 ### 4.2 Mereview Aktivitas APUPPT
 
-**Cara review:**
+**Cara review satu per satu:**
 1. Buka menu **"Review"**
 2. Tab **"Perlu Direview"** menampilkan aktivitas yang belum direview
-3. Klik aktivitas yang ingin direview
+3. Klik kartu aktivitas untuk membuka detailnya
 4. Periksa data aktivitas: jenis, jumlah nasabah, kategori risiko
-5. Pilih status: **"Disetujui"** atau **"Perlu Revisi"**
+5. Klik **"Setujui"** atau **"Minta Revisi"**
 6. Tambahkan catatan jika diperlukan
-7. Klik **"Simpan Review"**
 
 > **Target:** Review sebaiknya dilakukan dalam 24 jam setelah APUPPT mengisi laporan.
+
+### 4.2.1 Review Banyak Sekaligus (Batch Review)
+
+Fitur ini memudahkan DK mereview banyak aktivitas sekaligus tanpa harus klik satu per satu.
+
+**Cara menggunakan:**
+1. Di halaman **"Review"**, klik tombol **"Pilih Banyak"** (pojok kanan atas)
+2. Mode batch aktif — muncul checkbox di setiap kartu aktivitas
+3. Centang aktivitas-aktivitas yang ingin direview sekaligus
+4. Atau klik **"Pilih Semua"** untuk centang semua sekaligus
+5. Klik tombol **"Review [N] Aktivitas"** (di bawah layar, mobile) atau di atas
+6. Modal konfirmasi muncul — isi catatan opsional jika perlu
+7. Klik **"Konfirmasi Review"**
+
+Semua aktivitas yang dipilih langsung ditandai sebagai "Disetujui" dalam satu aksi.
+
+> **Catatan:** Hanya aktivitas yang belum direview yang bisa dipilih dalam mode batch. Aktivitas yang sudah pernah direview tidak akan terpengaruh.
+
+### 4.2.2 Berkomunikasi via Komentar
+
+DK bisa meninggalkan komentar langsung pada setiap aktivitas untuk berkomunikasi dengan APUPPT.
+
+1. Klik kartu aktivitas untuk membuka detailnya
+2. Gulir ke bawah ke bagian **"Komentar"**
+3. Ketik pesan → tekan **Enter** atau klik tombol kirim
+4. APUPPT akan melihat komentar Anda di halaman Aktivitas mereka
+
+Komentar berguna untuk meminta klarifikasi tanpa harus membuat temuan formal.
 
 ### 4.3 Mengelola Temuan
 
@@ -434,17 +481,21 @@ ACC mendukung notifikasi push langsung ke browser (PWA).
 
 | Role | Jenis Notifikasi yang Diterima |
 |------|-------------------------------|
-| APUPPT | Komentar baru pada temuan di PT Anda |
-| DK | Aktivitas harian baru dari APUPPT, temuan baru, perlu review |
+| APUPPT | Pengingat pagi (09:00 WIB) jika belum isi aktivitas; komentar baru pada temuan di PT Anda |
+| DK | Aktivitas harian baru dari APUPPT, temuan baru, perlu review; peringatan sore PT merah |
 | DU | Laporan siap di-sign-off |
 | Owner | Ringkasan harian, notifikasi PT kritis |
 | Superadmin | Ringkasan harian, notifikasi PT kritis |
 
-### 10.3 Notifikasi Harian
+### 10.3 Notifikasi Harian Otomatis
 
-Setiap hari pukul **17:00 WIB**, sistem mengirim:
+**Pukul 09:00 WIB (Senin–Jumat):**
+- APUPPT yang belum mengisi aktivitas hari ini akan mendapat pengingat otomatis
+- Sabtu dan Minggu tidak ada pengingat
+
+**Pukul 17:00 WIB (Senin–Jumat):**
 - DK: peringatan jika PT-nya berstatus Merah
-- Owner & Superadmin: ringkasan kondisi semua PT
+- Owner & Superadmin: ringkasan kondisi semua PT (jumlah Hijau/Kuning/Merah)
 
 ### 10.4 Menonaktifkan Notifikasi
 
@@ -461,7 +512,7 @@ A: Hubungi Superadmin untuk meminta reset password. Superadmin bisa reset melalu
 A: Ada kemungkinan PT Anda memiliki temuan overdue (lebih dari 3 hari belum selesai). Cek halaman Temuan dan selesaikan yang sudah overdue.
 
 **Q: Bisakah saya mengisi aktivitas untuk hari kemarin?**  
-A: Ya, bisa. Pilih tanggal yang diinginkan saat mengisi aktivitas. Namun pastikan mengisi untuk hari-hari yang terlewat sesegera mungkin.
+A: Tidak. Formulir aktivitas hanya bisa diisi untuk **hari ini**. Jika kemarin terlewat, segera hubungi DK atau Superadmin untuk pencatatan manual.
 
 **Q: Berapa jenis aktivitas yang bisa diisi dalam satu hari?**  
 A: Bisa lebih dari satu, tapi masing-masing jenis aktivitas hanya bisa diisi sekali per hari. Misalnya: KYC 1 kali, CDD 1 kali, Screening 1 kali dalam hari yang sama.
@@ -493,8 +544,20 @@ A: Pastikan:
 2. Perangkat tidak dalam mode "Jangan Ganggu"
 3. Coba nonaktifkan dan aktifkan ulang dari menu Pengaturan Notifikasi
 
+**Q: Apa itu fitur "Pilih Banyak" di halaman Review?**  
+A: Fitur Batch Review yang memungkinkan DK mereview banyak aktivitas sekaligus dalam satu klik. Aktifkan dengan tombol "Pilih Banyak", centang aktivitas yang ingin direview, lalu konfirmasi. Sangat berguna jika ada banyak aktivitas yang menumpuk.
+
+**Q: Apa bedanya komentar di aktivitas dengan komentar di temuan?**  
+A: Komentar di **aktivitas** (halaman Aktivitas / Review) adalah komunikasi informal antara APUPPT dan DK seputar laporan harian — misalnya klarifikasi data. Komentar di **temuan** (halaman detail tiket) adalah komunikasi formal terkait penanganan pelanggaran yang tercatat dalam audit trail sistem.
+
+**Q: Apakah ada pengingat otomatis jika saya lupa isi aktivitas?**  
+A: Ya. Setiap hari kerja pukul **09:00 WIB**, sistem akan otomatis mengirim notifikasi push kepada APUPPT yang belum mengisi aktivitas hari itu. Pastikan notifikasi sudah diaktifkan di perangkat Anda.
+
+**Q: Mengapa jenis kegiatan "Libur" tidak memerlukan data nasabah?**  
+A: Karena pada hari libur tidak ada kegiatan operasional. Mengisi "Libur" cukup sebagai penanda bahwa PT memang tidak beroperasi pada hari tersebut, tanpa perlu data nasabah atau jumlah pemeriksaan.
+
 ---
 
 *Dokumen ini dibuat untuk membantu pengguna ACC dalam memahami dan menggunakan sistem secara optimal. Untuk pertanyaan teknis lebih lanjut, hubungi Superadmin.*
 
-*Sistem ACC — APUPPT Control Center | April 2026*
+*Sistem ACC — APUPPT Control Center | April 2026 | Versi 1.1*

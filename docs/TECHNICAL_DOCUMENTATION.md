@@ -1,7 +1,7 @@
 # ACC — APUPPT Control Center
 # Dokumentasi Teknis
 
-**Versi:** 1.0  
+**Versi:** 1.1  
 **Tanggal:** April 2026  
 **Status:** Production
 
@@ -262,6 +262,17 @@ Owner / Superadmin memantau KPI & laporan
 | auth | text | Auth secret |
 | createdAt | timestamp | |
 
+### `activity_comments` — Komentar per Aktivitas
+| Kolom | Tipe | Keterangan |
+|-------|------|-----------|
+| id | uuid PK | |
+| activityId | uuid FK | Referensi aktivitas harian |
+| authorId | uuid FK | User yang menulis komentar |
+| content | text | Isi komentar (max 1000 karakter) |
+| createdAt | timestamp | |
+
+> Berbeda dengan `ticket_comments` (untuk temuan/findings), tabel ini khusus untuk komunikasi DK ↔ APUPPT seputar aktivitas harian.
+
 ---
 
 ## 6. Autentikasi & Otorisasi
@@ -331,6 +342,9 @@ Base URL: `/api`
 | GET | `/activities/:id/review` | dk, superadmin, apuppt | Detail review DK |
 | POST | `/activities/:id/review` | dk, superadmin | DK review aktivitas |
 | POST | `/activities/:id/signoff` | du | DU sign-off aktivitas |
+| POST | `/activities/batch-review` | dk, superadmin | DK review banyak aktivitas sekaligus |
+| GET | `/activities/:id/comments` | Any auth | List komentar aktivitas |
+| POST | `/activities/:id/comments` | Any auth | Tambah komentar pada aktivitas |
 
 ### Temuan (Findings)
 | Method | Path | Role | Deskripsi |
@@ -431,8 +445,34 @@ Cron job (`artifacts/api-server/src/lib/escalation.ts`) berjalan setiap 5 menit:
 
 ### Activity Type Rules
 
-- `sosialisasi`: TIDAK memerlukan data nasabah (itemsReviewed bisa 0)
-- Semua tipe lain: WAJIB `itemsReviewed > 0` DAN `customerRiskCategories` terisi
+- `sosialisasi` dan `libur`: TIDAK memerlukan data nasabah (itemsReviewed bisa 0, customerRiskCategories boleh kosong)
+- Semua tipe lain (`kyc`, `cdd`, `screening`, `monitoring_transaksi`, `pelaporan`, `lainnya`): WAJIB `itemsReviewed > 0` DAN `customerRiskCategories` terisi minimal 1
+
+### Monthly Compliance Rate per PT
+
+Dihitung di `GET /api/dashboard/summary` menggunakan helper `getWorkingDaysInMonth`:
+
+```
+complianceRate = (workingDaysFilled / workingDaysTotal) × 100
+
+workingDaysTotal = jumlah hari kerja (Senin–Jumat) dalam bulan berjalan s/d hari ini
+workingDaysFilled = jumlah hari kerja di mana PT memiliki minimal 1 aktivitas tercatat
+```
+
+Ditampilkan sebagai progress bar di setiap card PT di Dashboard. Nilai `complianceRate`, `workingDaysTotal`, dan `workingDaysFilled` dikembalikan dalam response `/api/dashboard/summary`.
+
+### Batch Review DK
+
+Endpoint: `POST /api/activities/batch-review`
+
+```json
+Body: { "activityIds": ["uuid1", "uuid2", ...], "notes": "catatan opsional" }
+Response: { "reviewedCount": 3 }
+```
+
+- Hanya bisa dilakukan oleh role `dk` atau `superadmin`
+- Aktivitas yang sudah direview (dkReviewedAt IS NOT NULL) di-skip otomatis
+- Semua aktivitas yang valid di-update dalam satu query (`inArray`)
 
 ---
 
@@ -445,11 +485,11 @@ Cron job (`artifacts/api-server/src/lib/escalation.ts`) berjalan setiap 5 menit:
 | `/login` | Login.tsx | Public | Halaman login |
 | `/dashboard` | Dashboard.tsx | All | Dashboard status PT + CriticalPanel + KpiMiniBar + RankingPanel |
 | `/pt/:id` | PTDetail.tsx | All | Detail PT + 7-day history + Rekap Cabang |
-| `/activity` | Activity.tsx | apuppt | Form isi aktivitas harian |
+| `/activity` | Activity.tsx | apuppt | Input aktivitas harian — banner status hari ini (amber/hijau), jenis kegiatan via grid visual, riwayat expandable dengan comment thread |
 | `/activities` | Activities.tsx | dk, superadmin | List aktivitas semua PT |
 | `/findings` | Findings.tsx | All | List temuan |
 | `/findings/:id` | FindingDetail.tsx | All | Detail tiket temuan |
-| `/review` | DKReview.tsx | dk, superadmin | Review aktivitas + Pressure Panel (always-on, tidak dismissable) |
+| `/review` | DKReview.tsx | dk, superadmin | Review aktivitas + Pressure Panel + Batch Review + Comment Thread per aktivitas |
 | `/signoff` | DUSignOff.tsx | du, superadmin | Sign-off laporan |
 | `/kpi` | KPI.tsx | dk, du, owner, superadmin | KPI scorecard + trend chart |
 | `/reports` | Reports.tsx | dk, du, owner, superadmin | Laporan + Export |
@@ -476,8 +516,13 @@ Cron job (`artifacts/api-server/src/lib/escalation.ts`) berjalan setiap 5 menit:
 
 **Catatan Phase 6 (Behavior Visibility Layer):**
 - Panel "⚠ Butuh Perhatian Sekarang" tampil di dua tempat: `Dashboard.tsx` dan `DKReview.tsx`
-- Di `DKReview.tsx`, panel **tidak memiliki tombol dismiss** — `alertDismissed` state dihapus, panel selalu terlihat jika ada masalah aktif
+- Di `DKReview.tsx`, panel **tidak memiliki tombol dismiss** — selalu terlihat jika ada masalah aktif
 - Semua data visibility berasal dari `useGetDashboardSummary()` — tidak ada endpoint API baru
+
+**Catatan Versi 1.1 (Simplified UX + Collaboration):**
+- `Activity.tsx` (APUPPT): Banner status hari ini (amber jika belum, hijau jika sudah). Form muncul setelah tap tombol. Jenis kegiatan dipilih via grid visual 2 kolom (emoji + label). Riwayat ditampilkan sebagai kartu lipat (expand untuk lihat detail + komentar).
+- `DKReview.tsx` (DK): Mode "Pilih Banyak" untuk batch review — checkboxes di tiap kartu, tombol "Pilih Semua", konfirmasi via modal. Expanded card menampilkan thread komentar. Mobile: tombol aksi batch di fixed bottom bar.
+- `CommentThread` (inline component): Komponen reusable yang dipakai di `Activity.tsx` dan `DKReview.tsx`. Load komentar via `useQuery`, post via `apiFetch`. Chat-bubble style (sender kanan, receiver kiri). Enter to send.
 
 ### AuthContext
 
@@ -525,13 +570,21 @@ File: `artifacts/acc-dashboard/public/sw.js`
 | POST /api/findings | DK + Owner + Superadmin |
 | POST /api/findings/:id/comments | Semua peserta PT (APUPPT + DK + DU) |
 | POST /api/activities | DK + Owner + Superadmin |
+| Daily cron 09:00 WIB | APUPPT (pengingat isi aktivitas jika belum) |
 | Daily cron 17:00 WIB | DK (PT merah), Owner + Superadmin (ringkasan) |
 
 ### Cron Harian
 File: `artifacts/api-server/src/lib/daily-notif-cron.ts`
-- Jadwal: 17:00 WIB (10:00 UTC)
-- Untuk tiap PT yang merah: notifikasi ke DK PT tersebut
-- Ringkasan harian ke Owner dan Superadmin
+
+**Cron pagi — 09:00 WIB (02:00 UTC), Senin–Jumat:**
+- Cek tiap APUPPT: apakah sudah mengisi aktivitas untuk hari ini?
+- Jika belum → kirim push notification pengingat "Jangan lupa isi aktivitas hari ini!"
+- Sabtu/Minggu dilewati (skip weekend)
+
+**Cron sore — 17:00 WIB (10:00 UTC), Senin–Jumat:**
+- Untuk tiap PT yang berstatus Merah: notifikasi ke DK PT tersebut
+- Ringkasan harian (jumlah PT merah/kuning/hijau) ke Owner dan Superadmin
+- Sabtu/Minggu dilewati (skip weekend)
 
 ---
 
