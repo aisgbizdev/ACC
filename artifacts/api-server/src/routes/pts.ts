@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, desc, and, gte } from "drizzle-orm";
 import { db, ptsTable, dailyActivitiesTable, findingsTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
-import { computeTrafficLight } from "../lib/traffic-light";
+import { computeTrafficLight, isWeekend } from "../lib/traffic-light";
 
 const router: IRouter = Router();
 
@@ -119,12 +119,22 @@ router.get("/pts/:id/history", requireAuth, async (req, res): Promise<void> => {
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split("T")[0];
 
+    if (isWeekend(dateStr)) {
+      history.push({ date: dateStr, status: "weekend" });
+      continue;
+    }
+
     const [lastActivity] = await db
       .select()
       .from(dailyActivitiesTable)
       .where(and(eq(dailyActivitiesTable.ptId, rawId), gte(dailyActivitiesTable.date, dateStr)))
       .orderBy(dailyActivitiesTable.date)
       .limit(1);
+
+    if (lastActivity?.date === dateStr && lastActivity?.activityType === "libur") {
+      history.push({ date: dateStr, status: "weekend" });
+      continue;
+    }
 
     const allFindings = await db
       .select()

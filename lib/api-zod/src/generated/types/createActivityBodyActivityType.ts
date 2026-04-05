@@ -17,4 +17,5 @@ export const CreateActivityBodyActivityType = {
   pelaporan: "pelaporan",
   sosialisasi: "sosialisasi",
   lainnya: "lainnya",
+  libur: "libur",
 } as const;

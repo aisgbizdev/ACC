@@ -9,10 +9,10 @@ import { notifyNewActivity } from "../lib/push-notify";
 
 const router: IRouter = Router();
 
-const SOSIALISASI_ONLY_EXEMPT = ["sosialisasi"] as const;
+const CUSTOMER_DATA_EXEMPT = ["sosialisasi", "libur"] as const;
 
 function requiresCustomerData(activityType: string): boolean {
-  return !(SOSIALISASI_ONLY_EXEMPT as readonly string[]).includes(activityType);
+  return !(CUSTOMER_DATA_EXEMPT as readonly string[]).includes(activityType);
 }
 
 async function validateBranchBelongsToPt(branchId: string, ptId: string): Promise<boolean> {

@@ -136,6 +136,7 @@ export const DailyActivityActivityType = {
   pelaporan: "pelaporan",
   sosialisasi: "sosialisasi",
   lainnya: "lainnya",
+  libur: "libur",
 } as const;
 
 export type DailyActivityCustomerRiskCategoriesItem =
@@ -195,6 +196,7 @@ export const CreateActivityBodyActivityType = {
   pelaporan: "pelaporan",
   sosialisasi: "sosialisasi",
   lainnya: "lainnya",
+  libur: "libur",
 } as const;
 
 export type CreateActivityBodyCustomerRiskCategoriesItem =
@@ -242,6 +244,7 @@ export const UpdateActivityBodyActivityType = {
   pelaporan: "pelaporan",
   sosialisasi: "sosialisasi",
   lainnya: "lainnya",
+  libur: "libur",
 } as const;
 
 export type UpdateActivityBodyCustomerRiskCategoriesItem =

@@ -27,6 +27,7 @@ const ACTIVITY_TYPES: { value: CreateActivityBodyActivityType; label: string }[]
   { value: CreateActivityBodyActivityType.pelaporan, label: "Pelaporan" },
   { value: CreateActivityBodyActivityType.sosialisasi, label: "Sosialisasi APUPPT" },
   { value: CreateActivityBodyActivityType.lainnya, label: "Lainnya" },
+  { value: CreateActivityBodyActivityType.libur, label: "Hari Libur / Tidak Masuk" },
 ];
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -37,6 +38,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   pelaporan: "Pelaporan",
   sosialisasi: "Sosialisasi APUPPT",
   lainnya: "Lainnya",
+  libur: "Hari Libur",
 };
 
 const RISK_CATEGORIES: { value: CreateActivityBodyCustomerRiskCategoriesItem; label: string; color: string }[] = [
@@ -179,7 +181,8 @@ export default function Activity() {
     }
 
     const isNonCustomerActivity =
-      form.activityType === CreateActivityBodyActivityType.sosialisasi;
+      form.activityType === CreateActivityBodyActivityType.sosialisasi ||
+      form.activityType === CreateActivityBodyActivityType.libur;
 
     if (!isNonCustomerActivity && form.itemsReviewed <= 0) {
       setError("Jumlah nasabah diperiksa harus lebih dari 0 untuk jenis kegiatan ini.");
@@ -338,22 +341,26 @@ export default function Activity() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  <Users className="w-3.5 h-3.5 inline mr-1" />Jumlah Nasabah Diperiksa *
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.itemsReviewed}
-                  onChange={(e) => setForm({ ...form, itemsReviewed: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-slate-500 mt-1">Wajib diisi &gt;0 kecuali untuk Sosialisasi APUPPT</p>
-              </div>
+              {form.activityType !== CreateActivityBodyActivityType.sosialisasi &&
+               form.activityType !== CreateActivityBodyActivityType.libur && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    <Users className="w-3.5 h-3.5 inline mr-1" />Jumlah Nasabah Diperiksa *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.itemsReviewed}
+                    onChange={(e) => setForm({ ...form, itemsReviewed: parseInt(e.target.value) || 0 })}
+                    className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
 
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-2">Kategori Risiko Nasabah (pilih semua yang relevan)</label>
+              {form.activityType !== CreateActivityBodyActivityType.sosialisasi &&
+               form.activityType !== CreateActivityBodyActivityType.libur && (
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-2">Kategori Risiko Nasabah (pilih semua yang relevan)</label>
                 <div className="flex gap-2 flex-wrap">
                   {RISK_CATEGORIES.map(rc => {
                     const checked = form.customerRiskCategories.includes(rc.value);
@@ -372,6 +379,7 @@ export default function Activity() {
                   })}
                 </div>
               </div>
+              )}
 
               <div>
                 <label className="flex items-center gap-2 cursor-pointer">

@@ -17,4 +17,5 @@ export const DailyActivityActivityType = {
   pelaporan: "pelaporan",
   sosialisasi: "sosialisasi",
   lainnya: "lainnya",
+  libur: "libur",
 } as const;

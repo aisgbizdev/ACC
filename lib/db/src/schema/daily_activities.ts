@@ -5,7 +5,7 @@ import { ptsTable } from "./pts";
 import { usersTable } from "./users";
 import { branchesTable } from "./branches";
 
-export const ACTIVITY_TYPES = ["kyc", "cdd", "screening", "monitoring_transaksi", "pelaporan", "sosialisasi", "lainnya"] as const;
+export const ACTIVITY_TYPES = ["kyc", "cdd", "screening", "monitoring_transaksi", "pelaporan", "sosialisasi", "lainnya", "libur"] as const;
 export type ActivityType = typeof ACTIVITY_TYPES[number];
 
 export const CUSTOMER_RISK_CATEGORIES = ["high", "medium", "low"] as const;

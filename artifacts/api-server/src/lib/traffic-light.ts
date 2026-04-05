@@ -2,12 +2,19 @@ import type { Finding } from "@workspace/db";
 
 export type TrafficLightStatus = "green" | "yellow" | "red";
 
+export function isWeekend(dateStr: string): boolean {
+  const d = new Date(dateStr + "T00:00:00");
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}
+
 export function computeTrafficLight(
   lastActivityDate: string | null,
   findings: Finding[],
   today: string
 ): TrafficLightStatus {
-  const updatedToday = lastActivityDate === today;
+  const weekend = isWeekend(today);
+  const updatedToday = weekend ? true : lastActivityDate === today;
 
   const openFindings = findings.filter((f) => f.status !== "completed");
 

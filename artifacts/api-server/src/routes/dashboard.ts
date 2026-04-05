@@ -2,7 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, desc, isNull, isNotNull, gte, sql } from "drizzle-orm";
 import { db, ptsTable, dailyActivitiesTable, findingsTable, branchesTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
-import { computeTrafficLight } from "../lib/traffic-light";
+import { computeTrafficLight, isWeekend } from "../lib/traffic-light";
 
 const router: IRouter = Router();
 
@@ -61,6 +61,15 @@ router.get("/dashboard/summary", requireAuth, async (req, res): Promise<void> =>
           checkDate.setDate(checkDate.getDate() - i);
           const checkDateStr = checkDate.toISOString().split("T")[0];
           const checkDateMs = checkDate.getTime();
+
+          if (isWeekend(checkDateStr)) {
+            continue;
+          }
+
+          const dayActivityExact = allPtActivities.find(a => a.date === checkDateStr);
+          if (dayActivityExact?.activityType === "libur") {
+            continue;
+          }
 
           const dayActivity = allPtActivities
             .filter(a => a.date <= checkDateStr)

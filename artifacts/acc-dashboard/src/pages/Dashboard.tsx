@@ -333,7 +333,7 @@ export default function Dashboard() {
 
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="space-y-5">
-                <StatusMeter label="PT Aman" value={data.greenCount} total={Math.max(totalPts, 1)} tone="green" href={user?.role === "apuppt" && sortedPTs[0] ? `/pt/${sortedPTs[0].id}` : "/kpi"} />
+                <StatusMeter label="Aman" value={data.greenCount} total={Math.max(totalPts, 1)} tone="green" href={user?.role === "apuppt" && sortedPTs[0] ? `/pt/${sortedPTs[0].id}` : "/kpi"} />
                 <StatusMeter label="Perlu Perhatian" value={data.yellowCount} total={Math.max(totalPts, 1)} tone="yellow" href="/findings" />
                 <StatusMeter label="Kritis" value={data.redCount} total={Math.max(totalPts, 1)} tone="red" href="/findings" />
               </div>
@@ -535,7 +535,7 @@ export default function Dashboard() {
 
               <div className="space-y-3 text-sm">
                 <Link href={user?.role === "apuppt" && sortedPTs[0] ? `/pt/${sortedPTs[0].id}` : "/kpi"} className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-emerald-500/20 hover:bg-emerald-500/5 hover:text-white">
-                  <span>PT aman</span>
+                  <span>Aman</span>
                   <span className="font-semibold text-emerald-400">{data.greenCount}</span>
                 </Link>
                 <Link href="/findings" className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-amber-500/20 hover:bg-amber-500/5 hover:text-white">

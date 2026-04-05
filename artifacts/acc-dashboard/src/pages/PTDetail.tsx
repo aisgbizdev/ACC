@@ -20,6 +20,7 @@ const DAY_STATUS_BADGE: Record<string, string> = {
   green: "bg-emerald-500 text-white",
   yellow: "bg-amber-400 text-white",
   red: "bg-red-500 text-white",
+  weekend: "bg-slate-200 text-slate-400",
 };
 
 function SevenDayHistory({ ptId }: { ptId: string }) {
@@ -87,6 +88,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   pelaporan: "Pelaporan",
   sosialisasi: "Sosialisasi APUPPT",
   lainnya: "Lainnya",
+  libur: "Hari Libur",
 };
 
 type BranchAnalytics = {
@@ -119,6 +121,8 @@ export default function PTDetail() {
   const { data: findings, isLoading: findLoading } = useListFindings({ ptId: id });
 
   const today = new Date().toISOString().split("T")[0];
+  const todayDayOfWeek = new Date(today + "T00:00:00").getDay();
+  const isWeekendToday = todayDayOfWeek === 0 || todayDayOfWeek === 6;
   const firstOfMonth = `${today.slice(0, 7)}-01`;
 
   const branchAnalyticsQuery = useQuery<{ branches: BranchAnalytics[] }>({
@@ -241,7 +245,9 @@ export default function PTDetail() {
               <div className="mb-4 bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-start gap-3">
                 <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-red-700">
-                  {!todayActivity && <p className="font-medium">Aktivitas hari ini belum diinput.</p>}
+                  {!todayActivity && !isWeekendToday && <p className="font-medium">Aktivitas hari ini belum diinput.</p>}
+                  {!todayActivity && isWeekendToday && <p className="font-medium">Hari ini libur — tidak wajib input aktivitas.</p>}
+                  {todayActivity?.activityType === "libur" && <p className="font-medium">Hari libur dicatat — tidak dihitung dalam kepatuhan.</p>}
                   {overdueFindings.length > 0 && (
                     <p className="font-medium">{overdueFindings.length} temuan sudah melewati batas 3 hari.</p>
                   )}
