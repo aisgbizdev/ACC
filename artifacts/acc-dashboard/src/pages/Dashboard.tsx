@@ -103,11 +103,13 @@ function StatusMeter({
   value,
   total,
   tone,
+  href,
 }: {
   label: string;
   value: number;
   total: number;
   tone: "green" | "yellow" | "red";
+  href?: string;
 }) {
   const pct = total === 0 ? 0 : Math.max(6, Math.round((value / total) * 100));
   const color =
@@ -117,7 +119,7 @@ function StatusMeter({
         ? "from-amber-400 to-amber-500"
         : "from-rose-400 to-rose-500";
 
-  return (
+  const inner = (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-300">{label}</span>
@@ -128,6 +130,15 @@ function StatusMeter({
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block rounded-xl p-2 -mx-2 transition-colors hover:bg-white/[0.03]">
+        {inner}
+      </Link>
+    );
+  }
+  return inner;
 }
 
 function StatCard({
@@ -291,10 +302,21 @@ export default function Dashboard() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-4">
-          <StatCard label="Total PT" value={totalPts} icon={Users} tone="blue" href="/reports" />
-          <StatCard label="Status Hijau" value={data.greenCount} icon={CheckCircle2} tone="green" href="/kpi" />
-          <StatCard label="Perlu Perhatian" value={data.yellowCount} icon={Clock3} tone="amber" href="/findings" />
-          <StatCard label="Status Kritis" value={data.redCount} icon={ShieldAlert} tone="rose" href="/findings" />
+          {user?.role === "apuppt" && sortedPTs[0] ? (
+            <>
+              <StatCard label="PT Saya" value={1} icon={Users} tone="blue" href={`/pt/${sortedPTs[0].id}`} />
+              <StatCard label="Status Hijau" value={data.greenCount} icon={CheckCircle2} tone="green" href={`/pt/${sortedPTs[0].id}`} />
+              <StatCard label="Perlu Perhatian" value={data.yellowCount} icon={Clock3} tone="amber" href="/findings" />
+              <StatCard label="Status Kritis" value={data.redCount} icon={ShieldAlert} tone="rose" href="/findings" />
+            </>
+          ) : (
+            <>
+              <StatCard label="Total PT" value={totalPts} icon={Users} tone="blue" href="/reports" />
+              <StatCard label="Status Hijau" value={data.greenCount} icon={CheckCircle2} tone="green" href="/kpi" />
+              <StatCard label="Perlu Perhatian" value={data.yellowCount} icon={Clock3} tone="amber" href="/findings" />
+              <StatCard label="Status Kritis" value={data.redCount} icon={ShieldAlert} tone="rose" href="/findings" />
+            </>
+          )}
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
@@ -311,9 +333,9 @@ export default function Dashboard() {
 
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
               <div className="space-y-5">
-                <StatusMeter label="PT Aman" value={data.greenCount} total={Math.max(totalPts, 1)} tone="green" />
-                <StatusMeter label="Perlu Perhatian" value={data.yellowCount} total={Math.max(totalPts, 1)} tone="yellow" />
-                <StatusMeter label="Kritis" value={data.redCount} total={Math.max(totalPts, 1)} tone="red" />
+                <StatusMeter label="PT Aman" value={data.greenCount} total={Math.max(totalPts, 1)} tone="green" href={user?.role === "apuppt" && sortedPTs[0] ? `/pt/${sortedPTs[0].id}` : "/kpi"} />
+                <StatusMeter label="Perlu Perhatian" value={data.yellowCount} total={Math.max(totalPts, 1)} tone="yellow" href="/findings" />
+                <StatusMeter label="Kritis" value={data.redCount} total={Math.max(totalPts, 1)} tone="red" href="/findings" />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -512,7 +534,7 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-3 text-sm">
-                <Link href="/kpi" className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-emerald-500/20 hover:bg-emerald-500/5 hover:text-white">
+                <Link href={user?.role === "apuppt" && sortedPTs[0] ? `/pt/${sortedPTs[0].id}` : "/kpi"} className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-emerald-500/20 hover:bg-emerald-500/5 hover:text-white">
                   <span>PT aman</span>
                   <span className="font-semibold text-emerald-400">{data.greenCount}</span>
                 </Link>
