@@ -40,7 +40,7 @@ const ACCOUNT_ITEMS = [
 
 export function Navbar() {
   const { user, setUser } = useAuth();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -63,7 +63,7 @@ export function Navbar() {
   const handleLogout = async () => {
     try { await logout(); } catch {}
     setUser(null);
-    window.location.href = "/login";
+    navigate("/login");
   };
 
   return (
