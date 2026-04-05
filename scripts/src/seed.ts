@@ -1,6 +1,46 @@
-import { db, pool, ptsTable, usersTable } from "@workspace/db";
+import { db, pool, ptsTable, usersTable, branchesTable } from "@workspace/db";
 import bcrypt from "bcryptjs";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+
+const BRANCHES_BY_PT: Record<string, string[]> = {
+  SGB: [
+    "Kantor Pusat - Jakarta",
+    "Cabang Jakarta Selatan",
+    "Cabang Surabaya",
+    "Cabang Bandung",
+    "Cabang Medan",
+  ],
+  RFB: [
+    "Kantor Pusat - Jakarta",
+    "Cabang Jakarta Selatan",
+    "Cabang Surabaya",
+    "Cabang Semarang",
+    "Cabang Makassar",
+  ],
+  BPF: [
+    "Kantor Pusat - Jakarta",
+    "Cabang Jakarta Barat",
+    "Cabang Surabaya",
+    "Cabang Bandung",
+    "Cabang Denpasar",
+  ],
+  KPF: [
+    "Kantor Pusat - Jakarta",
+    "Cabang Jakarta Selatan",
+    "Cabang Surabaya",
+    "Cabang Bandung",
+    "Cabang Yogyakarta",
+  ],
+  EWF: [
+    "Kantor Pusat - Jakarta",
+    "Cabang Jakarta Selatan",
+    "Cabang Surabaya",
+    "Cabang Medan",
+    "Cabang Semarang",
+    "Cabang Makassar",
+    "Cabang Denpasar",
+  ],
+};
 
 async function seed() {
   console.log("Seeding database...");
@@ -28,8 +68,22 @@ async function seed() {
   const allPts = await db.select().from(ptsTable).orderBy(ptsTable.code);
   const ptMap = Object.fromEntries(allPts.map((p) => [p.code, p.id]));
 
+  // Seed branches for each PT
+  for (const [ptCode, branchNames] of Object.entries(BRANCHES_BY_PT)) {
+    const ptId = ptMap[ptCode];
+    if (!ptId) continue;
+    const existingBranches = await db.select().from(branchesTable).where(eq(branchesTable.ptId, ptId));
+    if (existingBranches.length === 0) {
+      for (const name of branchNames) {
+        await db.insert(branchesTable).values({ name, ptId });
+      }
+      console.log(`  Created ${branchNames.length} branches for PT ${ptCode}`);
+    } else {
+      console.log(`  Branches for PT ${ptCode} already exist (${existingBranches.length}), skipping.`);
+    }
+  }
+
   // Rename old global dk/du users that conflict with new per-PT usernames
-  // We can't delete them if they have FK references, so rename them to avoid username conflicts
   const conflictingUsernames = ["dk", "du"];
   for (const oldUsername of conflictingUsernames) {
     const existing = await db.select().from(usersTable).where(eq(usersTable.username, oldUsername));

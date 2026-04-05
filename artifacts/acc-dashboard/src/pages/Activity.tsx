@@ -313,13 +313,13 @@ export default function Activity() {
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
                   <Building2 className="w-3.5 h-3.5 inline mr-1" />Cabang (opsional)
                 </label>
                 <select
                   value={form.branchId}
                   onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">— Semua / Kantor Pusat —</option>
                   {branches?.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -327,19 +327,19 @@ export default function Activity() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">Jenis Kegiatan *</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">Jenis Kegiatan *</label>
                 <select
                   value={form.activityType}
                   onChange={(e) => setForm({ ...form, activityType: e.target.value as CreateActivityBodyActivityType })}
                   required
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {ACTIVITY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
                   <Users className="w-3.5 h-3.5 inline mr-1" />Jumlah Nasabah Diperiksa *
                 </label>
                 <input
@@ -347,13 +347,13 @@ export default function Activity() {
                   min="0"
                   value={form.itemsReviewed}
                   onChange={(e) => setForm({ ...form, itemsReviewed: parseInt(e.target.value) || 0 })}
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <p className="text-xs text-slate-400 mt-1">Wajib diisi &gt;0 kecuali untuk Sosialisasi APUPPT</p>
+                <p className="text-xs text-slate-500 mt-1">Wajib diisi &gt;0 kecuali untuk Sosialisasi APUPPT</p>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-2">Kategori Risiko Nasabah (pilih semua yang relevan)</label>
+                <label className="block text-xs font-medium text-slate-300 mb-2">Kategori Risiko Nasabah (pilih semua yang relevan)</label>
                 <div className="flex gap-2 flex-wrap">
                   {RISK_CATEGORIES.map(rc => {
                     const checked = form.customerRiskCategories.includes(rc.value);
@@ -363,7 +363,7 @@ export default function Activity() {
                         type="button"
                         onClick={() => toggleRiskCategory(rc.value)}
                         className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-all ${
-                          checked ? rc.color : "text-slate-500 bg-slate-50 border-slate-200 hover:border-slate-300"
+                          checked ? rc.color : "text-slate-400 bg-white/5 border-white/10 hover:border-white/20 hover:text-slate-200"
                         }`}
                       >
                         {checked ? "✓ " : ""}{rc.label}
@@ -381,28 +381,28 @@ export default function Activity() {
                     onChange={(e) => setForm({ ...form, hasFinding: e.target.checked })}
                     className="w-4 h-4 text-blue-600 rounded"
                   />
-                  <span className="text-sm font-medium text-slate-700">Ada temuan / indikasi pelanggaran</span>
+                  <span className="text-sm font-medium text-slate-300">Ada temuan / indikasi pelanggaran</span>
                 </label>
               </div>
 
               {form.hasFinding && (
-                <div className="pl-4 border-l-2 border-amber-300 space-y-3">
+                <div className="pl-4 border-l-2 border-amber-400/50 space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1.5">Ringkasan Temuan *</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">Ringkasan Temuan *</label>
                     <textarea
                       value={form.findingSummary}
                       onChange={(e) => setForm({ ...form, findingSummary: e.target.value })}
                       rows={2}
                       placeholder="Deskripsikan temuan secara singkat..."
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      className="w-full px-3 py-2 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-700 mb-1.5">Status Temuan</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">Status Temuan</label>
                     <select
                       value={form.findingStatus ?? "pending"}
                       onChange={(e) => setForm({ ...form, findingStatus: e.target.value as CreateActivityBodyFindingStatus })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {FINDING_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                     </select>
@@ -411,13 +411,13 @@ export default function Activity() {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1.5">Catatan (opsional)</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">Catatan (opsional)</label>
                 <textarea
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   rows={2}
                   placeholder="Catatan tambahan..."
-                  className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
               </div>
 

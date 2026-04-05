@@ -135,11 +135,13 @@ function StatCard({
   value,
   icon: Icon,
   tone,
+  href,
 }: {
   label: string;
   value: number;
   icon: ElementType;
   tone: "blue" | "green" | "amber" | "rose";
+  href?: string;
 }) {
   const toneClasses = {
     blue: "bg-sky-500/10 text-sky-300",
@@ -148,17 +150,29 @@ function StatCard({
     rose: "bg-rose-500/10 text-rose-300",
   };
 
+  const inner = (
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
+        <p className="mt-3 text-5xl font-semibold tracking-tight text-white">{value}</p>
+      </div>
+      <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${toneClasses[tone]}`}>
+        <Icon className="h-5 w-5" />
+      </div>
+    </div>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className="block rounded-[28px] border border-white/8 bg-[#0b1525] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)] transition-colors hover:border-white/14 hover:bg-[#0d1a2f]">
+        {inner}
+      </Link>
+    );
+  }
+
   return (
     <div className="rounded-[28px] border border-white/8 bg-[#0b1525] p-5 shadow-[0_30px_80px_rgba(0,0,0,0.28)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">{label}</p>
-          <p className="mt-3 text-5xl font-semibold tracking-tight text-white">{value}</p>
-        </div>
-        <div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${toneClasses[tone]}`}>
-          <Icon className="h-5 w-5" />
-        </div>
-      </div>
+      {inner}
     </div>
   );
 }
@@ -277,10 +291,10 @@ export default function Dashboard() {
         </section>
 
         <section className="grid gap-4 xl:grid-cols-4">
-          <StatCard label="Total PT" value={totalPts} icon={Users} tone="blue" />
-          <StatCard label="Status Hijau" value={data.greenCount} icon={CheckCircle2} tone="green" />
-          <StatCard label="Perlu Perhatian" value={data.yellowCount} icon={Clock3} tone="amber" />
-          <StatCard label="Status Kritis" value={data.redCount} icon={ShieldAlert} tone="rose" />
+          <StatCard label="Total PT" value={totalPts} icon={Users} tone="blue" href="/reports" />
+          <StatCard label="Status Hijau" value={data.greenCount} icon={CheckCircle2} tone="green" href="/kpi" />
+          <StatCard label="Perlu Perhatian" value={data.yellowCount} icon={Clock3} tone="amber" href="/findings" />
+          <StatCard label="Status Kritis" value={data.redCount} icon={ShieldAlert} tone="rose" href="/findings" />
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.7fr_1fr]">
@@ -303,16 +317,16 @@ export default function Dashboard() {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <div className="rounded-[24px] border border-white/6 bg-[#0e1a2d] p-4">
+                <Link href="/findings" className="block rounded-[24px] border border-white/6 bg-[#0e1a2d] p-4 transition-colors hover:border-white/12 hover:bg-[#111f35]">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Temuan Terbuka</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{totalOpenFindings}</p>
                   <p className="mt-2 text-sm text-slate-400">Total tiket aktif lintas PT.</p>
-                </div>
-                <div className="rounded-[24px] border border-white/6 bg-[#0e1a2d] p-4">
+                </Link>
+                <Link href="/findings" className="block rounded-[24px] border border-white/6 bg-[#0e1a2d] p-4 transition-colors hover:border-amber-500/20 hover:bg-amber-500/5">
                   <p className="text-xs uppercase tracking-[0.18em] text-slate-500">Deadline Lewat</p>
                   <p className="mt-3 text-3xl font-semibold text-white">{totalOverdue}</p>
                   <p className="mt-2 text-sm text-slate-400">Fokus utama untuk penanganan cepat.</p>
-                </div>
+                </Link>
               </div>
             </div>
           </div>
@@ -458,11 +472,11 @@ export default function Dashboard() {
 
               <div className="space-y-4">
                 {([
-                  ["Hijau", data.greenCount, "green"],
-                  ["Kuning", data.yellowCount, "yellow"],
-                  ["Merah", data.redCount, "red"],
-                ] as const).map(([label, value, tone]) => (
-                  <div key={label} className="rounded-[22px] border border-white/6 bg-[#0e1a2d] p-4">
+                  ["Hijau", data.greenCount, "green", "/kpi"],
+                  ["Kuning", data.yellowCount, "yellow", "/findings"],
+                  ["Merah", data.redCount, "red", "/findings"],
+                ] as const).map(([label, value, tone, href]) => (
+                  <Link key={label} href={href} className="block rounded-[22px] border border-white/6 bg-[#0e1a2d] p-4 transition-colors hover:border-white/12 hover:bg-[#111f35]">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="text-sm text-slate-300">{label}</span>
                       <span className="text-2xl font-semibold text-white">{value}</span>
@@ -481,7 +495,7 @@ export default function Dashboard() {
                         }}
                       />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -498,18 +512,22 @@ export default function Dashboard() {
               </div>
 
               <div className="space-y-3 text-sm">
-                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
-                  PT aman: <span className="font-semibold text-white">{data.greenCount}</span>
-                </div>
-                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
-                  Perlu perhatian: <span className="font-semibold text-white">{data.yellowCount}</span>
-                </div>
-                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
-                  Kritis: <span className="font-semibold text-white">{data.redCount}</span>
-                </div>
-                <div className="rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300">
-                  Total temuan terbuka: <span className="font-semibold text-white">{totalOpenFindings}</span>
-                </div>
+                <Link href="/kpi" className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-emerald-500/20 hover:bg-emerald-500/5 hover:text-white">
+                  <span>PT aman</span>
+                  <span className="font-semibold text-emerald-400">{data.greenCount}</span>
+                </Link>
+                <Link href="/findings" className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-amber-500/20 hover:bg-amber-500/5 hover:text-white">
+                  <span>Perlu perhatian</span>
+                  <span className="font-semibold text-amber-400">{data.yellowCount}</span>
+                </Link>
+                <Link href="/findings" className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-rose-500/20 hover:bg-rose-500/5 hover:text-white">
+                  <span>Kritis</span>
+                  <span className="font-semibold text-rose-400">{data.redCount}</span>
+                </Link>
+                <Link href="/findings" className="flex items-center justify-between rounded-[22px] border border-white/6 bg-[#0e1a2d] px-4 py-3 text-slate-300 transition-colors hover:border-white/12 hover:bg-[#111f35] hover:text-white">
+                  <span>Total temuan terbuka</span>
+                  <span className="font-semibold text-white">{totalOpenFindings}</span>
+                </Link>
               </div>
             </div>
           </div>
