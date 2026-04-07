@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   useListActivities,
@@ -14,9 +14,11 @@ import {
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2, Clock, Building2, Users, ClipboardCheck, ChevronDown, ChevronUp,
-  AlertTriangle, CheckSquare, Square, MessageCircle, Send, Layers,
+  AlertTriangle, CheckSquare, Square, MessageCircle, Send, Layers, Paperclip, Download, Trash2,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
+import { detectActivityScope, stripActivityScopeTag } from "@/lib/activity-scope";
+import { getActivityDocuments, formatFileSize } from "@/lib/activity-documents";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   kyc: "KYC", cdd: "CDD", screening: "Screening",
@@ -38,7 +40,7 @@ type Comment = {
   authorId: string; authorName: string | null; authorRole: string | null;
 };
 
-/* ─── inline comment thread ─── */
+/* inline comment thread */
 function CommentThread({ activityId, currentUserId }: { activityId: string; currentUserId: string }) {
   const [text, setText] = useState("");
   const [posting, setPosting] = useState(false);
@@ -73,7 +75,7 @@ function CommentThread({ activityId, currentUserId }: { activityId: string; curr
                   : "bg-slate-100 text-slate-700 rounded-tl-none"
               }`}>
                 <p className={`font-semibold mb-0.5 ${c.authorId === currentUserId ? "text-blue-100" : "text-slate-500"}`}>
-                  {c.authorName ?? "?"} · {c.authorRole ? ROLE_BADGE[c.authorRole] ?? c.authorRole : ""}
+                  {c.authorName ?? "?"} - {c.authorRole ? ROLE_BADGE[c.authorRole] ?? c.authorRole : ""}
                 </p>
                 <p>{c.content}</p>
                 <p className={`text-xs mt-1 ${c.authorId === currentUserId ? "text-blue-200" : "text-slate-400"}`}>
@@ -101,12 +103,13 @@ function CommentThread({ activityId, currentUserId }: { activityId: string; curr
   );
 }
 
-/* ─── main page ─── */
+/* main page */
 export default function DKReview() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const [filterPt, setFilterPt] = useState("");
+  const [filterScope, setFilterScope] = useState<"" | "daily" | "monthly" | "quarterly">("");
   const [filterTab, setFilterTab] = useState<"pending" | "reviewed">("pending");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
@@ -119,6 +122,7 @@ export default function DKReview() {
   const [batchNotes, setBatchNotes] = useState("");
   const [batchConfirm, setBatchConfirm] = useState(false);
   const [batchDoing, setBatchDoing] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const activityParams: Record<string, string> = {};
   if (filterPt) activityParams.ptId = filterPt;
@@ -128,6 +132,19 @@ export default function DKReview() {
   const { data: activities, isLoading } = useListActivities(activityParams);
   const { data: pts } = useListPts();
   const { data: dashboardData } = useGetDashboardSummary();
+  const allActivities = activities ?? [];
+  const scopeCounts = allActivities.reduce(
+    (acc, activity) => {
+      const scope = detectActivityScope(activity.notes);
+      acc[scope] += 1;
+      return acc;
+    },
+    { daily: 0, monthly: 0, quarterly: 0 } as Record<"daily" | "monthly" | "quarterly", number>,
+  );
+  const filteredActivities = (activities ?? []).filter((a) => {
+    if (!filterScope) return true;
+    return detectActivityScope(a.notes) === filterScope;
+  });
 
   const { mutate: reviewActivity, isPending: reviewing } = useReviewActivity<ErrorType<ErrorResponse>>({
     mutation: {
@@ -142,7 +159,7 @@ export default function DKReview() {
 
   const getPtCode = (ptId: string) => pts?.find(p => p.id === ptId)?.code ?? ptId.slice(0, 8);
 
-  const pendingCount = activities?.length ?? 0;
+  const pendingCount = filteredActivities.length;
   const today = new Date().toISOString().split("T")[0];
 
   const consecutiveRedPts: PtStatusCard[] = dashboardData?.ptStatuses?.filter(p => p.consecutiveRedDays >= 2) ?? [];
@@ -164,7 +181,7 @@ export default function DKReview() {
       return next;
     });
   };
-  const selectAll = () => setSelectedIds(new Set((activities ?? []).map(a => a.id)));
+  const selectAll = () => setSelectedIds(new Set(filteredActivities.map(a => a.id)));
   const clearAll = () => setSelectedIds(new Set());
 
   const doBatchReview = async () => {
@@ -186,11 +203,32 @@ export default function DKReview() {
     setBatchDoing(false);
   };
 
+  const deleteActivity = async (id: string) => {
+    const confirmed = window.confirm("Hapus aktivitas ini? Data dan dokumen terkait akan ikut terhapus.");
+    if (!confirmed) return;
+    setDeletingId(id);
+    try {
+      await apiFetch(`/api/activities/${id}`, { method: "DELETE" });
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      if (expandedId === id) setExpandedId(null);
+      if (reviewingId === id) setReviewingId(null);
+      queryClient.invalidateQueries({ queryKey: getListActivitiesQueryKey() });
+    } catch (err) {
+      alert((err as Error).message ?? "Gagal menghapus aktivitas.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 pb-20 sm:pb-6">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="mb-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -198,7 +236,7 @@ export default function DKReview() {
                 <ClipboardCheck className="w-5 h-5 text-blue-600 flex-shrink-0" />
                 Review Aktivitas
               </h1>
-              <p className="text-sm text-slate-500 mt-0.5">DK — tinjau dan setujui laporan aktivitas harian APUPPT</p>
+              <p className="text-sm text-slate-500 mt-0.5">DK - tinjau dan setujui laporan aktivitas harian APUPPT</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {filterTab === "pending" && (
@@ -220,13 +258,44 @@ export default function DKReview() {
                 className="w-full sm:w-auto px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Semua PT</option>
-                {pts?.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
+                {pts?.map(p => <option key={p.id} value={p.id}>{p.code} - {p.name}</option>)}
               </select>
             </div>
           </div>
         </div>
 
-        {/* ── Alert box ── */}
+        <div className="mb-5">
+          <div className="inline-flex flex-wrap gap-1 rounded-lg bg-slate-100 p-1">
+            {[
+              { key: "", label: "Semua", count: allActivities.length },
+              { key: "daily", label: "Daily", count: scopeCounts.daily },
+              { key: "monthly", label: "Monthly", count: scopeCounts.monthly },
+              { key: "quarterly", label: "Triwulan", count: scopeCounts.quarterly },
+            ].map((tab) => (
+              <button
+                key={tab.key || "all"}
+                type="button"
+                onClick={() => setFilterScope(tab.key as "" | "daily" | "monthly" | "quarterly")}
+                className={`inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filterScope === tab.key
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-700"
+                }`}
+              >
+                {tab.label}
+                <span
+                  className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                    filterScope === tab.key ? "bg-slate-900 text-white" : "bg-slate-200 text-slate-600"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Alert box */}
         {hasAlerts && (
           <div className="mb-5 rounded-xl border-2 border-red-300 bg-red-50 shadow-md overflow-hidden">
             <button
@@ -238,7 +307,7 @@ export default function DKReview() {
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-red-500 flex-shrink-0">
                   <AlertTriangle className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-sm font-bold text-red-800 uppercase tracking-wide">⚠ Butuh Perhatian</span>
+                <span className="text-sm font-bold text-red-800 uppercase tracking-wide">Butuh Perhatian</span>
                 {totalAlerts > 0 && (
                   <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">{totalAlerts}</span>
                 )}
@@ -258,7 +327,7 @@ export default function DKReview() {
                         <div key={p.id} className="flex items-center gap-2 text-xs">
                           <span className="font-bold bg-red-600 text-white px-2 py-0.5 rounded">{p.code}</span>
                           <span className="text-red-800 font-medium">{p.name}</span>
-                          <span className="ml-auto font-bold text-orange-700 bg-orange-100 border border-orange-200 px-2 py-0.5 rounded">🔥 {p.consecutiveRedDays} hari</span>
+                          <span className="ml-auto font-bold text-orange-700 bg-orange-100 border border-orange-200 px-2 py-0.5 rounded">{p.consecutiveRedDays} hari</span>
                         </div>
                       ))}
                     </div>
@@ -305,7 +374,7 @@ export default function DKReview() {
           </div>
         )}
 
-        {/* ── Tabs ── */}
+        {/* Tabs */}
         <div className="flex gap-1 bg-slate-100 rounded-lg p-1 mb-5 w-fit">
           <button
             onClick={() => { setFilterTab("pending"); setBatchMode(false); setSelectedIds(new Set()); }}
@@ -324,12 +393,12 @@ export default function DKReview() {
           </button>
         </div>
 
-        {/* ── Batch bar ── */}
-        {batchMode && filterTab === "pending" && activities && activities.length > 0 && (
+        {/* Batch bar */}
+        {batchMode && filterTab === "pending" && filteredActivities.length > 0 && (
           <div className="mb-4 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-3 flex-1">
               <button onClick={selectAll} className="flex items-center gap-1.5 text-xs text-blue-700 font-medium hover:text-blue-900">
-                <CheckSquare className="w-4 h-4" />Pilih Semua ({activities.length})
+                <CheckSquare className="w-4 h-4" />Pilih Semua ({filteredActivities.length})
               </button>
               {selectedIds.size > 0 && (
                 <button onClick={clearAll} className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700">
@@ -349,7 +418,7 @@ export default function DKReview() {
           </div>
         )}
 
-        {/* ── Batch confirm modal ── */}
+        {/* Batch confirm modal */}
         {batchConfirm && (
           <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
@@ -382,10 +451,10 @@ export default function DKReview() {
           </div>
         )}
 
-        {/* ── Activity list ── */}
+        {/* Activity list */}
         {isLoading ? (
           <div className="text-center py-12 text-slate-400 text-sm">Memuat...</div>
-        ) : !activities || activities.length === 0 ? (
+        ) : filteredActivities.length === 0 ? (
           <div className="bg-white rounded-xl border border-slate-200 py-14 text-center">
             <CheckCircle2 className="w-10 h-10 text-slate-200 mx-auto mb-3" />
             <p className="text-sm text-slate-400 font-medium">
@@ -394,10 +463,18 @@ export default function DKReview() {
           </div>
         ) : (
           <div className="space-y-2">
-            {activities.map((a: DailyActivity) => {
+            {filteredActivities.map((a: DailyActivity) => {
               const isExpanded = expandedId === a.id;
               const isReviewing = reviewingId === a.id;
               const isSelected = selectedIds.has(a.id);
+              const scope = detectActivityScope(a.notes);
+              const scopeBadgeClass =
+                scope === "monthly"
+                  ? "text-indigo-700 bg-indigo-50 border-indigo-200"
+                  : scope === "quarterly"
+                    ? "text-fuchsia-700 bg-fuchsia-50 border-fuchsia-200"
+                    : "text-cyan-700 bg-cyan-50 border-cyan-200";
+              const scopeLabel = scope === "monthly" ? "Monthly" : scope === "quarterly" ? "Triwulan" : "Daily";
 
               return (
                 <div key={a.id} className={`bg-white rounded-xl border shadow-sm transition-all ${
@@ -429,6 +506,9 @@ export default function DKReview() {
                           </span>
                           <span className="text-xs font-medium text-slate-700 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded">
                             {ACTIVITY_LABELS[a.activityType] ?? a.activityType}
+                          </span>
+                          <span className={`text-xs font-medium border px-2 py-0.5 rounded ${scopeBadgeClass}`}>
+                            {scopeLabel}
                           </span>
                           {a.branchName && (
                             <span className="text-xs text-slate-500 flex items-center gap-1">
@@ -466,6 +546,16 @@ export default function DKReview() {
                           </button>
                         )}
                         {!batchMode && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); void deleteActivity(a.id); }}
+                            disabled={deletingId === a.id}
+                            className="px-3 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs font-medium hover:bg-red-100 disabled:opacity-50 transition-colors inline-flex items-center gap-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            {deletingId === a.id ? "..." : "Hapus"}
+                          </button>
+                        )}
+                        {!batchMode && (
                           isExpanded
                             ? <ChevronUp className="w-4 h-4 text-slate-400" />
                             : <ChevronDown className="w-4 h-4 text-slate-400" />
@@ -485,7 +575,7 @@ export default function DKReview() {
                               ? a.customerRiskCategories.map(rc => (
                                   <span key={rc} className={`px-2 py-0.5 rounded border text-xs ${RISK_COLOR[rc] ?? ""}`}>{RISK_LABEL[rc] ?? rc}</span>
                                 ))
-                              : <span className="text-slate-300">—</span>
+                              : <span className="text-slate-300">-</span>
                             }
                           </div>
                         </div>
@@ -495,10 +585,35 @@ export default function DKReview() {
                             <p className="text-slate-700 mt-1">{a.findingSummary}</p>
                           </div>
                         )}
-                        {a.notes && (
+                        {stripActivityScopeTag(a.notes) && (
                           <div>
                             <span className="text-slate-400 font-medium">Catatan APUPPT</span>
-                            <p className="text-slate-700 mt-1">{a.notes}</p>
+                            <p className="text-slate-700 mt-1">{stripActivityScopeTag(a.notes)}</p>
+                          </div>
+                        )}
+                        {getActivityDocuments(a).length > 0 && (
+                          <div className="sm:col-span-2">
+                            <span className="text-slate-400 font-medium">Dokumen</span>
+                            <div className="mt-1.5 space-y-1.5">
+                              {getActivityDocuments(a).map((doc) => (
+                                <a
+                                  key={doc.id}
+                                  href={`/api/activities/${a.id}/documents/${doc.id}/download`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100"
+                                >
+                                  <span className="min-w-0 flex items-center gap-1.5">
+                                    <Paperclip className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
+                                    <span className="truncate">{doc.originalName}</span>
+                                  </span>
+                                  <span className="ml-2 flex items-center gap-2 text-slate-500">
+                                    <span>{formatFileSize(doc.size)}</span>
+                                    <Download className="h-3.5 w-3.5" />
+                                  </span>
+                                </a>
+                              ))}
+                            </div>
                           </div>
                         )}
                         {a.dkNotes && (
@@ -559,7 +674,7 @@ export default function DKReview() {
         )}
       </div>
 
-      {/* ── Mobile batch action bar ── */}
+      {/* Mobile batch action bar */}
       {batchMode && selectedIds.size > 0 && (
         <div className="fixed bottom-16 left-0 right-0 z-30 sm:hidden border-t border-slate-200 bg-white px-4 pb-3 pt-2 shadow-xl">
           <button
@@ -573,3 +688,4 @@ export default function DKReview() {
     </div>
   );
 }
+

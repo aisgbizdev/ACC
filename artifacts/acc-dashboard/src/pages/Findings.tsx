@@ -92,6 +92,10 @@ export default function Findings() {
 
   const activePtId = user?.ptId ?? form.ptId;
   const branchesForForm = branches?.filter(b => b.ptId === activePtId) ?? branches ?? [];
+  const controlClass =
+    "w-full px-3 py-2 bg-[#0e1a2d] text-slate-100 border border-white/10 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+  const labelClass = "block text-xs font-medium text-slate-300 mb-1";
+  const selectClass = `${controlClass} findings-form-select`;
 
   return (
     <PageChrome
@@ -110,11 +114,11 @@ export default function Findings() {
                 {pts.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
               </select>
             )}
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="px-3 py-1.5 bg-[#0e1a2d] border border-white/10 rounded-lg text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 findings-form-select"
+              >
               <option value="">Semua Status</option>
               <option value="pending">Pending</option>
               <option value="in_progress">In Progress</option>
@@ -140,11 +144,11 @@ export default function Findings() {
             <div className="space-y-3">
               {user?.role === "dk" && !user.ptId && (
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">PT *</label>
+                  <label className={labelClass}>PT *</label>
                   <select
                     value={form.ptId}
                     onChange={(e) => setForm({ ...form, ptId: e.target.value, branchId: "" })}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={selectClass}
                   >
                     <option value="">Pilih PT</option>
                     {pts?.map((p) => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
@@ -153,13 +157,13 @@ export default function Findings() {
               )}
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className={labelClass}>
                   <Building2 className="w-3.5 h-3.5 inline mr-1" />Cabang (opsional)
                 </label>
                 <select
                   value={form.branchId}
                   onChange={(e) => setForm({ ...form, branchId: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={selectClass}
                 >
                   <option value="">— Semua / Kantor Pusat —</option>
                   {branchesForForm.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -168,41 +172,41 @@ export default function Findings() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Tanggal</label>
+                  <label className={labelClass}>Tanggal</label>
                   <input
                     type="date"
                     value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={controlClass}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Deadline *</label>
+                  <label className={labelClass}>Deadline *</label>
                   <input
                     type="date"
                     value={form.deadline}
                     onChange={(e) => setForm({ ...form, deadline: e.target.value })}
                     min={form.date}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={controlClass}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Deskripsi Temuan *</label>
+                <label className={labelClass}>Deskripsi Temuan *</label>
                 <textarea
                   value={form.findingText}
                   onChange={(e) => setForm({ ...form, findingText: e.target.value })}
                   rows={3}
                   placeholder="Deskripsikan temuan secara lengkap..."
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className={`${controlClass} resize-none`}
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Status</label>
+                <label className={labelClass}>Status</label>
                 <select
                   value={form.status}
                   onChange={(e) => setForm({ ...form, status: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={selectClass}
                 >
                   <option value="pending">Pending</option>
                   <option value="in_progress">In Progress</option>
@@ -210,12 +214,12 @@ export default function Findings() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Catatan (opsional)</label>
+                <label className={labelClass}>Catatan (opsional)</label>
                 <textarea
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  className={`${controlClass} resize-none`}
                 />
               </div>
               {formError && (

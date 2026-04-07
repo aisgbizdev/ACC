@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { eq, and, SQL, isNull, isNotNull, inArray } from "drizzle-orm";
 import { db, dailyActivitiesTable, branchesTable, activityReviewsTable, usersTable, activityCommentsTable } from "@workspace/db";
 import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams, ReviewActivityBody } from "@workspace/api-zod";
@@ -6,10 +6,78 @@ import { requireAuth, requireRole } from "../middlewares/auth";
 import { z } from "zod";
 import { logAudit } from "../lib/audit";
 import { notifyNewActivity } from "../lib/push-notify";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import { randomUUID } from "crypto";
 
 const router: IRouter = Router();
 
 const CUSTOMER_DATA_EXEMPT = ["sosialisasi", "libur"] as const;
+const MAX_ACTIVITY_DOCS = 10;
+
+const activityDocsDir = path.join(process.cwd(), "uploads", "activity-documents");
+if (!fs.existsSync(activityDocsDir)) fs.mkdirSync(activityDocsDir, { recursive: true });
+
+type ActivityDocument = {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+};
+
+const activityDocumentsSchema = z.array(
+  z.object({
+    id: z.string(),
+    fileName: z.string(),
+    originalName: z.string(),
+    mimeType: z.string(),
+    size: z.number(),
+    uploadedAt: z.string(),
+  }),
+);
+
+function parseDocuments(raw: unknown): ActivityDocument[] {
+  const parsed = activityDocumentsSchema.safeParse(raw);
+  return parsed.success ? parsed.data : [];
+}
+
+const activityDocUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, activityDocsDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname) || "";
+      cb(null, `${Date.now()}-${randomUUID()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024, files: MAX_ACTIVITY_DOCS },
+  fileFilter: (_req, file, cb) => {
+    const allowedMime = new Set([
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "image/jpeg",
+      "image/png",
+    ]);
+    if (allowedMime.has(file.mimetype)) cb(null, true);
+    else cb(new Error("Format dokumen tidak didukung."));
+  },
+});
+
+const uploadActivityDocumentsMiddleware = (req: Request, res: Response, next: NextFunction) => {
+  activityDocUpload.array("documents", MAX_ACTIVITY_DOCS)(req, res, (err) => {
+    if (err) {
+      const message = err instanceof Error ? err.message : "Gagal mengunggah dokumen.";
+      res.status(400).json({ error: message });
+      return;
+    }
+    next();
+  });
+};
 
 function requiresCustomerData(activityType: string): boolean {
   return !(CUSTOMER_DATA_EXEMPT as readonly string[]).includes(activityType);
@@ -34,6 +102,7 @@ const ACTIVITY_SELECT = {
   findingSummary: dailyActivitiesTable.findingSummary,
   findingStatus: dailyActivitiesTable.findingStatus,
   notes: dailyActivitiesTable.notes,
+  documents: dailyActivitiesTable.documents,
   dkReviewedAt: dailyActivitiesTable.dkReviewedAt,
   dkReviewedBy: dailyActivitiesTable.dkReviewedBy,
   dkNotes: dailyActivitiesTable.dkNotes,
@@ -236,6 +305,54 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
   res.json(withBranch);
 });
 
+router.delete("/activities/:id", requireRole("dk", "du", "owner", "superadmin"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: "ID aktivitas tidak valid." });
+    return;
+  }
+
+  const [existing] = await db
+    .select({
+      id: dailyActivitiesTable.id,
+      ptId: dailyActivitiesTable.ptId,
+      documents: dailyActivitiesTable.documents,
+      activityType: dailyActivitiesTable.activityType,
+      date: dailyActivitiesTable.date,
+    })
+    .from(dailyActivitiesTable)
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  if (!existing) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  if (user.ptId && existing.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  await db.delete(activityReviewsTable).where(eq(activityReviewsTable.activityId, params.data.id));
+  await db.delete(activityCommentsTable).where(eq(activityCommentsTable.activityId, params.data.id));
+  await db.delete(dailyActivitiesTable).where(eq(dailyActivitiesTable.id, params.data.id));
+
+  const docs = parseDocuments(existing.documents);
+  for (const doc of docs) {
+    fs.unlink(path.join(activityDocsDir, doc.fileName), () => undefined);
+  }
+
+  await logAudit("delete_activity", "activity", existing.id, req, {
+    ptId: existing.ptId,
+    beforeData: { activityType: existing.activityType, date: existing.date },
+  });
+
+  res.json({ success: true });
+});
+
 router.post("/activities/:id/review", requireRole("dk"), async (req, res): Promise<void> => {
   const user = req.session.user!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
@@ -348,6 +465,112 @@ router.post("/activities/batch-review", requireRole("dk"), async (req, res): Pro
     .where(inArray(dailyActivitiesTable.id, toReview.map(a => a.id)));
 
   res.json({ reviewedCount: toReview.length });
+});
+
+router.post(
+  "/activities/:id/documents",
+  requireRole("apuppt"),
+  uploadActivityDocumentsMiddleware,
+  async (req, res): Promise<void> => {
+    const user = req.session.user!;
+    const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const params = ReviewParamsSchema.safeParse({ id: rawId });
+
+    if (!params.success) {
+      res.status(400).json({ error: "ID aktivitas tidak valid." });
+      return;
+    }
+
+    const [activity] = await db
+      .select({ id: dailyActivitiesTable.id, ptId: dailyActivitiesTable.ptId, documents: dailyActivitiesTable.documents })
+      .from(dailyActivitiesTable)
+      .where(eq(dailyActivitiesTable.id, params.data.id));
+
+    if (!activity) {
+      res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+      return;
+    }
+
+    if (activity.ptId !== user.ptId) {
+      res.status(403).json({ error: "Akses ditolak." });
+      return;
+    }
+
+    const files = (req.files as Express.Multer.File[] | undefined) ?? [];
+    if (files.length === 0) {
+      res.status(400).json({ error: "Tidak ada dokumen yang diunggah." });
+      return;
+    }
+
+    const existingDocs = parseDocuments(activity.documents);
+    const uploadedDocs: ActivityDocument[] = files.map((file) => ({
+      id: randomUUID(),
+      fileName: file.filename,
+      originalName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      uploadedAt: new Date().toISOString(),
+    }));
+
+    const nextDocs = [...existingDocs, ...uploadedDocs];
+    if (nextDocs.length > MAX_ACTIVITY_DOCS) {
+      for (const file of files) {
+        fs.unlink(path.join(activityDocsDir, file.filename), () => undefined);
+      }
+      res.status(400).json({ error: `Maksimal ${MAX_ACTIVITY_DOCS} dokumen per aktivitas.` });
+      return;
+    }
+
+    await db
+      .update(dailyActivitiesTable)
+      .set({ documents: nextDocs })
+      .where(eq(dailyActivitiesTable.id, params.data.id));
+
+    res.json({ documents: nextDocs });
+  },
+);
+
+router.get("/activities/:id/documents/:docId/download", requireAuth, async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const docId = Array.isArray(req.params.docId) ? req.params.docId[0] : req.params.docId;
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
+
+  if (!params.success || !docId) {
+    res.status(400).json({ error: "Parameter tidak valid." });
+    return;
+  }
+
+  const [activity] = await db
+    .select({ ptId: dailyActivitiesTable.ptId, documents: dailyActivitiesTable.documents })
+    .from(dailyActivitiesTable)
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  if (!activity) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  if (user.ptId && activity.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  const docs = parseDocuments(activity.documents);
+  const doc = docs.find((item) => item.id === docId);
+
+  if (!doc) {
+    res.status(404).json({ error: "Dokumen tidak ditemukan." });
+    return;
+  }
+
+  const filePath = path.join(activityDocsDir, doc.fileName);
+  if (!fs.existsSync(filePath)) {
+    res.status(404).json({ error: "File dokumen tidak ditemukan di server." });
+    return;
+  }
+
+  res.download(filePath, doc.originalName);
 });
 
 router.get("/activities/:id/comments", requireAuth, async (req, res): Promise<void> => {

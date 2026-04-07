@@ -10,6 +10,14 @@ export type ActivityType = typeof ACTIVITY_TYPES[number];
 
 export const CUSTOMER_RISK_CATEGORIES = ["high", "medium", "low"] as const;
 export type CustomerRiskCategory = typeof CUSTOMER_RISK_CATEGORIES[number];
+export type ActivityDocument = {
+  id: string;
+  fileName: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  uploadedAt: string;
+};
 
 export const dailyActivitiesTable = pgTable(
   "daily_activities",
@@ -26,6 +34,7 @@ export const dailyActivitiesTable = pgTable(
     findingSummary: text("finding_summary"),
     findingStatus: varchar("finding_status", { length: 20 }),
     notes: text("notes"),
+    documents: jsonb("documents").$type<ActivityDocument[]>().default([]),
     // DK Review
     dkReviewedAt: timestamp("dk_reviewed_at", { withTimezone: true }),
     dkReviewedBy: uuid("dk_reviewed_by").references(() => usersTable.id),

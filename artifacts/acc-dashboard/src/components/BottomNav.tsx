@@ -12,7 +12,7 @@ export function BottomNav() {
 
   const allItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
-    { href: "/activity", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
+    { href: "/activity/daily", label: "Aktivitas", icon: FileText, roles: ["apuppt"] },
     { href: "/findings", label: "Temuan", icon: AlertTriangle, roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
     { href: "/reports", label: "Laporan", icon: BarChart2, roles: ["dk", "du", "owner", "superadmin"] },
     { href: "/monthly-recap", label: "Rekap", icon: FileBarChart, roles: ["dk", "du", "owner", "superadmin"] },

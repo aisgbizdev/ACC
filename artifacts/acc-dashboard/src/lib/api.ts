@@ -5,10 +5,15 @@ export function getBaseUrl(): string {
 }
 
 export async function apiFetch<T = unknown>(path: string, options?: RequestInit): Promise<T> {
+  const isFormData = typeof FormData !== "undefined" && options?.body instanceof FormData;
+  const headers: Record<string, string> = isFormData
+    ? {}
+    : { "Content-Type": "application/json" };
+
   const res = await fetch(`${getBaseUrl()}${path}`, {
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
+      ...headers,
       ...(options?.headers ?? {}),
     },
     ...options,
@@ -17,5 +22,14 @@ export async function apiFetch<T = unknown>(path: string, options?: RequestInit)
     const data = await res.json().catch(() => ({}));
     throw new Error(data?.error ?? `HTTP ${res.status}`);
   }
-  return res.json();
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+  if (!text) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }

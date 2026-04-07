@@ -423,4 +423,10 @@
   .app-shell-main .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
     border-color: rgba(255, 255, 255, 0.06) !important;
   }
+
+  /* Keep native select popup options readable on Windows browsers. */
+  .findings-form-select option {
+    color: #0f172a;
+    background-color: #f8fafc;
+  }
 }

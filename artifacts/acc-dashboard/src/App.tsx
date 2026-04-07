@@ -11,7 +11,9 @@ import ChangePassword from "@/pages/ChangePassword";
 import Profile from "@/pages/Profile";
 import Dashboard from "@/pages/Dashboard";
 import PTDetail from "@/pages/PTDetail";
-import Activity from "@/pages/Activity";
+import ActivityDaily from "@/pages/ActivityDaily";
+import ActivityMonthly from "@/pages/ActivityMonthly";
+import ActivityQuarterly from "@/pages/ActivityQuarterly";
 import Activities from "@/pages/Activities";
 import Findings from "@/pages/Findings";
 import FindingDetail from "@/pages/FindingDetail";
@@ -90,7 +92,22 @@ function Router() {
         </Route>
         <Route path="/activity">
           <ProtectedRoute allowedRoles={["apuppt"]}>
-            <Activity />
+            <Redirect to="/activity/daily" />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/activity/daily">
+          <ProtectedRoute allowedRoles={["apuppt"]}>
+            <ActivityDaily />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/activity/monthly">
+          <ProtectedRoute allowedRoles={["apuppt"]}>
+            <ActivityMonthly />
+          </ProtectedRoute>
+        </Route>
+        <Route path="/activity/quarterly">
+          <ProtectedRoute allowedRoles={["apuppt"]}>
+            <ActivityQuarterly />
           </ProtectedRoute>
         </Route>
         <Route path="/activities">
