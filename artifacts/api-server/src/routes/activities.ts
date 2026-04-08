@@ -176,8 +176,8 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
 
   const needsCustomerData = requiresCustomerData(data.activityType);
 
-  if (needsCustomerData && (data.itemsReviewed ?? 0) <= 0) {
-    res.status(400).json({ error: `Jumlah nasabah diperiksa harus lebih dari 0 untuk jenis kegiatan ${data.activityType}.` });
+  if (needsCustomerData && (data.itemsReviewed ?? 0) < 0) {
+    res.status(400).json({ error: `Jumlah nasabah diperiksa tidak boleh negatif untuk jenis kegiatan ${data.activityType}.` });
     return;
   }
 
@@ -265,8 +265,8 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
   const needsCustomerData = requiresCustomerData(effectiveType);
 
   const effectiveItemsReviewed = data.itemsReviewed !== undefined ? data.itemsReviewed : existing.itemsReviewed;
-  if (needsCustomerData && (effectiveItemsReviewed ?? 0) <= 0) {
-    res.status(400).json({ error: `Jumlah nasabah diperiksa harus lebih dari 0 untuk jenis kegiatan ${effectiveType}.` });
+  if (needsCustomerData && (effectiveItemsReviewed ?? 0) < 0) {
+    res.status(400).json({ error: `Jumlah nasabah diperiksa tidak boleh negatif untuk jenis kegiatan ${effectiveType}.` });
     return;
   }
 

@@ -500,7 +500,7 @@ export default function Activity({
     const selected = ACTIVITY_TYPES.find(t => t.value === form.activityType);
     const needsCustomer = selected?.needsCustomer ?? true;
     const isHolidayActivity = form.activityType === CreateActivityBodyActivityType.libur;
-    if (needsCustomer && form.itemsReviewed <= 0) { setError("Jumlah nasabah harus lebih dari 0 untuk jenis kegiatan ini."); return; }
+    if (needsCustomer && form.itemsReviewed < 0) { setError("Jumlah nasabah tidak boleh negatif untuk jenis kegiatan ini."); return; }
 
     const riskCats = form.customerRiskCategories.length > 0 ? form.customerRiskCategories : null;
 
@@ -783,12 +783,13 @@ export default function Activity({
                     <Users className="w-3.5 h-3.5 inline mr-1" />Jumlah Nasabah Diperiksa *
                   </label>
                   <input
-                    type="number" min="1"
-                    value={form.itemsReviewed || ""}
+                    type="number" min="0"
+                    value={String(form.itemsReviewed)}
                     onChange={(e) => setForm({ ...form, itemsReviewed: parseInt(e.target.value) || 0 })}
                     placeholder="0"
                     className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-xl text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <p className="mt-1 text-[11px] text-slate-500">Nilai 0 diperbolehkan.</p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-2">Kategori Risiko Nasabah (opsional)</label>
