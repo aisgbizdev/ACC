@@ -181,11 +181,6 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
     return;
   }
 
-  if (needsCustomerData && (!data.customerRiskCategories || data.customerRiskCategories.length === 0)) {
-    res.status(400).json({ error: `Kategori risiko nasabah wajib dipilih untuk jenis kegiatan ${data.activityType}.` });
-    return;
-  }
-
   const dateStr = data.date instanceof Date
     ? data.date.toISOString().split("T")[0]
     : String(data.date);
@@ -270,15 +265,8 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
   const needsCustomerData = requiresCustomerData(effectiveType);
 
   const effectiveItemsReviewed = data.itemsReviewed !== undefined ? data.itemsReviewed : existing.itemsReviewed;
-  const effectiveRiskCats = data.customerRiskCategories !== undefined ? data.customerRiskCategories : existing.customerRiskCategories;
-
   if (needsCustomerData && (effectiveItemsReviewed ?? 0) <= 0) {
     res.status(400).json({ error: `Jumlah nasabah diperiksa harus lebih dari 0 untuk jenis kegiatan ${effectiveType}.` });
-    return;
-  }
-
-  if (needsCustomerData && (!effectiveRiskCats || effectiveRiskCats.length === 0)) {
-    res.status(400).json({ error: `Kategori risiko nasabah wajib dipilih untuk jenis kegiatan ${effectiveType}.` });
     return;
   }
 

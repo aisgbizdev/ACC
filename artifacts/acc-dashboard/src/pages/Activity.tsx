@@ -463,6 +463,26 @@ export default function Activity({
         : [...prev.customerRiskCategories, cat],
     }));
 
+  const handleActivityTypeChange = (activityType: CreateActivityBodyActivityType) => {
+    const selectedMeta = ACTIVITY_TYPES.find((t) => t.value === activityType);
+    const isHoliday = activityType === CreateActivityBodyActivityType.libur;
+
+    setForm((prev) => ({
+      ...prev,
+      activityType,
+      customerRiskCategories: [],
+      itemsReviewed: selectedMeta?.needsCustomer ? prev.itemsReviewed : 0,
+      branchId: isHoliday ? "" : prev.branchId,
+      hasFinding: isHoliday ? false : prev.hasFinding,
+      findingSummary: isHoliday ? "" : prev.findingSummary,
+      findingStatus: isHoliday ? CreateActivityBodyFindingStatus.pending : prev.findingStatus,
+    }));
+
+    if (isHoliday) {
+      setDocumentFiles([]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -479,8 +499,8 @@ export default function Activity({
 
     const selected = ACTIVITY_TYPES.find(t => t.value === form.activityType);
     const needsCustomer = selected?.needsCustomer ?? true;
+    const isHolidayActivity = form.activityType === CreateActivityBodyActivityType.libur;
     if (needsCustomer && form.itemsReviewed <= 0) { setError("Jumlah nasabah harus lebih dari 0 untuk jenis kegiatan ini."); return; }
-    if (needsCustomer && form.customerRiskCategories.length === 0) { setError("Kategori risiko nasabah wajib dipilih minimal satu."); return; }
 
     const riskCats = form.customerRiskCategories.length > 0 ? form.customerRiskCategories : null;
 
@@ -491,13 +511,13 @@ export default function Activity({
         const updated = await updateActivity({
           id: editingId,
           data: {
-            branchId: form.branchId || null,
+            branchId: isHolidayActivity ? null : form.branchId || null,
             activityType: form.activityType as UpdateActivityBodyActivityType,
             itemsReviewed: Number(form.itemsReviewed),
             customerRiskCategories: riskCats as UpdateActivityBodyCustomerRiskCategoriesItem[] | null,
-            hasFinding: form.hasFinding,
-            findingSummary: form.hasFinding ? form.findingSummary || null : null,
-            findingStatus: form.hasFinding ? form.findingStatus as UpdateActivityBodyFindingStatus : null,
+            hasFinding: isHolidayActivity ? false : form.hasFinding,
+            findingSummary: !isHolidayActivity && form.hasFinding ? form.findingSummary || null : null,
+            findingStatus: !isHolidayActivity && form.hasFinding ? form.findingStatus as UpdateActivityBodyFindingStatus : null,
             notes: encodeNotesWithScope(activityView, form.notes),
           },
         });
@@ -506,21 +526,21 @@ export default function Activity({
         const created = await createActivity({
           data: {
             ptId: user.ptId,
-            branchId: form.branchId || null,
+            branchId: isHolidayActivity ? null : form.branchId || null,
             date: form.date,
             activityType: form.activityType,
             itemsReviewed: Number(form.itemsReviewed),
             customerRiskCategories: riskCats,
-            hasFinding: form.hasFinding,
-            findingSummary: form.hasFinding ? form.findingSummary || null : null,
-            findingStatus: form.hasFinding ? form.findingStatus : null,
+            hasFinding: isHolidayActivity ? false : form.hasFinding,
+            findingSummary: !isHolidayActivity && form.hasFinding ? form.findingSummary || null : null,
+            findingStatus: !isHolidayActivity && form.hasFinding ? form.findingStatus : null,
             notes: encodeNotesWithScope(activityView, form.notes),
           },
         });
         activityId = created.id;
       }
 
-      if (activityId && documentFiles.length > 0) {
+      if (!isHolidayActivity && activityId && documentFiles.length > 0) {
         setUploadingDocs(true);
         await uploadDocuments(activityId, documentFiles);
       }
@@ -536,6 +556,7 @@ export default function Activity({
 
   const selectedTypeMeta = ACTIVITY_TYPES.find(t => t.value === form.activityType);
   const needsCustomer = selectedTypeMeta?.needsCustomer ?? true;
+  const isHolidayActivity = form.activityType === CreateActivityBodyActivityType.libur;
 
   const monthlyActivities = activitiesWithScope.filter(a => a.scope === "monthly" && a.date.startsWith(selectedMonth));
   const monthlyItemsReviewed = monthlyActivities.reduce((sum, a) => sum + (a.itemsReviewed ?? 0), 0);
@@ -706,7 +727,7 @@ export default function Activity({
                     <button
                       key={t.value}
                       type="button"
-                      onClick={() => setForm({ ...form, activityType: t.value, customerRiskCategories: [], itemsReviewed: t.needsCustomer ? form.itemsReviewed : 0 })}
+                      onClick={() => handleActivityTypeChange(t.value)}
                       className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all ${
                         selected
                           ? "bg-blue-600/20 border-blue-500 text-blue-200"
@@ -738,7 +759,7 @@ export default function Activity({
             </div>
 
             {/* Branch */}
-            {branches && branches.length > 0 && (
+            {!isHolidayActivity && branches && branches.length > 0 && (
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">
                   <Building2 className="w-3.5 h-3.5 inline mr-1" />Cabang (opsional)
@@ -770,7 +791,7 @@ export default function Activity({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-2">Kategori Risiko Nasabah *</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-2">Kategori Risiko Nasabah (opsional)</label>
                   <div className="flex gap-2 flex-wrap">
                     {RISK_CATEGORIES.map(rc => {
                       const checked = form.customerRiskCategories.includes(rc.value);
@@ -791,6 +812,7 @@ export default function Activity({
             )}
 
             {/* Finding */}
+            {!isHolidayActivity && (
             <div className="rounded-xl border border-white/10 overflow-hidden">
               <label className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/5 transition-colors">
                 <input
@@ -824,6 +846,7 @@ export default function Activity({
                 </div>
               )}
             </div>
+            )}
 
             {/* Notes */}
             <div>
@@ -836,6 +859,7 @@ export default function Activity({
               />
             </div>
 
+            {!isHolidayActivity && (
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">Upload Dokumen (opsional)</label>
               <input
@@ -857,6 +881,7 @@ export default function Activity({
                 </div>
               )}
             </div>
+            )}
 
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2.5 text-xs text-red-400">{error}</div>
