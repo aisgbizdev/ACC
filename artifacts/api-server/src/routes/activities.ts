@@ -60,6 +60,9 @@ const activityDocUpload = multer({
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "application/vnd.ms-excel",
       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/csv",
+      "application/csv",
+      "application/vnd.csv",
       "image/jpeg",
       "image/png",
     ]);

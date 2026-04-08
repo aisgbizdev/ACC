@@ -866,7 +866,7 @@ export default function Activity({
               <input
                 type="file"
                 multiple
-                accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"
                 onChange={(e) => setDocumentFiles(Array.from(e.target.files ?? []))}
                 className="w-full rounded-xl border border-white/10 bg-[#0e1a2d] px-3 py-2 text-xs text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-700 file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-slate-100"
               />
