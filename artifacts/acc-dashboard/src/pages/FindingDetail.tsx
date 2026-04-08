@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useRoute, Link } from "wouter";
+import { useRoute, Link, useLocation } from "wouter";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowLeft, MessageSquare, CheckCircle, Edit2, Send } from "lucide-react";
+import { ArrowLeft, MessageSquare, CheckCircle, Edit2, Send, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/api";
+import { getListFindingsQueryKey } from "@workspace/api-client-react";
 
 type Finding = {
   id: string;
@@ -79,6 +80,7 @@ function useUsers() {
 
 export default function FindingDetail() {
   const [, params] = useRoute("/findings/:id");
+  const [, setLocation] = useLocation();
   const id = params?.id ?? "";
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -93,8 +95,10 @@ export default function FindingDetail() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const canEdit = user?.role === "dk" || user?.role === "apuppt" || user?.role === "superadmin";
+  const canDelete = canEdit;
 
   const startEdit = () => {
     if (!finding) return;
@@ -158,6 +162,23 @@ export default function FindingDetail() {
     setSubmittingComment(false);
   };
 
+  const deleteFinding = async () => {
+    if (!id || !canDelete || deleting) return;
+    const confirmed = window.confirm("Hapus temuan ini? Aksi ini tidak bisa dibatalkan.");
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      await apiFetch(`/api/findings/${id}`, { method: "DELETE" });
+      qc.invalidateQueries({ queryKey: getListFindingsQueryKey() });
+      qc.invalidateQueries({ queryKey: ["finding", id] });
+      qc.invalidateQueries({ queryKey: ["finding-comments", id] });
+      setLocation("/findings");
+    } catch {
+      setDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -218,6 +239,16 @@ export default function FindingDetail() {
                 {canEdit && !editMode && (
                   <button onClick={startEdit} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors">
                     <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {canDelete && !editMode && (
+                  <button
+                    onClick={deleteFinding}
+                    disabled={deleting}
+                    className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors disabled:opacity-50"
+                    title="Hapus temuan"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>

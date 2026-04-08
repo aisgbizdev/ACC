@@ -297,6 +297,42 @@ router.put("/findings/:id", requireAuth, async (req, res): Promise<void> => {
   res.json(withBranch);
 });
 
+router.delete("/findings/:id", requireAuth, async (req, res): Promise<void> => {
+  const user = req.session.user!;
+
+  if (user.role === "du" || user.role === "owner") {
+    res.status(403).json({ error: "Akses ditolak. Hanya APUPPT, DK, dan superadmin yang bisa menghapus temuan." });
+    return;
+  }
+
+  const findingId = req.params.id as string;
+  const [existing] = await db.select().from(findingsTable).where(eq(findingsTable.id, findingId));
+  if (!existing) {
+    res.status(404).json({ error: "Temuan tidak ditemukan." });
+    return;
+  }
+
+  if (user.ptId && existing.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  await db.delete(ticketCommentsTable).where(eq(ticketCommentsTable.findingId, findingId));
+  await db.delete(findingsTable).where(eq(findingsTable.id, findingId));
+
+  await logAudit("delete_finding", "finding", findingId, req, {
+    ptId: existing.ptId,
+    beforeData: {
+      findingText: existing.findingText,
+      status: existing.status,
+      assignedTo: existing.assignedTo,
+      deadline: existing.deadline,
+    },
+  });
+
+  res.status(204).send();
+});
+
 router.get("/findings/:id/comments", requireAuth, async (req, res): Promise<void> => {
   const user = req.session.user!;
   const findingId = req.params.id as string;

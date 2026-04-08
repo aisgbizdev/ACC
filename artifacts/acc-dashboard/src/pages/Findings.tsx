@@ -8,7 +8,7 @@ import {
   getListFindingsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, Plus, Building2, ExternalLink, Clock } from "lucide-react";
+import { AlertTriangle, Plus, Building2, ExternalLink, Clock, Trash2 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { PageChrome, Panel } from "@/components/PageChrome";
 
@@ -55,6 +55,7 @@ export default function Findings() {
   const [form, setForm] = useState(defaultForm);
   const [formError, setFormError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const handleCreate = async () => {
     setFormError("");
@@ -87,6 +88,23 @@ export default function Findings() {
   };
 
   const canCreate = user?.role === "apuppt" || user?.role === "dk";
+  const canDelete = canCreate || user?.role === "superadmin";
+
+  const handleDelete = async (id: string) => {
+    if (!canDelete || deletingId) return;
+    const confirmed = window.confirm("Hapus temuan ini? Aksi ini tidak bisa dibatalkan.");
+    if (!confirmed) return;
+
+    setDeletingId(id);
+    try {
+      await apiFetch(`/api/findings/${id}`, { method: "DELETE" });
+      queryClient.invalidateQueries({ queryKey: getListFindingsQueryKey() });
+    } catch {
+      setDeletingId(null);
+      return;
+    }
+    setDeletingId(null);
+  };
 
   const getPtName = (ptId: string) => pts?.find((p) => p.id === ptId)?.code ?? ptId;
 
@@ -253,47 +271,64 @@ export default function Findings() {
               <p className="text-sm text-slate-400">Tidak ada temuan{filterStatus ? ` dengan status ini` : ""}.</p>
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-white/15">
               {findings.map((f) => {
                 const statusInfo = FINDING_STATUS[f.status] ?? FINDING_STATUS.pending;
                 const today = new Date().toISOString().split("T")[0];
                 const deadline = (f as { deadline?: string | null }).deadline;
                 const isOverdue = deadline && f.status !== "completed" && deadline < today;
                 return (
-                  <div key={f.id} className="px-4 py-4 hover:bg-slate-50/50 transition-colors">
+                  <div key={f.id} className="px-4 py-4 hover:bg-white/5 transition-colors">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <div className="flex items-center gap-2 mb-2 flex-wrap">
                           <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                             {getPtName(f.ptId)}
                           </span>
                           {f.branchName && (
-                            <span className="text-xs text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded flex items-center gap-1">
+                            <span className="text-xs text-slate-200 bg-white/10 border border-white/20 px-2 py-0.5 rounded flex items-center gap-1">
                               <Building2 className="w-3 h-3" />
                               {f.branchName}
                             </span>
                           )}
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-300">
                             {new Date(f.date).toLocaleDateString("id-ID")}
                           </span>
                           {deadline && (
-                            <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-red-600 font-medium" : "text-slate-400"}`}>
+                            <span className={`text-xs flex items-center gap-1 ${isOverdue ? "text-red-400 font-semibold" : "text-slate-300"}`}>
                               <Clock className="w-3 h-3" />
                               Deadline: {new Date(deadline + "T00:00:00").toLocaleDateString("id-ID")}
                               {isOverdue && " (Lewat!)"}
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-slate-800">{f.findingText}</p>
-                        {f.notes && <p className="text-xs text-slate-400 mt-1">{f.notes}</p>}
+                        <div className="space-y-1">
+                          <p className="text-sm text-white font-medium leading-relaxed">
+                            <span className="text-slate-300 font-normal">Temuan:</span> {f.findingText}
+                          </p>
+                          <p className="text-sm text-slate-200 leading-relaxed">
+                            <span className="text-slate-400">Catatan:</span> {f.notes?.trim() ? f.notes : "-"}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${statusInfo.color}`}>
                           {statusInfo.label}
                         </span>
+                        {canDelete && (
+                          <button
+                            onClick={() => handleDelete(f.id)}
+                            disabled={deletingId === f.id}
+                            className="flex items-center gap-1 px-2 py-0.5 rounded border border-rose-200 text-xs text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
+                            title="Hapus temuan"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            {deletingId === f.id ? "Menghapus..." : "Hapus"}
+                          </button>
+                        )}
                         <Link
                           href={`/findings/${f.id}`}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded border border-slate-300 text-xs text-slate-600 hover:bg-slate-100 transition-colors"
+                          className="flex items-center gap-1 px-2 py-0.5 rounded border border-white/25 text-xs text-slate-200 hover:bg-white/10 transition-colors"
                         >
                           <ExternalLink className="w-3 h-3" />
                           Detail
