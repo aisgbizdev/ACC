@@ -19,7 +19,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2, Edit2, Building2, Users, FileCheck2,
   AlertCircle, MessageCircle, Send, X, ChevronDown, ChevronUp,
-  Paperclip, Download,
+  Paperclip, Download, CalendarDays, Clock3,
 } from "lucide-react";
 import { PageChrome, Panel } from "@/components/PageChrome";
 import { apiFetch, getBaseUrl } from "@/lib/api";
@@ -78,6 +78,7 @@ type ActivityItem = {
   customerRiskCategories?: string[] | null; hasFinding: boolean;
   findingSummary?: string | null; findingStatus?: string | null;
   notes?: string | null; date: string;
+  createdAt?: string; updatedAt?: string;
   documents?: unknown;
   dkReviewedAt?: string | null; dkNotes?: string | null;
   duSignedOffAt?: string | null;
@@ -163,6 +164,21 @@ function getQuarterRange(year: number, quarter: 1 | 2 | 3 | 4): { start: string;
     start: `${year}-${pad2(startMonth)}-01`,
     end: `${year}-${pad2(endMonth)}-${pad2(endDay)}`,
   };
+}
+
+function formatActivityTime(value?: string): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toLocaleTimeString("id-ID", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getCurrentTimeValue(): string {
+  const now = new Date();
+  return `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
 }
 
 /* â”€â”€â”€ comment thread â”€â”€â”€ */
@@ -261,7 +277,12 @@ function HistoryCard({ a, userId }: { a: ActivityItem; userId: string }) {
             )}
           </div>
           <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
-            <span>{new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</span>
+            <span className="flex flex-col leading-tight">
+              <span>{new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</span>
+              {formatActivityTime(a.createdAt) && (
+                <span className="text-[11px] text-slate-500/90">Jam {formatActivityTime(a.createdAt)}</span>
+              )}
+            </span>
             {a.itemsReviewed > 0 && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{a.itemsReviewed} nasabah</span>}
             {a.duSignedOffAt ? (
               <span className="text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded flex items-center gap-1">
@@ -373,6 +394,7 @@ export default function Activity({
 
   type FormState = {
     date: string;
+    activityTime: string;
     branchId: string;
     activityType: CreateActivityBodyActivityType;
     itemsReviewed: number;
@@ -385,6 +407,7 @@ export default function Activity({
 
   const buildDefaultForm = (view: ActivityView): FormState => ({
     date: getDefaultDateForView(view),
+    activityTime: getCurrentTimeValue(),
     branchId: "",
     activityType: CreateActivityBodyActivityType.kyc,
     itemsReviewed: 0,
@@ -400,8 +423,22 @@ export default function Activity({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
+  const [formOpenedAt, setFormOpenedAt] = useState<string | null>(null);
+  const dateInputRef = useRef<HTMLInputElement>(null);
+  const timeInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [uploadingDocs, setUploadingDocs] = useState(false);
+
+  const openNativePicker = (input: HTMLInputElement | null) => {
+    if (!input) return;
+    const pickerCapable = input as HTMLInputElement & { showPicker?: () => void };
+    if (typeof pickerCapable.showPicker === "function") {
+      pickerCapable.showPicker();
+      return;
+    }
+    input.focus();
+    input.click();
+  };
 
   const { mutateAsync: createActivity, isPending: creating } = useCreateActivity<ErrorType<ErrorResponse>>({
     mutation: {
@@ -418,6 +455,7 @@ export default function Activity({
   const resetFormState = () => {
     setEditingId(null);
     setShowForm(false);
+    setFormOpenedAt(null);
     setForm(buildDefaultForm(activityView));
     setDocumentFiles([]);
     setError("");
@@ -439,6 +477,7 @@ export default function Activity({
     const { cleanNotes } = extractScopeAndNotes(a.notes);
     setForm({
       date: a.date,
+      activityTime: formatActivityTime(a.createdAt)?.replace(".", ":") ?? getCurrentTimeValue(),
       branchId: a.branchId ?? "",
       activityType: (a.activityType as CreateActivityBodyActivityType) ?? CreateActivityBodyActivityType.kyc,
       itemsReviewed: a.itemsReviewed,
@@ -449,11 +488,18 @@ export default function Activity({
       notes: cleanNotes,
     });
     setEditingId(a.id);
+    setFormOpenedAt(a.createdAt ?? null);
     setShowForm(true);
     setError("");
     setDocumentFiles([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (showForm && !editingId && !formOpenedAt) {
+      setFormOpenedAt(new Date().toISOString());
+    }
+  }, [showForm, editingId, formOpenedAt]);
 
   const toggleRisk = (cat: CreateActivityBodyCustomerRiskCategoriesItem) =>
     setForm(prev => ({
@@ -488,6 +534,7 @@ export default function Activity({
     setError("");
     if (!user?.ptId) { setError("Akun Anda tidak terhubung ke PT manapun."); return; }
     if (!form.date) { setError("Tanggal aktivitas wajib diisi."); return; }
+    if (!form.activityTime) { setError("Jam aktivitas wajib diisi."); return; }
     if (activityView === "monthly" && (form.date < monthRange.start || form.date > monthRange.end)) {
       setError("Tanggal harus berada di bulan yang dipilih.");
       return;
@@ -704,9 +751,14 @@ export default function Activity({
       {showForm && (
         <Panel className="mb-6 p-5 pb-20 sm:pb-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-slate-100">
-              {editingId ? "Edit Aktivitas" : `Aktivitas Baru — ${form.date}`}
-            </h3>
+            <div>
+              <h3 className="text-sm font-semibold text-slate-100">
+                {editingId ? "Edit Aktivitas" : `Aktivitas Baru — ${form.date}`}
+              </h3>
+              {!editingId && formOpenedAt && (
+                <p className="mt-1 text-xs text-slate-400">Jam {formatActivityTime(formOpenedAt)}</p>
+              )}
+            </div>
             <button
               onClick={resetFormState}
               className="text-slate-500 hover:text-slate-300 transition-colors"
@@ -744,18 +796,52 @@ export default function Activity({
 
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5">Tanggal Aktivitas *</label>
-              <input
-                type="date"
-                value={form.date}
-                min={activityView === "monthly" ? monthRange.start : activityView === "quarterly" ? quarterRange.start : today}
-                max={activityView === "monthly" ? monthRange.end : activityView === "quarterly" ? quarterRange.end : today}
-                disabled={Boolean(editingId) || activityView === "daily"}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
-                className="w-full px-3 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-xl text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-70"
-              />
+              <div className="relative">
+                <input
+                  ref={dateInputRef}
+                  type="date"
+                  value={form.date}
+                  min={activityView === "monthly" ? monthRange.start : activityView === "quarterly" ? quarterRange.start : undefined}
+                  max={activityView === "monthly" ? monthRange.end : activityView === "quarterly" ? quarterRange.end : today}
+                  disabled={Boolean(editingId)}
+                  onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  className="w-full appearance-none px-3 pr-11 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-xl text-sm text-slate-200 [color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-70 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => openNativePicker(dateInputRef.current)}
+                  disabled={Boolean(editingId)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-white/20 bg-white/10 p-1 text-white hover:bg-white/20 disabled:opacity-60"
+                  aria-label="Pilih tanggal"
+                >
+                  <CalendarDays className="h-4 w-4" />
+                </button>
+              </div>
               {activityView === "daily" && (
-                <p className="mt-1 text-[11px] text-slate-500">Mode Daily hanya untuk tanggal hari ini.</p>
+                <p className="mt-1 text-[11px] text-slate-500">Mode Daily bisa pilih tanggal sampai hari ini (tidak bisa tanggal masa depan).</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-300 mb-1.5">Jam Aktivitas *</label>
+              <div className="relative">
+                <input
+                  ref={timeInputRef}
+                  type="time"
+                  value={form.activityTime}
+                  onChange={(e) => setForm({ ...form, activityTime: e.target.value })}
+                  className="w-full appearance-none px-3 pr-11 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-xl text-sm text-slate-200 [color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-blue-500 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => openNativePicker(timeInputRef.current)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-white/20 bg-white/10 p-1 text-white hover:bg-white/20"
+                  aria-label="Pilih jam"
+                >
+                  <Clock3 className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500">Isi jam saat aktivitas dikerjakan (format 24 jam).</p>
             </div>
 
             {/* Branch */}
@@ -989,11 +1075,22 @@ export default function Activity({
               <div className="space-y-2">
                 {monthlyActivities
                   .slice()
-                  .sort((a, b) => b.date.localeCompare(a.date))
+                  .sort((a, b) => {
+                    const byDate = b.date.localeCompare(a.date);
+                    if (byDate !== 0) return byDate;
+                    return (b.createdAt ?? "").localeCompare(a.createdAt ?? "");
+                  })
                   .map((a) => (
                     <div key={a.id} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-xs text-slate-300">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-slate-100 font-medium">{new Date(`${a.date}T00:00:00`).toLocaleDateString("id-ID")}</span>
+                      <div className="flex flex-wrap items-start gap-2">
+                        <span className="text-slate-100 font-medium leading-tight">
+                          <span className="block">{new Date(`${a.date}T00:00:00`).toLocaleDateString("id-ID")}</span>
+                          {formatActivityTime((a as ActivityItem).createdAt) && (
+                            <span className="block text-[11px] text-slate-400 font-normal">
+                              Jam {formatActivityTime((a as ActivityItem).createdAt)}
+                            </span>
+                          )}
+                        </span>
                         <span className="rounded bg-blue-500/15 px-2 py-0.5 text-blue-200">{ACTIVITY_LABELS[a.activityType] ?? a.activityType}</span>
                         {a.hasFinding && <span className="rounded bg-amber-500/15 px-2 py-0.5 text-amber-300">Ada Temuan</span>}
                       </div>
