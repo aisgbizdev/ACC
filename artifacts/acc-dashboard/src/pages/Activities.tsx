@@ -4,7 +4,7 @@ import { useListActivities, useListPts } from "@workspace/api-client-react";
 import { FileText, Building2, Eye, CheckCircle, AlertTriangle, Paperclip, Download, Trash2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getBaseUrl } from "@/lib/api";
-import { detectActivityScope, stripActivityScopeTag } from "@/lib/activity-scope";
+import { detectActivityScope, stripActivityScopeTag, extractActivityInputTime } from "@/lib/activity-scope";
 import { getActivityDocuments, formatFileSize } from "@/lib/activity-documents";
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -257,6 +257,9 @@ export default function Activities() {
                     : scope === "quarterly"
                       ? "text-violet-700 bg-violet-50 border-violet-200"
                       : "text-sky-700 bg-sky-50 border-sky-200";
+                const inputTime =
+                  extractActivityInputTime(a.notes) ??
+                  new Date(a.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
                 return (
                 <div key={a.id} className="px-4 py-4">
@@ -291,6 +294,7 @@ export default function Activities() {
                             day: "numeric", month: "long", year: "numeric"
                           })}
                         </span>
+                        <span className="text-xs text-slate-400">Jam {inputTime}</span>
                       </div>
                       <div className="text-xs text-slate-600">
                         <strong>{a.itemsReviewed}</strong> nasabah diperiksa

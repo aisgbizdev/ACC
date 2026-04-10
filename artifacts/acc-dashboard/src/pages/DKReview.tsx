@@ -17,7 +17,7 @@ import {
   AlertTriangle, CheckSquare, Square, MessageCircle, Send, Layers, Paperclip, Download, Trash2,
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
-import { detectActivityScope, stripActivityScopeTag } from "@/lib/activity-scope";
+import { detectActivityScope, stripActivityScopeTag, extractActivityInputTime } from "@/lib/activity-scope";
 import { getActivityDocuments, formatFileSize } from "@/lib/activity-documents";
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -475,6 +475,9 @@ export default function DKReview() {
                     ? "text-fuchsia-700 bg-fuchsia-50 border-fuchsia-200"
                     : "text-cyan-700 bg-cyan-50 border-cyan-200";
               const scopeLabel = scope === "monthly" ? "Monthly" : scope === "quarterly" ? "Triwulan" : "Daily";
+              const inputTime =
+                extractActivityInputTime(a.notes) ??
+                new Date(a.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
               return (
                 <div key={a.id} className={`bg-white rounded-xl border shadow-sm transition-all ${
@@ -530,6 +533,10 @@ export default function DKReview() {
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Jam {inputTime}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" />{a.itemsReviewed} nasabah

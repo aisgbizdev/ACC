@@ -21,6 +21,18 @@ type AuditLogEntry = {
   createdAt: string;
 };
 
+function getSubmitActivityInputTime(afterData: unknown, createdAt: string): string {
+  const value =
+    afterData && typeof afterData === "object"
+      ? (afterData as Record<string, unknown>).inputTime
+      : null;
+  if (typeof value === "string" && /^\d{2}:\d{2}$/.test(value)) return value;
+
+  const parsed = new Date(createdAt);
+  if (Number.isNaN(parsed.getTime())) return "--:--";
+  return parsed.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
 const ACTION_LABELS: Record<string, string> = {
   login: "Login",
   logout: "Logout",
@@ -183,9 +195,16 @@ export default function AuditLog() {
                         <span className="font-medium text-slate-700">{log.userName ?? "—"}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-                          {ACTION_LABELS[log.action] ?? log.action}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 w-fit">
+                            {ACTION_LABELS[log.action] ?? log.action}
+                          </span>
+                          {log.action === "submit_activity" && (
+                            <span className="text-[11px] font-medium text-sky-700">
+                              Jam Input: {getSubmitActivityInputTime(log.afterData, log.createdAt)}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-slate-500">
                         {log.resourceType}

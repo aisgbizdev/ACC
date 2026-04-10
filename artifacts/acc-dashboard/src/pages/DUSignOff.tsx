@@ -10,7 +10,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { FileCheck2, Building2, Users, CheckCircle2, ChevronDown, ChevronUp, Clock, Paperclip, Download, Trash2 } from "lucide-react";
-import { detectActivityScope, stripActivityScopeTag } from "@/lib/activity-scope";
+import { detectActivityScope, stripActivityScopeTag, extractActivityInputTime } from "@/lib/activity-scope";
 import { getActivityDocuments, formatFileSize } from "@/lib/activity-documents";
 import { apiFetch } from "@/lib/api";
 
@@ -35,6 +35,15 @@ const RISK_LABEL: Record<string, string> = {
   medium: "Medium Risk",
   low: "Low Risk",
 };
+
+function getDisplayInputTime(notes?: string | null, createdAt?: string): string {
+  const fromNotes = extractActivityInputTime(notes);
+  if (fromNotes) return fromNotes;
+  if (!createdAt) return "--:--";
+  const parsed = new Date(createdAt);
+  if (Number.isNaN(parsed.getTime())) return "--:--";
+  return parsed.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
 
 export default function DUSignOff() {
   const queryClient = useQueryClient();
@@ -160,6 +169,7 @@ export default function DUSignOff() {
                     ? "text-fuchsia-700 bg-fuchsia-50 border-fuchsia-200"
                     : "text-cyan-700 bg-cyan-50 border-cyan-200";
               const scopeLabel = scope === "monthly" ? "Monthly" : scope === "quarterly" ? "Triwulan" : "Daily";
+              const inputTime = getDisplayInputTime(a.notes, a.createdAt);
               return (
                 <div key={a.id} className={`bg-white rounded-xl border shadow-sm ${
                   filterTab === "signed_off" ? "border-violet-200" : "border-slate-200"
@@ -194,10 +204,14 @@ export default function DUSignOff() {
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                        <div className="flex flex-col gap-0.5 text-xs text-slate-500">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3 h-3" />
                             {new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}
+                          </span>
+                          <span className="flex items-center gap-1 font-semibold text-sky-700">
+                            <Clock className="w-3 h-3" />
+                            Jam Input: {inputTime}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" />
@@ -299,6 +313,10 @@ export default function DUSignOff() {
                             <p className="text-slate-700 mt-1">{new Date(a.dkReviewedAt).toLocaleString("id-ID")}</p>
                           </div>
                         )}
+                        <div>
+                          <span className="text-slate-400 font-medium">Jam input aktivitas</span>
+                          <p className="text-slate-700 mt-1">{inputTime}</p>
+                        </div>
                         {a.duSignedOffAt && (
                           <div>
                             <span className="text-slate-400 font-medium">Sign-off DU pada</span>

@@ -86,6 +86,13 @@ function requiresCustomerData(activityType: string): boolean {
   return !(CUSTOMER_DATA_EXEMPT as readonly string[]).includes(activityType);
 }
 
+function extractInputTimeFromNotes(notes?: string | null): string | null {
+  const raw = (notes ?? "").trim();
+  if (!raw) return null;
+  const match = raw.match(/\[time:(\d{2}:\d{2})\]/);
+  return match?.[1] ?? null;
+}
+
 async function validateBranchBelongsToPt(branchId: string, ptId: string): Promise<boolean> {
   const [branch] = await db.select({ ptId: branchesTable.ptId }).from(branchesTable).where(eq(branchesTable.id, branchId));
   return !!branch && branch.ptId === ptId;
@@ -207,7 +214,11 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
 
   await logAudit("submit_activity", "activity", activity.id, req, {
     ptId: data.ptId,
-    afterData: { activityType: data.activityType, date: data.date },
+    afterData: {
+      activityType: data.activityType,
+      date: data.date,
+      inputTime: extractInputTimeFromNotes(data.notes ?? null),
+    },
   });
 
   const [withBranch] = await db

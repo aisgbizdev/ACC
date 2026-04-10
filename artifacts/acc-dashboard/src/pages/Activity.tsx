@@ -78,6 +78,7 @@ type ActivityItem = {
   customerRiskCategories?: string[] | null; hasFinding: boolean;
   findingSummary?: string | null; findingStatus?: string | null;
   notes?: string | null; date: string;
+  inputTime?: string | null;
   createdAt?: string; updatedAt?: string;
   documents?: unknown;
   dkReviewedAt?: string | null; dkNotes?: string | null;
@@ -99,32 +100,51 @@ const SCOPE_TAG: Record<EntryScope, string> = {
   quarterly: "[scope:quarterly]",
 };
 
-function extractScopeAndNotes(rawNotes?: string | null): { scope: EntryScope; cleanNotes: string } {
+function extractScopeAndNotes(rawNotes?: string | null): { scope: EntryScope; cleanNotes: string; activityTime: string | null } {
   const notes = (rawNotes ?? "").trim();
+  const extractTime = (value: string): { cleanNotes: string; activityTime: string | null } => {
+    const match = value.match(/^\[time:(\d{2}:\d{2})\]\s*/);
+    if (!match) return { cleanNotes: value, activityTime: null };
+    return { cleanNotes: value.slice(match[0].length).trim(), activityTime: match[1] };
+  };
   if (notes.startsWith(SCOPE_TAG.monthly)) {
+    const withoutScope = notes.slice(SCOPE_TAG.monthly.length).trim();
+    const { cleanNotes, activityTime } = extractTime(withoutScope);
     return {
       scope: "monthly",
-      cleanNotes: notes.slice(SCOPE_TAG.monthly.length).trim(),
+      cleanNotes,
+      activityTime,
     };
   }
   if (notes.startsWith(SCOPE_TAG.quarterly)) {
+    const withoutScope = notes.slice(SCOPE_TAG.quarterly.length).trim();
+    const { cleanNotes, activityTime } = extractTime(withoutScope);
     return {
       scope: "quarterly",
-      cleanNotes: notes.slice(SCOPE_TAG.quarterly.length).trim(),
+      cleanNotes,
+      activityTime,
     };
   }
   if (notes.startsWith(SCOPE_TAG.daily)) {
+    const withoutScope = notes.slice(SCOPE_TAG.daily.length).trim();
+    const { cleanNotes, activityTime } = extractTime(withoutScope);
     return {
       scope: "daily",
-      cleanNotes: notes.slice(SCOPE_TAG.daily.length).trim(),
+      cleanNotes,
+      activityTime,
     };
   }
-  return { scope: "daily", cleanNotes: notes };
+  const { cleanNotes, activityTime } = extractTime(notes);
+  return { scope: "daily", cleanNotes, activityTime };
 }
 
-function encodeNotesWithScope(scope: EntryScope, notes?: string): string {
+function encodeNotesWithScope(scope: EntryScope, notes?: string, activityTime?: string): string {
   const clean = (notes ?? "").trim();
-  return clean ? `${SCOPE_TAG[scope]} ${clean}` : SCOPE_TAG[scope];
+  const timeTag = activityTime ? `[time:${activityTime}]` : "";
+  if (clean && timeTag) return `${SCOPE_TAG[scope]} ${timeTag} ${clean}`;
+  if (clean) return `${SCOPE_TAG[scope]} ${clean}`;
+  if (timeTag) return `${SCOPE_TAG[scope]} ${timeTag}`;
+  return SCOPE_TAG[scope];
 }
 
 function pad2(value: number): string {
@@ -258,6 +278,7 @@ function CommentThread({ activityId, currentUserId }: { activityId: string; curr
 function HistoryCard({ a, userId }: { a: ActivityItem; userId: string }) {
   const [expanded, setExpanded] = useState(false);
   const docs = getActivityDocuments(a);
+  const displayTime = a.inputTime ?? formatActivityTime(a.createdAt);
 
   return (
     <Panel className="px-4 py-3 space-y-2">
@@ -279,8 +300,8 @@ function HistoryCard({ a, userId }: { a: ActivityItem; userId: string }) {
           <div className="flex items-center gap-3 text-xs text-slate-500 flex-wrap">
             <span className="flex flex-col leading-tight">
               <span>{new Date(a.date).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}</span>
-              {formatActivityTime(a.createdAt) && (
-                <span className="text-[11px] text-slate-500/90">Jam {formatActivityTime(a.createdAt)}</span>
+              {displayTime && (
+                <span className="text-[11px] text-slate-500/90">Jam {displayTime}</span>
               )}
             </span>
             {a.itemsReviewed > 0 && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{a.itemsReviewed} nasabah</span>}
@@ -373,8 +394,8 @@ export default function Activity({
   const { data: branches } = useListBranches({ ptId: user?.ptId ?? undefined });
 
   const activitiesWithScope = (activities ?? []).map((a) => {
-    const { scope, cleanNotes } = extractScopeAndNotes((a as ActivityItem).notes);
-    return { ...a, notes: cleanNotes || null, scope };
+    const { scope, cleanNotes, activityTime } = extractScopeAndNotes((a as ActivityItem).notes);
+    return { ...a, notes: cleanNotes || null, scope, inputTime: activityTime };
   });
 
   const dailyActivities = activitiesWithScope.filter((a) => a.scope === "daily");
@@ -474,10 +495,10 @@ export default function Activity({
   };
 
   const handleEdit = (a: ActivityItem) => {
-    const { cleanNotes } = extractScopeAndNotes(a.notes);
+    const { cleanNotes, activityTime } = extractScopeAndNotes(a.notes);
     setForm({
       date: a.date,
-      activityTime: formatActivityTime(a.createdAt)?.replace(".", ":") ?? getCurrentTimeValue(),
+      activityTime: activityTime ?? formatActivityTime(a.createdAt)?.replace(".", ":") ?? getCurrentTimeValue(),
       branchId: a.branchId ?? "",
       activityType: (a.activityType as CreateActivityBodyActivityType) ?? CreateActivityBodyActivityType.kyc,
       itemsReviewed: a.itemsReviewed,
@@ -565,7 +586,7 @@ export default function Activity({
             hasFinding: isHolidayActivity ? false : form.hasFinding,
             findingSummary: !isHolidayActivity && form.hasFinding ? form.findingSummary || null : null,
             findingStatus: !isHolidayActivity && form.hasFinding ? form.findingStatus as UpdateActivityBodyFindingStatus : null,
-            notes: encodeNotesWithScope(activityView, form.notes),
+            notes: encodeNotesWithScope(activityView, form.notes, form.activityTime),
           },
         });
         activityId = updated.id;
@@ -581,7 +602,7 @@ export default function Activity({
             hasFinding: isHolidayActivity ? false : form.hasFinding,
             findingSummary: !isHolidayActivity && form.hasFinding ? form.findingSummary || null : null,
             findingStatus: !isHolidayActivity && form.hasFinding ? form.findingStatus : null,
-            notes: encodeNotesWithScope(activityView, form.notes),
+            notes: encodeNotesWithScope(activityView, form.notes, form.activityTime),
           },
         });
         activityId = created.id;
@@ -1085,11 +1106,11 @@ export default function Activity({
                       <div className="flex flex-wrap items-start gap-2">
                         <span className="text-slate-100 font-medium leading-tight">
                           <span className="block">{new Date(`${a.date}T00:00:00`).toLocaleDateString("id-ID")}</span>
-                          {formatActivityTime((a as ActivityItem).createdAt) && (
+                          {(a as ActivityItem).inputTime || formatActivityTime((a as ActivityItem).createdAt) ? (
                             <span className="block text-[11px] text-slate-400 font-normal">
-                              Jam {formatActivityTime((a as ActivityItem).createdAt)}
+                              Jam {(a as ActivityItem).inputTime ?? formatActivityTime((a as ActivityItem).createdAt)}
                             </span>
-                          )}
+                          ) : null}
                         </span>
                         <span className="rounded bg-blue-500/15 px-2 py-0.5 text-blue-200">{ACTIVITY_LABELS[a.activityType] ?? a.activityType}</span>
                         {a.hasFinding && <span className="rounded bg-amber-500/15 px-2 py-0.5 text-amber-300">Ada Temuan</span>}
