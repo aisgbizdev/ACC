@@ -67,6 +67,7 @@ const FINDING_STATUSES = [
   { value: "follow_up", label: "Follow Up" },
   { value: "completed", label: "Selesai" },
 ];
+const MAX_DOCUMENT_FILES = 10;
 
 const ROLE_BADGE: Record<string, string> = {
   apuppt: "APUPPT", dk: "DK", du: "DU", owner: "Owner", superadmin: "Superadmin",
@@ -83,6 +84,8 @@ type ActivityItem = {
   documents?: unknown;
   dkReviewedAt?: string | null; dkNotes?: string | null;
   duSignedOffAt?: string | null;
+  reportSubmittedAt?: string | null;
+  uploadDeadlineAt?: string | null;
 };
 
 type Comment = {
@@ -305,16 +308,16 @@ function HistoryCard({ a, userId }: { a: ActivityItem; userId: string }) {
               )}
             </span>
             {a.itemsReviewed > 0 && <span className="flex items-center gap-1"><Users className="w-3 h-3" />{a.itemsReviewed} nasabah</span>}
-            {a.duSignedOffAt ? (
-              <span className="text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded flex items-center gap-1">
-                <FileCheck2 className="w-3 h-3" />Sign-Off DU
+            {a.reportSubmittedAt ? (
+              <span className="text-xs font-medium text-slate-200 bg-slate-700/60 border border-slate-500/40 px-2 py-0.5 rounded flex items-center gap-1">
+                <FileCheck2 className="w-3 h-3" />Case Closed
               </span>
-            ) : a.dkReviewedAt ? (
-              <span className="text-xs font-medium text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />DK ✓
+            ) : a.duSignedOffAt ? (
+              <span className="text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                <FileCheck2 className="w-3 h-3" />DU Approve
               </span>
             ) : (
-              <span className="text-xs text-slate-500">Pending</span>
+              <span className="text-xs text-amber-300">Menunggu Review DU</span>
             )}
           </div>
         </div>
@@ -335,7 +338,8 @@ function HistoryCard({ a, userId }: { a: ActivityItem; userId: string }) {
           {a.hasFinding && a.findingSummary && (
             <p className="text-amber-300"><span className="font-semibold">Temuan:</span> {a.findingSummary}</p>
           )}
-          {a.dkNotes && <p><span className="font-semibold text-slate-400">Catatan DK:</span> {a.dkNotes}</p>}
+          {a.dkNotes && <p><span className="font-semibold text-slate-400">Catatan Monitoring:</span> {a.dkNotes}</p>}
+          {a.reportSubmittedAt && <p><span className="font-semibold text-slate-400">Case Closed:</span> {new Date(a.reportSubmittedAt).toLocaleString("id-ID")}</p>}
           {a.notes && <p><span className="font-semibold text-slate-400">Catatan:</span> {a.notes}</p>}
           {docs.length > 0 && (
             <div>
@@ -449,6 +453,7 @@ export default function Activity({
   const timeInputRef = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [closingCaseId, setClosingCaseId] = useState<string | null>(null);
 
   const openNativePicker = (input: HTMLInputElement | null) => {
     if (!input) return;
@@ -480,6 +485,30 @@ export default function Activity({
     setForm(buildDefaultForm(activityView));
     setDocumentFiles([]);
     setError("");
+  };
+
+  const handleDocumentSelection = (selectedFiles: File[]) => {
+    if (selectedFiles.length === 0) return;
+    setDocumentFiles((prev) => {
+      const merged = [...prev, ...selectedFiles];
+      const deduped = merged.filter((file, index, arr) => {
+        return arr.findIndex((f) => (
+          f.name === file.name &&
+          f.size === file.size &&
+          f.lastModified === file.lastModified
+        )) === index;
+      });
+      if (deduped.length > MAX_DOCUMENT_FILES) {
+        setError(`Maksimal ${MAX_DOCUMENT_FILES} file dokumen per aktivitas.`);
+      } else if (error.startsWith("Maksimal")) {
+        setError("");
+      }
+      return deduped.slice(0, MAX_DOCUMENT_FILES);
+    });
+  };
+
+  const removeDocumentFile = (fileIndex: number) => {
+    setDocumentFiles((prev) => prev.filter((_, index) => index !== fileIndex));
   };
 
   const uploadDocuments = async (activityId: string, files: File[]) => {
@@ -514,6 +543,18 @@ export default function Activity({
     setError("");
     setDocumentFiles([]);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const closeCase = async (activityId: string) => {
+    setClosingCaseId(activityId);
+    try {
+      await apiFetch(`/api/activities/${activityId}/close-case`, { method: "POST" });
+      await queryClient.invalidateQueries({ queryKey: getListActivitiesQueryKey() });
+    } catch (err) {
+      setError((err as Error).message ?? "Gagal memperbarui status case closed.");
+    } finally {
+      setClosingCaseId(null);
+    }
   };
 
   useEffect(() => {
@@ -629,16 +670,16 @@ export default function Activity({
   const monthlyActivities = activitiesWithScope.filter(a => a.scope === "monthly" && a.date.startsWith(selectedMonth));
   const monthlyItemsReviewed = monthlyActivities.reduce((sum, a) => sum + (a.itemsReviewed ?? 0), 0);
   const monthlyFindings = monthlyActivities.filter(a => a.hasFinding).length;
-  const monthlyReviewed = monthlyActivities.filter(a => Boolean((a as ActivityItem).dkReviewedAt)).length;
-  const monthlySignedOff = monthlyActivities.filter(a => Boolean((a as ActivityItem).duSignedOffAt)).length;
+  const monthlyReviewed = monthlyActivities.filter(a => Boolean((a as ActivityItem).duSignedOffAt)).length;
+  const monthlySignedOff = monthlyActivities.filter(a => Boolean((a as ActivityItem).reportSubmittedAt)).length;
 
   const quarterStartMonth = (selectedQuarter - 1) * 3 + 1;
   const quarterEndMonth = quarterStartMonth + 2;
   const quarterlyActivities = activitiesWithScope.filter(a => a.scope === "quarterly" && a.date >= quarterRange.start && a.date <= quarterRange.end);
   const quarterlyItemsReviewed = quarterlyActivities.reduce((sum, a) => sum + (a.itemsReviewed ?? 0), 0);
   const quarterlyFindings = quarterlyActivities.filter(a => a.hasFinding).length;
-  const quarterlyReviewed = quarterlyActivities.filter(a => Boolean((a as ActivityItem).dkReviewedAt)).length;
-  const quarterlySignedOff = quarterlyActivities.filter(a => Boolean((a as ActivityItem).duSignedOffAt)).length;
+  const quarterlyReviewed = quarterlyActivities.filter(a => Boolean((a as ActivityItem).duSignedOffAt)).length;
+  const quarterlySignedOff = quarterlyActivities.filter(a => Boolean((a as ActivityItem).reportSubmittedAt)).length;
 
   const quarterMonthBuckets = [0, 1, 2].map((offset) => {
     const monthNumber = quarterStartMonth + offset;
@@ -727,18 +768,34 @@ export default function Activity({
                         <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
                           {a.branchName && <span className="flex items-center gap-0.5"><Building2 className="w-3 h-3" />{a.branchName}</span>}
                           {ai.itemsReviewed > 0 && <span>{ai.itemsReviewed} nasabah</span>}
-                          {ai.dkReviewedAt
-                            ? <span className="text-emerald-400">✓ DK</span>
-                            : <span className="text-amber-400">Menunggu DK</span>}
+                          {ai.reportSubmittedAt ? (
+                            <span className="text-slate-200">Case Closed</span>
+                          ) : ai.duSignedOffAt ? (
+                            <span className="text-emerald-400">Approve DU</span>
+                          ) : (
+                            <span className="text-amber-400">Menunggu Review DU</span>
+                          )}
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleEdit(ai)}
-                        className="text-slate-500 hover:text-blue-400 transition-colors p-1"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        {ai.duSignedOffAt && !ai.reportSubmittedAt && (
+                          <button
+                            type="button"
+                            onClick={() => void closeCase(ai.id)}
+                            disabled={closingCaseId === ai.id}
+                            className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+                          >
+                            {closingCaseId === ai.id ? "..." : "Laporan Terkirim"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleEdit(ai)}
+                          className="text-slate-500 hover:text-blue-400 transition-colors p-1"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
@@ -974,16 +1031,30 @@ export default function Activity({
                 type="file"
                 multiple
                 accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.jpg,.jpeg,.png"
-                onChange={(e) => setDocumentFiles(Array.from(e.target.files ?? []))}
+                onChange={(e) => {
+                  const selectedFiles = Array.from(e.target.files ?? []);
+                  handleDocumentSelection(selectedFiles);
+                }}
                 className="w-full rounded-xl border border-white/10 bg-[#0e1a2d] px-3 py-2 text-xs text-slate-300 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-700 file:px-2.5 file:py-1.5 file:text-xs file:font-medium file:text-slate-100"
               />
-              <p className="mt-1 text-[11px] text-slate-500">Maks 10 file, ukuran per file maks 10MB.</p>
+              <p className="mt-1 text-[11px] text-slate-500">Format: PDF/Word/Excel/CSV/JPG/PNG. Maks 10 file, ukuran per file maks 10MB.</p>
+              <p className="mt-1 text-[11px] text-slate-500">Dipilih: {documentFiles.length}/{MAX_DOCUMENT_FILES} file</p>
               {documentFiles.length > 0 && (
                 <div className="mt-2 space-y-1.5">
-                  {documentFiles.map((file) => (
-                    <div key={`${file.name}-${file.size}`} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-[11px] text-slate-300">
+                  {documentFiles.map((file, index) => (
+                    <div key={`${file.name}-${file.size}-${file.lastModified}-${index}`} className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-[11px] text-slate-300">
                       <span className="truncate pr-2">{file.name}</span>
-                      <span className="text-slate-500">{formatFileSize(file.size)}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-slate-500">{formatFileSize(file.size)}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeDocumentFile(index)}
+                          className="rounded p-0.5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
+                          aria-label={`Hapus ${file.name}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -1084,8 +1155,8 @@ export default function Activity({
             <Panel className="p-4"><p className="text-xs text-slate-400">Total Aktivitas</p><p className="mt-1 text-lg font-semibold text-slate-100">{monthlyActivities.length}</p></Panel>
             <Panel className="p-4"><p className="text-xs text-slate-400">Nasabah Diperiksa</p><p className="mt-1 text-lg font-semibold text-slate-100">{monthlyItemsReviewed}</p></Panel>
             <Panel className="p-4"><p className="text-xs text-slate-400">Temuan</p><p className="mt-1 text-lg font-semibold text-amber-300">{monthlyFindings}</p></Panel>
-            <Panel className="p-4"><p className="text-xs text-slate-400">Review DK</p><p className="mt-1 text-lg font-semibold text-emerald-300">{monthlyReviewed}</p></Panel>
-            <Panel className="p-4"><p className="text-xs text-slate-400">Sign-Off DU</p><p className="mt-1 text-lg font-semibold text-violet-300">{monthlySignedOff}</p></Panel>
+            <Panel className="p-4"><p className="text-xs text-slate-400">Approve DU</p><p className="mt-1 text-lg font-semibold text-emerald-300">{monthlyReviewed}</p></Panel>
+            <Panel className="p-4"><p className="text-xs text-slate-400">Case Closed</p><p className="mt-1 text-lg font-semibold text-violet-300">{monthlySignedOff}</p></Panel>
           </div>
 
           <Panel className="p-5">
@@ -1168,8 +1239,8 @@ export default function Activity({
             <Panel className="p-4"><p className="text-xs text-slate-400">Total Aktivitas</p><p className="mt-1 text-lg font-semibold text-slate-100">{quarterlyActivities.length}</p></Panel>
             <Panel className="p-4"><p className="text-xs text-slate-400">Nasabah Diperiksa</p><p className="mt-1 text-lg font-semibold text-slate-100">{quarterlyItemsReviewed}</p></Panel>
             <Panel className="p-4"><p className="text-xs text-slate-400">Temuan</p><p className="mt-1 text-lg font-semibold text-amber-300">{quarterlyFindings}</p></Panel>
-            <Panel className="p-4"><p className="text-xs text-slate-400">Review DK</p><p className="mt-1 text-lg font-semibold text-emerald-300">{quarterlyReviewed}</p></Panel>
-            <Panel className="p-4"><p className="text-xs text-slate-400">Sign-Off DU</p><p className="mt-1 text-lg font-semibold text-violet-300">{quarterlySignedOff}</p></Panel>
+            <Panel className="p-4"><p className="text-xs text-slate-400">Approve DU</p><p className="mt-1 text-lg font-semibold text-emerald-300">{quarterlyReviewed}</p></Panel>
+            <Panel className="p-4"><p className="text-xs text-slate-400">Case Closed</p><p className="mt-1 text-lg font-semibold text-violet-300">{quarterlySignedOff}</p></Panel>
           </div>
 
           <Panel className="p-5">

@@ -41,7 +41,7 @@ const NAV_ITEMS = [
   },
   { href: "/activities",    label: "Aktivitas PT",   icon: ClipboardList,   roles: ["dk", "superadmin"] },
   { href: "/findings",      label: "Temuan",         icon: AlertTriangle,   roles: ["apuppt", "dk", "du", "owner", "superadmin"] },
-  { href: "/review",        label: "Review DK",      icon: ClipboardCheck,  roles: ["dk", "superadmin"] },
+  { href: "/review",        label: "Monitoring DK",  icon: ClipboardCheck,  roles: ["dk", "superadmin"] },
   { href: "/signoff",       label: "Sign-Off DU",    icon: FileCheck2,      roles: ["du", "superadmin"] },
   { href: "/kpi",           label: "KPI",            icon: TrendingUp,      roles: ["dk", "du", "owner", "superadmin"] },
   { href: "/reports",       label: "Laporan",        icon: BarChart2,       roles: ["dk", "du", "owner", "superadmin"] },

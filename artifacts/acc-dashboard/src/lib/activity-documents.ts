@@ -7,13 +7,10 @@ export type ActivityDocument = {
   uploadedAt: string;
 };
 
-type MaybeWithDocuments = {
-  documents?: unknown;
-};
-
-export function getActivityDocuments(activity: MaybeWithDocuments): ActivityDocument[] {
-  if (!Array.isArray(activity.documents)) return [];
-  return activity.documents.filter((doc): doc is ActivityDocument => {
+export function getActivityDocuments(activity: unknown): ActivityDocument[] {
+  const docs = (activity as { documents?: unknown })?.documents;
+  if (!Array.isArray(docs)) return [];
+  return docs.filter((doc): doc is ActivityDocument => {
     return Boolean(
       doc &&
       typeof doc === "object" &&

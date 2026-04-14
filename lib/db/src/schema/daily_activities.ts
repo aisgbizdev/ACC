@@ -42,6 +42,11 @@ export const dailyActivitiesTable = pgTable(
     // DU Sign-off
     duSignedOffAt: timestamp("du_signed_off_at", { withTimezone: true }),
     duSignedOffBy: uuid("du_signed_off_by").references(() => usersTable.id),
+    // APUPPT upload completion (case closed)
+    reportSubmittedAt: timestamp("report_submitted_at", { withTimezone: true }),
+    reportSubmittedBy: uuid("report_submitted_by").references(() => usersTable.id),
+    // Deadline for DU approval (used by H-1 reminder)
+    uploadDeadlineAt: timestamp("upload_deadline_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   },
@@ -50,6 +55,17 @@ export const dailyActivitiesTable = pgTable(
 export const insertDailyActivitySchema = createInsertSchema(dailyActivitiesTable, {
   activityType: z.enum(ACTIVITY_TYPES),
   customerRiskCategories: z.array(z.enum(CUSTOMER_RISK_CATEGORIES)).optional(),
-}).omit({ id: true, createdAt: true, updatedAt: true, dkReviewedAt: true, dkReviewedBy: true, dkNotes: true, duSignedOffAt: true, duSignedOffBy: true });
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  dkReviewedAt: true,
+  dkReviewedBy: true,
+  dkNotes: true,
+  duSignedOffAt: true,
+  duSignedOffBy: true,
+  reportSubmittedAt: true,
+  reportSubmittedBy: true,
+});
 export type InsertDailyActivity = z.infer<typeof insertDailyActivitySchema>;
 export type DailyActivity = typeof dailyActivitiesTable.$inferSelect;

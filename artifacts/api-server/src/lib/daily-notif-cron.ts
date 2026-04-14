@@ -1,11 +1,74 @@
 import { eq, isNull, and } from "drizzle-orm";
 import { db, ptsTable, dailyActivitiesTable, findingsTable } from "@workspace/db";
 import { logger } from "./logger";
-import { notifyDailyMissing, notifyDailySummary, notifyApupptReminder } from "./push-notify";
+import { notifyDailyMissing, notifyDailySummary, notifyApupptReminder, notifyDuApprovalReminder } from "./push-notify";
 import { computeTrafficLight, isWeekend } from "./traffic-light";
 
+function getDatePartsInJakarta(input = new Date()): { y: number; m: number; d: number } {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(input);
+  const value = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? "0");
+  return { y: value("year"), m: value("month"), d: value("day") };
+}
+
+function getTodayInJakarta(): string {
+  const { y, m, d } = getDatePartsInJakarta();
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
+function getTomorrowInJakarta(): string {
+  const { y, m, d } = getDatePartsInJakarta();
+  const local = new Date(Date.UTC(y, m - 1, d + 1));
+  const yy = local.getUTCFullYear();
+  const mm = String(local.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(local.getUTCDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
+}
+
+export async function runDuApprovalReminderHMinusOne(): Promise<void> {
+  logger.info("Running DU approval reminder check (H-1 12:00 WIB)...");
+
+  try {
+    const tomorrowJakarta = getTomorrowInJakarta();
+    const dueAtUtc = new Date(`${tomorrowJakarta}T05:00:00.000Z`);
+
+    const pending = await db
+      .select({ ptId: dailyActivitiesTable.ptId })
+      .from(dailyActivitiesTable)
+      .where(
+        and(
+          eq(dailyActivitiesTable.uploadDeadlineAt, dueAtUtc),
+          isNull(dailyActivitiesTable.duSignedOffAt),
+        ),
+      );
+
+    if (pending.length === 0) {
+      logger.info("No DU reminders required for H-1 window");
+      return;
+    }
+
+    const ptIds = [...new Set(pending.map((p) => p.ptId))];
+    const pts = await db.select().from(ptsTable);
+    const byId = new Map(pts.map((pt) => [pt.id, pt] as const));
+
+    for (const ptId of ptIds) {
+      const pt = byId.get(ptId);
+      if (!pt) continue;
+      notifyDuApprovalReminder(ptId, pt.name, tomorrowJakarta).catch(() => {});
+    }
+
+    logger.info({ affectedPts: ptIds.length }, "DU approval reminder check complete");
+  } catch (err) {
+    logger.error({ err }, "DU approval reminder check failed");
+  }
+}
+
 export async function runApupptReminders(): Promise<void> {
-  const today = new Date().toISOString().split("T")[0]!;
+  const today = getTodayInJakarta();
 
   if (isWeekend(today)) {
     logger.info("Skipping APUPPT reminders — weekend");
@@ -35,7 +98,7 @@ export async function runApupptReminders(): Promise<void> {
 }
 
 export async function runDailyNotifications(): Promise<void> {
-  const today = new Date().toISOString().split("T")[0]!;
+  const today = getTodayInJakarta();
 
   if (isWeekend(today)) {
     logger.info("Skipping daily notifications — weekend");
@@ -95,5 +158,6 @@ function scheduleAt(utcHour: number, fn: () => void, label: string): void {
 
 export function scheduleDailyNotifications(): void {
   scheduleAt(2, runApupptReminders, "APUPPT morning reminder (09:00 WIB)");
+  scheduleAt(5, runDuApprovalReminderHMinusOne, "DU approval reminder H-1 (12:00 WIB)");
   scheduleAt(10, runDailyNotifications, "Daily notification (17:00 WIB)");
 }

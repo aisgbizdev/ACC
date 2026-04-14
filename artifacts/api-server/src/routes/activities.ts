@@ -65,9 +65,15 @@ const activityDocUpload = multer({
       "application/vnd.csv",
       "image/jpeg",
       "image/png",
+      "application/octet-stream",
     ]);
-    if (allowedMime.has(file.mimetype)) cb(null, true);
-    else cb(new Error("Format dokumen tidak didukung."));
+    const allowedExt = new Set([".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".jpg", ".jpeg", ".png"]);
+    const ext = path.extname(file.originalname ?? "").toLowerCase();
+    if (allowedMime.has(file.mimetype) || allowedExt.has(ext)) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error("Format dokumen tidak didukung."));
   },
 });
 
@@ -81,6 +87,19 @@ const uploadActivityDocumentsMiddleware = (req: Request, res: Response, next: Ne
     next();
   });
 };
+
+function toWibNoonUtc(dateStr: string): Date {
+  return new Date(`${dateStr}T05:00:00.000Z`);
+}
+
+function defaultUploadDeadlineFromActivityDate(dateStr: string): Date {
+  const base = new Date(`${dateStr}T00:00:00.000Z`);
+  base.setUTCDate(base.getUTCDate() + 1);
+  const y = base.getUTCFullYear();
+  const m = String(base.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(base.getUTCDate()).padStart(2, "0");
+  return toWibNoonUtc(`${y}-${m}-${d}`);
+}
 
 function requiresCustomerData(activityType: string): boolean {
   return !(CUSTOMER_DATA_EXEMPT as readonly string[]).includes(activityType);
@@ -118,6 +137,9 @@ const ACTIVITY_SELECT = {
   dkNotes: dailyActivitiesTable.dkNotes,
   duSignedOffAt: dailyActivitiesTable.duSignedOffAt,
   duSignedOffBy: dailyActivitiesTable.duSignedOffBy,
+  reportSubmittedAt: dailyActivitiesTable.reportSubmittedAt,
+  reportSubmittedBy: dailyActivitiesTable.reportSubmittedBy,
+  uploadDeadlineAt: dailyActivitiesTable.uploadDeadlineAt,
   createdAt: dailyActivitiesTable.createdAt,
   updatedAt: dailyActivitiesTable.updatedAt,
 };
@@ -143,12 +165,12 @@ router.get("/activities", requireAuth, async (req, res): Promise<void> => {
   if (branchId) conditions.push(eq(dailyActivitiesTable.branchId, branchId));
 
   if (reviewStatus === "pending_review") {
-    conditions.push(isNull(dailyActivitiesTable.dkReviewedAt));
-  } else if (reviewStatus === "reviewed") {
-    conditions.push(isNotNull(dailyActivitiesTable.dkReviewedAt));
     conditions.push(isNull(dailyActivitiesTable.duSignedOffAt));
-  } else if (reviewStatus === "signed_off") {
+  } else if (reviewStatus === "reviewed") {
     conditions.push(isNotNull(dailyActivitiesTable.duSignedOffAt));
+    conditions.push(isNull(dailyActivitiesTable.reportSubmittedAt));
+  } else if (reviewStatus === "signed_off") {
+    conditions.push(isNotNull(dailyActivitiesTable.reportSubmittedAt));
   }
 
   const rows = await db
@@ -209,6 +231,7 @@ router.post("/activities", requireRole("apuppt"), async (req, res): Promise<void
       findingStatus: data.findingStatus ?? null,
       notes: data.notes ?? null,
       userId: user.id,
+      uploadDeadlineAt: defaultUploadDeadlineFromActivityDate(dateStr),
     })
     .returning();
 
@@ -307,7 +330,7 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
   res.json(withBranch);
 });
 
-router.delete("/activities/:id", requireRole("dk", "du", "owner", "superadmin"), async (req, res): Promise<void> => {
+router.delete("/activities/:id", requireRole("du", "owner", "superadmin"), async (req, res): Promise<void> => {
   const user = req.session.user!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
@@ -355,7 +378,7 @@ router.delete("/activities/:id", requireRole("dk", "du", "owner", "superadmin"),
   res.json({ success: true });
 });
 
-router.post("/activities/:id/review", requireRole("dk"), async (req, res): Promise<void> => {
+router.post("/activities/:id/review", requireRole("du"), async (req, res): Promise<void> => {
   const user = req.session.user!;
   const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
 
@@ -365,24 +388,25 @@ router.post("/activities/:id/review", requireRole("dk"), async (req, res): Promi
     return;
   }
 
-  const parsed = ReviewActivityBody.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: "Data tidak valid." });
-    return;
-  }
-
   const [existing] = await db.select().from(dailyActivitiesTable).where(eq(dailyActivitiesTable.id, params.data.id));
   if (!existing) {
     res.status(404).json({ error: "Aktivitas tidak ditemukan." });
     return;
   }
 
+  if (user.ptId && existing.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  const parsed = ReviewActivityBody.safeParse(req.body);
+
   await db
     .update(dailyActivitiesTable)
     .set({
-      dkReviewedAt: new Date(),
-      dkReviewedBy: user.id,
-      dkNotes: parsed.data.notes ?? null,
+      duSignedOffAt: new Date(),
+      duSignedOffBy: user.id,
+      ...(parsed.success ? { dkNotes: parsed.data.notes ?? null } : {}),
     })
     .where(eq(dailyActivitiesTable.id, params.data.id));
 
@@ -411,8 +435,13 @@ router.post("/activities/:id/signoff", requireRole("du"), async (req, res): Prom
     return;
   }
 
-  if (!existing.dkReviewedAt) {
-    res.status(400).json({ error: "Aktivitas belum disetujui oleh DK. DU hanya bisa sign-off setelah DK mereview." });
+  if (user.ptId && existing.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  if (existing.duSignedOffAt) {
+    res.status(409).json({ error: "Aktivitas ini sudah di-approve DU." });
     return;
   }
 
@@ -433,7 +462,7 @@ router.post("/activities/:id/signoff", requireRole("du"), async (req, res): Prom
   res.json(withBranch);
 });
 
-router.post("/activities/batch-review", requireRole("dk"), async (req, res): Promise<void> => {
+router.post("/activities/batch-review", requireRole("du"), async (req, res): Promise<void> => {
   const user = req.session.user!;
   const schema = z.object({ ids: z.array(z.string().uuid()).min(1), notes: z.string().optional() });
   const parsed = schema.safeParse(req.body);
@@ -445,7 +474,7 @@ router.post("/activities/batch-review", requireRole("dk"), async (req, res): Pro
   const { ids, notes } = parsed.data;
 
   const activities = await db
-    .select({ id: dailyActivitiesTable.id, ptId: dailyActivitiesTable.ptId, dkReviewedAt: dailyActivitiesTable.dkReviewedAt })
+    .select({ id: dailyActivitiesTable.id, ptId: dailyActivitiesTable.ptId, duSignedOffAt: dailyActivitiesTable.duSignedOffAt })
     .from(dailyActivitiesTable)
     .where(inArray(dailyActivitiesTable.id, ids));
 
@@ -453,7 +482,7 @@ router.post("/activities/batch-review", requireRole("dk"), async (req, res): Pro
     ? activities.filter(a => a.ptId === user.ptId)
     : activities;
 
-  const toReview = accessible.filter(a => !a.dkReviewedAt);
+  const toReview = accessible.filter(a => !a.duSignedOffAt);
 
   if (toReview.length === 0) {
     res.status(400).json({ error: "Tidak ada aktivitas yang bisa direview (sudah direview atau tidak ditemukan)." });
@@ -463,10 +492,54 @@ router.post("/activities/batch-review", requireRole("dk"), async (req, res): Pro
   const reviewedAt = new Date();
   await db
     .update(dailyActivitiesTable)
-    .set({ dkReviewedAt: reviewedAt, dkReviewedBy: user.id, dkNotes: notes ?? null })
+    .set({ duSignedOffAt: reviewedAt, duSignedOffBy: user.id, dkNotes: notes ?? null })
     .where(inArray(dailyActivitiesTable.id, toReview.map(a => a.id)));
 
   res.json({ reviewedCount: toReview.length });
+});
+
+router.post("/activities/:id/close-case", requireRole("apuppt"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: "ID aktivitas tidak valid." });
+    return;
+  }
+
+  const [existing] = await db.select().from(dailyActivitiesTable).where(eq(dailyActivitiesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  if (existing.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  if (!existing.duSignedOffAt) {
+    res.status(400).json({ error: "Aktivitas belum di-approve DU." });
+    return;
+  }
+
+  if (existing.reportSubmittedAt) {
+    res.status(409).json({ error: "Aktivitas ini sudah ditandai Laporan Terkirim." });
+    return;
+  }
+
+  await db
+    .update(dailyActivitiesTable)
+    .set({ reportSubmittedAt: new Date(), reportSubmittedBy: user.id })
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  const [withBranch] = await db
+    .select(ACTIVITY_SELECT)
+    .from(dailyActivitiesTable)
+    .leftJoin(branchesTable, eq(dailyActivitiesTable.branchId, branchesTable.id))
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  res.json(withBranch);
 });
 
 router.post(

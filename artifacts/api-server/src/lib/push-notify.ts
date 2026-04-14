@@ -123,8 +123,9 @@ export async function notifyNewActivity(ptId: string, activityType: string, subm
     };
 
     const dkIds = await getUsersByRole(["dk"], ptId);
+    const duIds = await getUsersByRole(["du"], ptId);
     const globalIds = await getUsersByRole(["owner", "superadmin"]);
-    const targetIds = [...new Set([...dkIds, ...globalIds])].filter((id) => id !== submitterUserId);
+    const targetIds = [...new Set([...dkIds, ...duIds, ...globalIds])].filter((id) => id !== submitterUserId);
 
     await sendToUsers(targetIds, payload);
   } catch (err) {
@@ -180,5 +181,21 @@ export async function notifyDailySummary(summary: { totalPts: number; redCount: 
     await sendToUsers(globalIds, payload);
   } catch (err) {
     logger.error({ err }, "notifyDailySummary failed");
+  }
+}
+
+export async function notifyDuApprovalReminder(ptId: string, ptName: string, dueDateLabel: string): Promise<void> {
+  try {
+    const payload: PushPayload = {
+      title: "Pengingat Approval DU (H-1)",
+      body: `${ptName}: masih ada laporan menunggu approval DU. Deadline ${dueDateLabel} pukul 12.00 WIB.`,
+      url: "/signoff",
+      tag: `du-approval-reminder-${ptId}`,
+    };
+
+    const duIds = await getUsersByRole(["du"], ptId);
+    await sendToUsers(duIds, payload);
+  } catch (err) {
+    logger.error({ err }, "notifyDuApprovalReminder failed");
   }
 }
