@@ -12,6 +12,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FileCheck2, Building2, Users, CheckCircle2, Clock, Paperclip, Download } from "lucide-react";
 import { detectActivityScope, stripActivityScopeTag, extractActivityInputTime } from "@/lib/activity-scope";
 import { getActivityDocuments, formatFileSize } from "@/lib/activity-documents";
+import { getBaseUrl } from "@/lib/api";
 
 const ACTIVITY_LABELS: Record<string, string> = {
   kyc: "KYC",
@@ -161,7 +162,7 @@ export default function DUSignOff() {
                       {docs.map((doc) => (
                         <a
                           key={doc.id}
-                          href={`/api/activities/${a.id}/documents/${doc.id}/download`}
+                          href={`${getBaseUrl()}/api/activities/${a.id}/documents/${doc.id}/download`}
                           target="_blank"
                           rel="noreferrer"
                           className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-xs text-slate-700 hover:bg-slate-100"

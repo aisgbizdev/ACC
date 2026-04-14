@@ -445,6 +445,7 @@ export default function Activity({
 
   const [form, setForm] = useState<FormState>(() => buildDefaultForm(activityView));
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
+  const documentFilesRef = useRef<File[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [error, setError] = useState("");
@@ -484,31 +485,34 @@ export default function Activity({
     setFormOpenedAt(null);
     setForm(buildDefaultForm(activityView));
     setDocumentFiles([]);
+    documentFilesRef.current = [];
     setError("");
   };
 
   const handleDocumentSelection = (selectedFiles: File[]) => {
     if (selectedFiles.length === 0) return;
-    setDocumentFiles((prev) => {
-      const merged = [...prev, ...selectedFiles];
-      const deduped = merged.filter((file, index, arr) => {
-        return arr.findIndex((f) => (
-          f.name === file.name &&
-          f.size === file.size &&
-          f.lastModified === file.lastModified
-        )) === index;
-      });
-      if (deduped.length > MAX_DOCUMENT_FILES) {
-        setError(`Maksimal ${MAX_DOCUMENT_FILES} file dokumen per aktivitas.`);
-      } else if (error.startsWith("Maksimal")) {
-        setError("");
-      }
-      return deduped.slice(0, MAX_DOCUMENT_FILES);
+    const merged = [...documentFilesRef.current, ...selectedFiles];
+    const deduped = merged.filter((file, index, arr) => {
+      return arr.findIndex((f) => (
+        f.name === file.name &&
+        f.size === file.size &&
+        f.lastModified === file.lastModified
+      )) === index;
     });
+    const next = deduped.slice(0, MAX_DOCUMENT_FILES);
+    documentFilesRef.current = next;
+    if (deduped.length > MAX_DOCUMENT_FILES) {
+      setError(`Maksimal ${MAX_DOCUMENT_FILES} file dokumen per aktivitas.`);
+    } else if (error.startsWith("Maksimal")) {
+      setError("");
+    }
+    setDocumentFiles(next);
   };
 
   const removeDocumentFile = (fileIndex: number) => {
-    setDocumentFiles((prev) => prev.filter((_, index) => index !== fileIndex));
+    const next = documentFilesRef.current.filter((_, index) => index !== fileIndex);
+    documentFilesRef.current = next;
+    setDocumentFiles(next);
   };
 
   const uploadDocuments = async (activityId: string, files: File[]) => {
@@ -517,10 +521,13 @@ export default function Activity({
     for (const file of files) {
       formData.append("documents", file);
     }
-    await apiFetch(`/api/activities/${activityId}/documents`, {
+    const result = await apiFetch<{ documents?: unknown[] }>(`/api/activities/${activityId}/documents`, {
       method: "POST",
       body: formData,
     });
+    if (!Array.isArray(result?.documents) || result.documents.length === 0) {
+      throw new Error("Dokumen gagal tersimpan. Silakan coba upload ulang.");
+    }
   };
 
   const handleEdit = (a: ActivityItem) => {
@@ -542,6 +549,7 @@ export default function Activity({
     setShowForm(true);
     setError("");
     setDocumentFiles([]);
+    documentFilesRef.current = [];
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -588,6 +596,7 @@ export default function Activity({
 
     if (isHoliday) {
       setDocumentFiles([]);
+      documentFilesRef.current = [];
     }
   };
 
@@ -649,9 +658,10 @@ export default function Activity({
         activityId = created.id;
       }
 
-      if (!isHolidayActivity && activityId && documentFiles.length > 0) {
+      const filesToUpload = documentFilesRef.current;
+      if (!isHolidayActivity && activityId && filesToUpload.length > 0) {
         setUploadingDocs(true);
-        await uploadDocuments(activityId, documentFiles);
+        await uploadDocuments(activityId, filesToUpload);
       }
 
       resetFormState();
