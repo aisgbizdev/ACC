@@ -606,14 +606,6 @@ export default function Activity({
     if (!user?.ptId) { setError("Akun Anda tidak terhubung ke PT manapun."); return; }
     if (!form.date) { setError("Tanggal aktivitas wajib diisi."); return; }
     if (!form.activityTime) { setError("Jam aktivitas wajib diisi."); return; }
-    if (activityView === "monthly" && (form.date < monthRange.start || form.date > monthRange.end)) {
-      setError("Tanggal harus berada di bulan yang dipilih.");
-      return;
-    }
-    if (activityView === "quarterly" && (form.date < quarterRange.start || form.date > quarterRange.end)) {
-      setError("Tanggal harus berada di triwulan yang dipilih.");
-      return;
-    }
 
     const selected = ACTIVITY_TYPES.find(t => t.value === form.activityType);
     const needsCustomer = selected?.needsCustomer ?? true;
@@ -889,8 +881,7 @@ export default function Activity({
                   ref={dateInputRef}
                   type="date"
                   value={form.date}
-                  min={activityView === "monthly" ? monthRange.start : activityView === "quarterly" ? quarterRange.start : undefined}
-                  max={activityView === "monthly" ? monthRange.end : activityView === "quarterly" ? quarterRange.end : today}
+                  max={activityView === "daily" ? today : undefined}
                   disabled={Boolean(editingId)}
                   onChange={(e) => setForm({ ...form, date: e.target.value })}
                   className="w-full appearance-none px-3 pr-11 py-2.5 bg-[#0e1a2d] border border-white/10 rounded-xl text-sm text-slate-200 [color-scheme:dark] focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-70 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:pointer-events-none"
