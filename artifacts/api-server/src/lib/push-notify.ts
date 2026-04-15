@@ -75,20 +75,42 @@ async function getUsersByRole(roles: string[], ptId?: string): Promise<string[]>
     .map((u) => u.id);
 }
 
+async function getUserDisplayName(userId: string): Promise<string> {
+  const [user] = await db
+    .select({ name: usersTable.name, role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+
+  if (!user) return "User";
+  if (!user.name || !user.name.trim()) return user.role;
+  return user.name.trim();
+}
+
 export async function notifyNewFinding(ptId: string, findingText: string, reportedByUserId: string): Promise<void> {
   try {
-    const payload: PushPayload = {
+    const payloadDefault: PushPayload = {
       title: "Temuan Baru",
       body: findingText.slice(0, 100),
+      url: "/findings",
+      tag: `finding-new-${ptId}`,
+    };
+    const reporterName = await getUserDisplayName(reportedByUserId);
+    const payloadGlobal: PushPayload = {
+      title: "Temuan Baru",
+      body: `${reporterName}: ${findingText.slice(0, 80)}`,
       url: "/findings",
       tag: `finding-new-${ptId}`,
     };
 
     const dkIds = await getUsersByRole(["dk"], ptId);
     const globalIds = await getUsersByRole(["owner", "superadmin"]);
-    const targetIds = [...new Set([...dkIds, ...globalIds])].filter((id) => id !== reportedByUserId);
+    const dkTargetIds = [...new Set(dkIds)].filter((id) => id !== reportedByUserId);
+    const globalTargetIds = [...new Set(globalIds)].filter((id) => id !== reportedByUserId);
 
-    await sendToUsers(targetIds, payload);
+    await Promise.all([
+      sendToUsers(dkTargetIds, payloadDefault),
+      sendToUsers(globalTargetIds, payloadGlobal),
+    ]);
   } catch (err) {
     logger.error({ err }, "notifyNewFinding failed");
   }
@@ -96,18 +118,29 @@ export async function notifyNewFinding(ptId: string, findingText: string, report
 
 export async function notifyNewComment(findingId: string, ptId: string, commenterUserId: string, content: string): Promise<void> {
   try {
-    const payload: PushPayload = {
+    const payloadDefault: PushPayload = {
       title: "Komentar Baru di Tiket",
       body: content.slice(0, 100),
+      url: `/findings/${findingId}`,
+      tag: `comment-${findingId}`,
+    };
+    const commenterName = await getUserDisplayName(commenterUserId);
+    const payloadGlobal: PushPayload = {
+      title: "Komentar Baru di Tiket",
+      body: `${commenterName}: ${content.slice(0, 80)}`,
       url: `/findings/${findingId}`,
       tag: `comment-${findingId}`,
     };
 
     const allPtUsers = await getUsersByRole(["apuppt", "dk"], ptId);
     const globalIds = await getUsersByRole(["owner", "superadmin"]);
-    const targetIds = [...new Set([...allPtUsers, ...globalIds])].filter((id) => id !== commenterUserId);
+    const ptTargetIds = [...new Set(allPtUsers)].filter((id) => id !== commenterUserId);
+    const globalTargetIds = [...new Set(globalIds)].filter((id) => id !== commenterUserId);
 
-    await sendToUsers(targetIds, payload);
+    await Promise.all([
+      sendToUsers(ptTargetIds, payloadDefault),
+      sendToUsers(globalTargetIds, payloadGlobal),
+    ]);
   } catch (err) {
     logger.error({ err }, "notifyNewComment failed");
   }
@@ -115,9 +148,16 @@ export async function notifyNewComment(findingId: string, ptId: string, commente
 
 export async function notifyNewActivity(ptId: string, activityType: string, submitterUserId: string): Promise<void> {
   try {
-    const payload: PushPayload = {
+    const payloadDefault: PushPayload = {
       title: "Aktivitas Baru Diinput",
       body: `APUPPT telah menginput aktivitas: ${activityType}`,
+      url: "/activities",
+      tag: `activity-new-${ptId}`,
+    };
+    const submitterName = await getUserDisplayName(submitterUserId);
+    const payloadGlobal: PushPayload = {
+      title: "Aktivitas Baru Diinput",
+      body: `${submitterName} menginput aktivitas: ${activityType}`,
       url: "/activities",
       tag: `activity-new-${ptId}`,
     };
@@ -125,9 +165,13 @@ export async function notifyNewActivity(ptId: string, activityType: string, subm
     const dkIds = await getUsersByRole(["dk"], ptId);
     const duIds = await getUsersByRole(["du"], ptId);
     const globalIds = await getUsersByRole(["owner", "superadmin"]);
-    const targetIds = [...new Set([...dkIds, ...duIds, ...globalIds])].filter((id) => id !== submitterUserId);
+    const internalTargetIds = [...new Set([...dkIds, ...duIds])].filter((id) => id !== submitterUserId);
+    const globalTargetIds = [...new Set(globalIds)].filter((id) => id !== submitterUserId);
 
-    await sendToUsers(targetIds, payload);
+    await Promise.all([
+      sendToUsers(internalTargetIds, payloadDefault),
+      sendToUsers(globalTargetIds, payloadGlobal),
+    ]);
   } catch (err) {
     logger.error({ err }, "notifyNewActivity failed");
   }
