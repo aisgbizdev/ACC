@@ -6,9 +6,7 @@ export default function ForgotPassword() {
     <div className="min-h-screen bg-slate-900 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-lg font-bold text-white">ACC</span>
-          </div>
+          <img src="/logo-apu.png" alt="Logo APU" className="w-12 h-12 rounded-xl object-cover mx-auto mb-4" />
           <h1 className="text-xl font-bold text-white">APUPPT Control Center</h1>
         </div>
 

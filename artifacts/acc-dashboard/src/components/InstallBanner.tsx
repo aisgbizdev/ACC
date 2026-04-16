@@ -44,9 +44,7 @@ export function InstallBanner() {
 
   return (
     <div className="fixed bottom-16 left-4 right-4 z-40 flex items-start gap-3 rounded-[28px] border border-sky-500/15 bg-[#0c1526] p-4 shadow-[0_30px_80px_rgba(0,0,0,0.35)] animate-in slide-in-from-bottom-2 sm:bottom-4 sm:left-auto sm:right-4 sm:w-[380px]">
-      <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl bg-sky-500/15">
-        <span className="text-white text-xs font-bold">ACC</span>
-      </div>
+      <img src="/logo-apu.png" alt="Logo APU" className="h-11 w-11 flex-shrink-0 rounded-2xl object-cover" />
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-white">Install ACC di HP Anda</p>
         <p className="mt-0.5 text-xs text-slate-400">Akses lebih cepat tanpa membuka browser</p>

@@ -78,9 +78,7 @@ export function Navbar() {
     <aside className="hidden sm:flex fixed top-0 left-0 bottom-0 z-50 w-40 flex-col bg-[#0b1525] border-r border-slate-800">
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-4 py-4 border-b border-slate-800 flex-shrink-0">
-        <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-          <span className="text-xs font-bold text-white">ACC</span>
-        </div>
+        <img src="/logo-apu.png" alt="Logo APU" className="w-8 h-8 rounded-lg object-cover flex-shrink-0" />
         <div className="leading-tight">
           <div className="text-xs font-bold text-white">ACC</div>
           <div className="text-[9px] text-slate-400 uppercase tracking-wide">Control Center</div>

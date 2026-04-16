@@ -47,8 +47,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title ?? "ACC Dashboard";
   const options = {
     body: payload.body ?? "",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-72.png",
+    icon: "/icon-192.png",
+    badge: "/icon-192.png",
     tag: payload.tag ?? "acc-notif",
     data: { url: payload.url ?? "/" },
     renotify: true,
