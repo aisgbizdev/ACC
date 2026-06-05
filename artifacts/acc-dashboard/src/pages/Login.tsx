@@ -50,6 +50,7 @@ const ACCOUNT_GROUPS = [
     items: [
       { username: "owner",      label: "Owner" },
       { username: "superadmin", label: "Superadmin" },
+      { username: "usrtest",    label: "usrtest" },
     ],
   },
 ];

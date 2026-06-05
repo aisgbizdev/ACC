@@ -404,11 +404,54 @@
     background-color: #0e1a2d !important;
     color: #f8fafc !important;
     border-color: rgba(255, 255, 255, 0.08) !important;
+    caret-color: #f8fafc;
+    color-scheme: dark;
   }
 
   .app-shell-main input::placeholder,
   .app-shell-main textarea::placeholder {
-    color: #64748b;
+    color: #94a3b8 !important;
+    opacity: 1;
+  }
+
+  .app-shell-main input:not([type="checkbox"]):not([type="radio"]):focus,
+  .app-shell-main select:focus,
+  .app-shell-main textarea:focus {
+    border-color: rgba(59, 130, 246, 0.72) !important;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.32) !important;
+  }
+
+  .app-shell-main input:disabled,
+  .app-shell-main select:disabled,
+  .app-shell-main textarea:disabled {
+    background-color: #0a1220 !important;
+    color: #94a3b8 !important;
+    -webkit-text-fill-color: #94a3b8 !important;
+    opacity: 1;
+  }
+
+  .app-shell-main input:-webkit-autofill,
+  .app-shell-main input:-webkit-autofill:hover,
+  .app-shell-main input:-webkit-autofill:focus,
+  .app-shell-main textarea:-webkit-autofill,
+  .app-shell-main textarea:-webkit-autofill:hover,
+  .app-shell-main textarea:-webkit-autofill:focus,
+  .app-shell-main select:-webkit-autofill,
+  .app-shell-main select:-webkit-autofill:hover,
+  .app-shell-main select:-webkit-autofill:focus {
+    border-color: rgba(59, 130, 246, 0.72) !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    caret-color: #f8fafc;
+    box-shadow: 0 0 0 1000px #0e1a2d inset !important;
+    transition: background-color 9999s ease-out;
+  }
+
+  .app-shell-main input[type="date"]::-webkit-calendar-picker-indicator,
+  .app-shell-main input[type="month"]::-webkit-calendar-picker-indicator,
+  .app-shell-main input[type="time"]::-webkit-calendar-picker-indicator,
+  .app-shell-main input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.4);
+    opacity: 0.78;
   }
 
   .app-shell-main table thead tr {
@@ -424,9 +467,20 @@
     border-color: rgba(255, 255, 255, 0.06) !important;
   }
 
-  /* Keep native select popup options readable on Windows browsers. */
+  /* Keep native select popup options consistent with the dark app shell. */
+  .app-shell-main optgroup,
+  .findings-form-select optgroup,
+  .app-shell-main option,
   .findings-form-select option {
-    color: #0f172a;
-    background-color: #f8fafc;
+    color: #f8fafc;
+    background-color: #071225;
+  }
+
+  .app-shell-main option:checked,
+  .app-shell-main option:hover,
+  .findings-form-select option:checked,
+  .findings-form-select option:hover {
+    color: #ffffff;
+    background-color: #1d4ed8;
   }
 }
