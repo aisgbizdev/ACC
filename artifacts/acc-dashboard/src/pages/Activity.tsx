@@ -19,7 +19,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
   CheckCircle2, Edit2, Building2, Users, FileCheck2,
   AlertCircle, MessageCircle, Send, X, ChevronDown, ChevronUp,
-  Paperclip, Download, CalendarDays, Clock3,
+  Paperclip, Download, CalendarDays, Clock3, Trash2,
 } from "lucide-react";
 import { PageChrome, Panel } from "@/components/PageChrome";
 import { apiFetch, getBaseUrl } from "@/lib/api";
@@ -278,7 +278,17 @@ function CommentThread({ activityId, currentUserId }: { activityId: string; curr
 }
 
 /* â”€â”€â”€ history card â”€â”€â”€ */
-function HistoryCard({ a, userId }: { a: ActivityItem; userId: string }) {
+function HistoryCard({
+  a,
+  userId,
+  canDeleteDocuments,
+  onDeleteDocument,
+}: {
+  a: ActivityItem;
+  userId: string;
+  canDeleteDocuments: boolean;
+  onDeleteDocument: (activityId: string, docId: string, docName: string) => void;
+}) {
   const [expanded, setExpanded] = useState(false);
   const docs = getActivityDocuments(a);
   const displayTime = a.inputTime ?? formatActivityTime(a.createdAt);
@@ -346,22 +356,34 @@ function HistoryCard({ a, userId }: { a: ActivityItem; userId: string }) {
               <p className="mb-1 text-slate-400 font-semibold">Dokumen</p>
               <div className="space-y-1.5">
                 {docs.map((doc) => (
-                  <a
+                  <div
                     key={doc.id}
-                    href={`${getBaseUrl()}/api/activities/${a.id}/documents/${doc.id}/download`}
-                    className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-[11px] text-slate-300 hover:bg-white/10"
-                    target="_blank"
-                    rel="noreferrer"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-white/5 px-2 py-1.5 text-[11px] text-slate-300"
                   >
-                    <span className="flex items-center gap-1.5 min-w-0">
+                    <a
+                      href={`${getBaseUrl()}/api/activities/${a.id}/documents/${doc.id}/download`}
+                      className="min-w-0 flex flex-1 items-center gap-1.5 hover:text-white"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <Paperclip className="h-3.5 w-3.5 flex-shrink-0" />
                       <span className="truncate">{doc.originalName}</span>
-                    </span>
-                    <span className="ml-2 flex items-center gap-2 text-slate-400">
+                    </a>
+                    <div className="flex items-center gap-1.5 text-slate-400">
                       <span>{formatFileSize(doc.size)}</span>
                       <Download className="h-3.5 w-3.5" />
-                    </span>
-                  </a>
+                      {canDeleteDocuments && (
+                        <button
+                          type="button"
+                          onClick={() => onDeleteDocument(a.id, doc.id, doc.originalName)}
+                          className="inline-flex items-center justify-center rounded-md p-1 text-red-300 hover:bg-red-500/10 hover:text-red-200"
+                          aria-label={`Hapus ${doc.originalName}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -455,6 +477,7 @@ export default function Activity({
   const formRef = useRef<HTMLFormElement>(null);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [closingCaseId, setClosingCaseId] = useState<string | null>(null);
+  const canDeleteDocuments = user?.role === "apuppt";
 
   const openNativePicker = (input: HTMLInputElement | null) => {
     if (!input) return;
@@ -562,6 +585,20 @@ export default function Activity({
       setError((err as Error).message ?? "Gagal memperbarui status case closed.");
     } finally {
       setClosingCaseId(null);
+    }
+  };
+
+  const deleteDocument = async (activityId: string, docId: string, docName: string) => {
+    const confirmed = window.confirm(`Hapus dokumen "${docName}"? Aksi ini tidak bisa dibatalkan.`);
+    if (!confirmed) return;
+
+    try {
+      await apiFetch(`/api/activities/${activityId}/documents/${docId}`, {
+        method: "DELETE",
+      });
+      await queryClient.invalidateQueries({ queryKey: getListActivitiesQueryKey() });
+    } catch (err) {
+      setError((err as Error).message ?? "Gagal menghapus dokumen.");
     }
   };
 
@@ -1118,7 +1155,13 @@ export default function Activity({
         ) : (
           <div className="space-y-2">
             {pastActivities.map(a => (
-              <HistoryCard key={a.id} a={a as ActivityItem} userId={user?.id ?? ""} />
+              <HistoryCard
+                key={a.id}
+                a={a as ActivityItem}
+                userId={user?.id ?? ""}
+                canDeleteDocuments={canDeleteDocuments}
+                onDeleteDocument={deleteDocument}
+              />
             ))}
           </div>
         )}
