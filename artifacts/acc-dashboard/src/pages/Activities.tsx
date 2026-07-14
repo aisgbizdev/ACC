@@ -134,6 +134,7 @@ export default function Activities() {
 
   const isDk = user?.role === "dk" || user?.role === "superadmin";
   const canDelete = user?.role === "dk" || user?.role === "du" || user?.role === "owner" || user?.role === "superadmin";
+  const canDeleteDocuments = user?.role === "apuppt" || user?.role === "owner" || user?.role === "superadmin";
 
   const params: Record<string, string> = {};
   if (user?.ptId) params.ptId = user.ptId;
@@ -177,6 +178,25 @@ export default function Activities() {
       window.alert((err as Error).message ?? "Gagal menghapus aktivitas.");
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleDeleteDocument = async (activityId: string, docId: string, docName: string) => {
+    const confirmed = window.confirm(`Hapus dokumen "${docName}"? Aksi ini tidak bisa dibatalkan.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/activities/${activityId}/documents/${docId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error ?? `HTTP ${res.status}`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+    } catch (err) {
+      window.alert((err as Error).message ?? "Gagal menghapus dokumen.");
     }
   };
 
@@ -324,14 +344,24 @@ export default function Activities() {
                                 <Paperclip className="h-3.5 w-3.5 flex-shrink-0 text-slate-500" />
                                 <span className="truncate">{doc.originalName}</span>
                               </span>
-                              <span className="ml-2 flex items-center gap-1.5 text-slate-500">
-                                <span>{formatFileSize(doc.size)}</span>
-                                <Download className="h-3.5 w-3.5" />
-                              </span>
-                            </a>
-                          ))}
-                        </div>
-                      )}
+                          <span className="ml-2 flex items-center gap-1.5 text-slate-500">
+                            <span>{formatFileSize(doc.size)}</span>
+                            <Download className="h-3.5 w-3.5" />
+                            {canDeleteDocuments && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDocument(a.id, doc.id, doc.originalName)}
+                                className="inline-flex items-center justify-center rounded-md p-1 text-red-500 hover:bg-red-50 hover:text-red-600"
+                                aria-label={`Hapus ${doc.originalName}`}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
                     </div>
                     <div className="flex-shrink-0">
                       <div className="flex items-center gap-2">

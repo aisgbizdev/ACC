@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useListActivities, useListPts, type DailyActivity } from "@workspace/api-client-react";
-import { ClipboardCheck, CheckCircle2, Clock, Building2, Users, Eye, Paperclip, Download } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { ClipboardCheck, CheckCircle2, Clock, Building2, Users, Eye, Paperclip, Download, Trash2 } from "lucide-react";
 import { detectActivityScope, stripActivityScopeTag, extractActivityInputTime } from "@/lib/activity-scope";
 import { getActivityDocuments, formatFileSize } from "@/lib/activity-documents";
 import { getBaseUrl } from "@/lib/api";
@@ -26,9 +28,12 @@ function getInputTime(notes?: string | null, createdAt?: string): string {
 }
 
 export default function DKReview() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [filterPt, setFilterPt] = useState("");
   const [filterScope, setFilterScope] = useState<"" | "daily" | "monthly" | "quarterly">("");
   const [tab, setTab] = useState<"pending" | "approved" | "closed">("pending");
+  const canDeleteDocuments = user?.role === "apuppt" || user?.role === "owner" || user?.role === "superadmin";
 
   const params: Record<string, string> = {};
   if (filterPt) params.ptId = filterPt;
@@ -41,6 +46,25 @@ export default function DKReview() {
     if (!filterScope) return true;
     return detectActivityScope(a.notes) === filterScope;
   });
+
+  const handleDeleteDocument = async (activityId: string, docId: string, docName: string) => {
+    const confirmed = window.confirm(`Hapus dokumen "${docName}"? Aksi ini tidak bisa dibatalkan.`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/activities/${activityId}/documents/${docId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.error ?? `HTTP ${res.status}`);
+      }
+      await queryClient.invalidateQueries({ queryKey: ["/api/activities"] });
+    } catch (err) {
+      window.alert((err as Error).message ?? "Gagal menghapus dokumen.");
+    }
+  };
 
   const getPtCode = (ptId: string) => pts?.find((p) => p.id === ptId)?.code ?? ptId.slice(0, 8);
 
@@ -137,6 +161,16 @@ export default function DKReview() {
                         <span className="ml-2 flex items-center gap-2 text-slate-500">
                           <span>{formatFileSize(doc.size)}</span>
                           <Download className="h-3.5 w-3.5" />
+                          {canDeleteDocuments && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteDocument(a.id, doc.id, doc.originalName)}
+                              className="inline-flex items-center justify-center rounded-md p-1 text-red-500 hover:bg-red-50 hover:text-red-600"
+                              aria-label={`Hapus ${doc.originalName}`}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </span>
                       </a>
                     ))}

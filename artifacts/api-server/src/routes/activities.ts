@@ -648,6 +648,59 @@ router.get("/activities/:id/documents/:docId/download", requireAuth, async (req,
   res.download(filePath, doc.originalName);
 });
 
+router.delete("/activities/:id/documents/:docId", requireRole("apuppt"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+  const docId = Array.isArray(req.params.docId) ? req.params.docId[0] : req.params.docId;
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
+
+  if (!params.success || !docId) {
+    res.status(400).json({ error: "Parameter tidak valid." });
+    return;
+  }
+
+  const [activity] = await db
+    .select({ id: dailyActivitiesTable.id, ptId: dailyActivitiesTable.ptId, documents: dailyActivitiesTable.documents })
+    .from(dailyActivitiesTable)
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  if (!activity) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  if (activity.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  const docs = parseDocuments(activity.documents);
+  const doc = docs.find((item) => item.id === docId);
+
+  if (!doc) {
+    res.status(404).json({ error: "Dokumen tidak ditemukan." });
+    return;
+  }
+
+  const nextDocs = docs.filter((item) => item.id !== docId);
+  const filePath = path.join(activityDocsDir, doc.fileName);
+
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  } catch (err) {
+    void err;
+  }
+
+  await db
+    .update(dailyActivitiesTable)
+    .set({ documents: nextDocs })
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  res.json({ documents: nextDocs });
+});
+
 router.get("/activities/:id/comments", requireAuth, async (req, res): Promise<void> => {
   const rawId = req.params.id as string;
   const comments = await db
