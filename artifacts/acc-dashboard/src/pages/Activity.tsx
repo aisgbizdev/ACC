@@ -282,11 +282,15 @@ function HistoryCard({
   a,
   userId,
   canDeleteDocuments,
+  canEdit,
+  onEdit,
   onDeleteDocument,
 }: {
   a: ActivityItem;
   userId: string;
   canDeleteDocuments: boolean;
+  canEdit: boolean;
+  onEdit: (a: ActivityItem) => void;
   onDeleteDocument: (activityId: string, docId: string, docName: string) => void;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -331,9 +335,21 @@ function HistoryCard({
             )}
           </div>
         </div>
-        <button className="text-slate-500 hover:text-slate-300 transition-colors flex-shrink-0">
-          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          {canEdit && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEdit(a); }}
+              className="text-slate-500 hover:text-blue-400 transition-colors p-1"
+              title="Edit"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button className="text-slate-500 hover:text-slate-300 transition-colors">
+            {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {expanded && (
@@ -478,6 +494,7 @@ export default function Activity({
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [closingCaseId, setClosingCaseId] = useState<string | null>(null);
   const canDeleteDocuments = user?.role === "apuppt" || user?.role === "owner" || user?.role === "superadmin";
+  const canEditActivity = user?.role === "apuppt";
 
   const openNativePicker = (input: HTMLInputElement | null) => {
     if (!input) return;
@@ -1145,7 +1162,7 @@ export default function Activity({
       {activityView === "daily" && (
       <div>
         <h2 className="mb-3 text-sm font-semibold text-slate-200">Riwayat Aktivitas</h2>
-        <p className="mb-3 text-xs text-slate-500">Tap kartu untuk lihat detail & komentar. Hanya aktivitas hari ini yang dapat diedit.</p>
+        <p className="mb-3 text-xs text-slate-500">Tap kartu untuk lihat detail & komentar.{canEditActivity ? " Gunakan ikon pensil untuk mengedit." : ""}</p>
         {isLoading ? (
           <div className="text-center py-8 text-slate-400 text-sm">Memuat...</div>
         ) : pastActivities.length === 0 ? (
@@ -1160,6 +1177,8 @@ export default function Activity({
                 a={a as ActivityItem}
                 userId={user?.id ?? ""}
                 canDeleteDocuments={canDeleteDocuments}
+                canEdit={canEditActivity}
+                onEdit={handleEdit}
                 onDeleteDocument={deleteDocument}
               />
             ))}

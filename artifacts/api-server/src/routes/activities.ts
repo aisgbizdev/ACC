@@ -280,12 +280,6 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
     return;
   }
 
-  const today = new Date().toISOString().split("T")[0];
-  if (existing.date !== today) {
-    res.status(403).json({ error: "Aktivitas lama tidak dapat diubah. Hanya aktivitas hari ini yang dapat diedit." });
-    return;
-  }
-
   const data = parsed.data;
 
   if (data.branchId) {
@@ -318,6 +312,22 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
       ...(data.notes !== undefined ? { notes: data.notes ?? null } : {}),
     })
     .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  await logAudit("update_activity", "activity", params.data.id, req, {
+    ptId: existing.ptId,
+    beforeData: {
+      activityType: existing.activityType,
+      itemsReviewed: existing.itemsReviewed,
+      hasFinding: existing.hasFinding,
+      notes: existing.notes,
+    },
+    afterData: {
+      activityType: data.activityType ?? existing.activityType,
+      itemsReviewed: data.itemsReviewed ?? existing.itemsReviewed,
+      hasFinding: data.hasFinding ?? existing.hasFinding,
+      notes: data.notes ?? existing.notes,
+    },
+  });
 
   const [withBranch] = await db
     .select(ACTIVITY_SELECT)
