@@ -5,6 +5,7 @@ import session from "express-session";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { objectExists, getObjectReadStream } from "./lib/docStorage";
 
 const app: Express = express();
 
@@ -72,6 +73,39 @@ app.use(
 );
 
 const uploadsDir = path.join(process.cwd(), "uploads");
+
+app.get("/uploads/avatars/:file", async (req, res, next) => {
+  if (!req.session?.user) {
+    res.status(401).json({ error: "Tidak terautentikasi." });
+    return;
+  }
+  const file = String(req.params.file);
+  if (!/^[\w.-]+$/.test(file)) {
+    next();
+    return;
+  }
+  try {
+    const objectPath = `avatars/${file}`;
+    if (await objectExists(objectPath)) {
+      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Cache-Control", "private, max-age=300");
+      const stream = getObjectReadStream(objectPath);
+      stream.on("error", () => {
+        if (!res.headersSent) {
+          res.status(500).json({ error: "Gagal memuat avatar." });
+        } else {
+          res.destroy();
+        }
+      });
+      stream.pipe(res);
+      return;
+    }
+  } catch {
+    // fall through to static
+  }
+  next();
+});
+
 app.use("/uploads", express.static(uploadsDir));
 
 app.use("/api", router);

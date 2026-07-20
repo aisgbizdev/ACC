@@ -1,0 +1,1 @@
+- [Uploads use App Storage](uploads-object-storage.md) — uploads must go to GCS, never local disk; prod filesystem is wiped on every publish.

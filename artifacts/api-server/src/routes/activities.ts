@@ -10,6 +10,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { randomUUID } from "crypto";
+import { saveObject, objectExists, getObjectReadStream, deleteObject } from "../lib/docStorage";
 
 const router: IRouter = Router();
 
@@ -17,7 +18,10 @@ const CUSTOMER_DATA_EXEMPT = ["sosialisasi", "libur"] as const;
 const MAX_ACTIVITY_DOCS = 10;
 
 const activityDocsDir = path.join(process.cwd(), "uploads", "activity-documents");
-if (!fs.existsSync(activityDocsDir)) fs.mkdirSync(activityDocsDir, { recursive: true });
+
+function docObjectPath(fileName: string): string {
+  return `activity-documents/${fileName}`;
+}
 
 type ActivityDocument = {
   id: string;
@@ -45,13 +49,7 @@ function parseDocuments(raw: unknown): ActivityDocument[] {
 }
 
 const activityDocUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, activityDocsDir),
-    filename: (_req, file, cb) => {
-      const ext = path.extname(file.originalname) || "";
-      cb(null, `${Date.now()}-${randomUUID()}${ext}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: MAX_ACTIVITY_DOCS },
   fileFilter: (_req, file, cb) => {
     const allowedMime = new Set([
@@ -367,6 +365,7 @@ router.delete("/activities/:id", requireRole("du", "owner", "superadmin"), async
 
   const docs = parseDocuments(existing.documents);
   for (const doc of docs) {
+    deleteObject(docObjectPath(doc.fileName)).catch(() => undefined);
     fs.unlink(path.join(activityDocsDir, doc.fileName), () => undefined);
   }
 
@@ -578,23 +577,37 @@ router.post(
     }
 
     const existingDocs = parseDocuments(activity.documents);
-    const uploadedDocs: ActivityDocument[] = files.map((file) => ({
-      id: randomUUID(),
-      fileName: file.filename,
-      originalName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
-      uploadedAt: new Date().toISOString(),
-    }));
 
-    const nextDocs = [...existingDocs, ...uploadedDocs];
-    if (nextDocs.length > MAX_ACTIVITY_DOCS) {
-      for (const file of files) {
-        fs.unlink(path.join(activityDocsDir, file.filename), () => undefined);
-      }
+    if (existingDocs.length + files.length > MAX_ACTIVITY_DOCS) {
       res.status(400).json({ error: `Maksimal ${MAX_ACTIVITY_DOCS} dokumen per aktivitas.` });
       return;
     }
+
+    const uploadedDocs: ActivityDocument[] = [];
+    try {
+      for (const file of files) {
+        const ext = path.extname(file.originalname) || "";
+        const storedName = `${Date.now()}-${randomUUID()}${ext}`;
+        await saveObject(docObjectPath(storedName), file.buffer, file.mimetype || "application/octet-stream");
+        uploadedDocs.push({
+          id: randomUUID(),
+          fileName: storedName,
+          originalName: file.originalname,
+          mimeType: file.mimetype,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      for (const doc of uploadedDocs) {
+        deleteObject(docObjectPath(doc.fileName)).catch(() => undefined);
+      }
+      console.error("Gagal menyimpan dokumen ke object storage:", err);
+      res.status(500).json({ error: "Gagal menyimpan dokumen. Coba lagi." });
+      return;
+    }
+
+    const nextDocs = [...existingDocs, ...uploadedDocs];
 
     await db
       .update(dailyActivitiesTable)
@@ -639,13 +652,31 @@ router.get("/activities/:id/documents/:docId/download", requireAuth, async (req,
     return;
   }
 
-  const filePath = path.join(activityDocsDir, doc.fileName);
-  if (!fs.existsSync(filePath)) {
-    res.status(404).json({ error: "File dokumen tidak ditemukan di server." });
+  const objectPath = docObjectPath(doc.fileName);
+  const existsInStorage = await objectExists(objectPath).catch(() => false);
+
+  if (existsInStorage) {
+    res.setHeader("Content-Type", doc.mimeType || "application/octet-stream");
+    res.setHeader("Content-Disposition", `attachment; filename="${encodeURIComponent(doc.originalName)}"`);
+    const stream = getObjectReadStream(objectPath);
+    stream.on("error", () => {
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Gagal mengunduh dokumen." });
+      } else {
+        res.end();
+      }
+    });
+    stream.pipe(res);
     return;
   }
 
-  res.download(filePath, doc.originalName);
+  const filePath = path.join(activityDocsDir, doc.fileName);
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, doc.originalName);
+    return;
+  }
+
+  res.status(404).json({ error: "File dokumen tidak ditemukan di server." });
 });
 
 router.delete("/activities/:id/documents/:docId", requireRole("apuppt"), async (req, res): Promise<void> => {
@@ -683,9 +714,10 @@ router.delete("/activities/:id/documents/:docId", requireRole("apuppt"), async (
   }
 
   const nextDocs = docs.filter((item) => item.id !== docId);
-  const filePath = path.join(activityDocsDir, doc.fileName);
 
+  deleteObject(docObjectPath(doc.fileName)).catch(() => undefined);
   try {
+    const filePath = path.join(activityDocsDir, doc.fileName);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }

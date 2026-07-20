@@ -2,9 +2,8 @@ import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { db, usersTable } from "@workspace/db";
+import { saveObject } from "../lib/docStorage";
 import { LoginBody, ChangePasswordBody, ResetPasswordBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
@@ -12,20 +11,8 @@ import { z } from "zod";
 
 const router: IRouter = Router();
 
-const uploadsDir = path.join(process.cwd(), "uploads", "avatars");
-if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-const avatarStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadsDir),
-  filename: (req, _file, cb) => {
-    const sessionUser = ((req.session as unknown) as Record<string, unknown>).user as { id: string } | undefined;
-    const userId = sessionUser?.id ?? "unknown";
-    cb(null, `${userId}.jpg`);
-  },
-});
-
 const upload = multer({
-  storage: avatarStorage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
@@ -143,6 +130,14 @@ router.post("/auth/profile/avatar", requireAuth, upload.single("avatar"), async 
 
   if (!req.file) {
     res.status(400).json({ error: "Tidak ada file yang diunggah." });
+    return;
+  }
+
+  try {
+    await saveObject(`avatars/${sessionUser.id}.jpg`, req.file.buffer, req.file.mimetype || "image/jpeg");
+  } catch (err) {
+    console.error("Gagal menyimpan avatar ke object storage:", err);
+    res.status(500).json({ error: "Gagal menyimpan avatar. Coba lagi." });
     return;
   }
 
