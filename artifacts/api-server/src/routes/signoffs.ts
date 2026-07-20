@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db, reportSignoffsTable, usersTable } from "@workspace/db";
 import { requireAuth } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
@@ -51,7 +51,7 @@ router.get("/reports/signoff", requireAuth, async (req, res): Promise<void> => {
     .from(reportSignoffsTable)
     .leftJoin(usersTable, eq(reportSignoffsTable.signedOffBy, usersTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(reportSignoffsTable.periodStart);
+    .orderBy(desc(reportSignoffsTable.periodStart));
 
   res.json(rows);
 });

@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import bcrypt from "bcryptjs";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { db, usersTable, ptsTable } from "@workspace/db";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { logAudit } from "../lib/audit";
@@ -42,7 +42,7 @@ router.get("/users", requireRole("dk", "superadmin"), async (req, res): Promise<
     })
     .from(usersTable)
     .leftJoin(ptsTable, eq(usersTable.ptId, ptsTable.id))
-    .orderBy(usersTable.name);
+    .orderBy(desc(usersTable.createdAt));
 
   res.json(users);
 });

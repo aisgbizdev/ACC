@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte, lte, SQL } from "drizzle-orm";
+import { eq, and, gte, lte, desc, SQL } from "drizzle-orm";
 import { db, auditLogsTable, usersTable } from "@workspace/db";
 import { requireRole } from "../middlewares/auth";
 
@@ -40,7 +40,7 @@ router.get("/audit-logs", requireRole("superadmin"), async (req, res): Promise<v
     .from(auditLogsTable)
     .leftJoin(usersTable, eq(auditLogsTable.userId, usersTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(auditLogsTable.createdAt)
+    .orderBy(desc(auditLogsTable.createdAt))
     .limit(500);
 
   res.json(logs);

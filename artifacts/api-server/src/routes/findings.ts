@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, SQL } from "drizzle-orm";
+import { eq, and, desc, SQL } from "drizzle-orm";
 import { db, findingsTable, branchesTable, ticketCommentsTable, usersTable } from "@workspace/db";
 import {
   AcknowledgeFindingBody,
@@ -107,7 +107,7 @@ router.get("/findings", requireAuth, async (req, res): Promise<void> => {
     .from(findingsTable)
     .leftJoin(branchesTable, eq(findingsTable.branchId, branchesTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(findingsTable.date);
+    .orderBy(desc(findingsTable.date));
   res.json(findings);
 });
 

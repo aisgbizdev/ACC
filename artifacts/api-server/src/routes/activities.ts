@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
-import { eq, and, SQL, isNull, isNotNull, inArray } from "drizzle-orm";
+import { eq, and, desc, SQL, isNull, isNotNull, inArray } from "drizzle-orm";
 import { db, dailyActivitiesTable, branchesTable, activityReviewsTable, usersTable, activityCommentsTable } from "@workspace/db";
 import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams, ReviewActivityBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
@@ -176,7 +176,7 @@ router.get("/activities", requireAuth, async (req, res): Promise<void> => {
     .from(dailyActivitiesTable)
     .leftJoin(branchesTable, eq(dailyActivitiesTable.branchId, branchesTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(dailyActivitiesTable.date);
+    .orderBy(desc(dailyActivitiesTable.date));
 
   res.json(rows);
 });
