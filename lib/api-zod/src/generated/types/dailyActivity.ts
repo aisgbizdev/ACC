@@ -28,6 +28,9 @@ export interface DailyActivity {
   dkNotes?: string | null;
   duSignedOffAt?: Date | null;
   duSignedOffBy?: string | null;
+  duRejectedAt?: Date | null;
+  duRejectedBy?: string | null;
+  duRejectionReason?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

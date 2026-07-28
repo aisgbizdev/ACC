@@ -13,4 +13,5 @@ export const ListActivitiesReviewStatus = {
   pending_review: "pending_review",
   reviewed: "reviewed",
   signed_off: "signed_off",
+  rejected: "rejected",
 } as const;

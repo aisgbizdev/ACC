@@ -174,7 +174,7 @@ export const ListActivitiesQueryParams = zod.object({
   branchId: zod.coerce.string().optional(),
   date: zod.coerce.string().optional(),
   reviewStatus: zod
-    .enum(["pending_review", "reviewed", "signed_off"])
+    .enum(["pending_review", "reviewed", "signed_off", "rejected"])
     .optional(),
 });
 
@@ -208,6 +208,9 @@ export const ListActivitiesResponseItem = zod.object({
   dkNotes: zod.string().nullish(),
   duSignedOffAt: zod.coerce.date().nullish(),
   duSignedOffBy: zod.string().nullish(),
+  duRejectedAt: zod.coerce.date().nullish(),
+  duRejectedBy: zod.string().nullish(),
+  duRejectionReason: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -258,6 +261,7 @@ export const UpdateActivityBody = zod.object({
       "pelaporan",
       "sosialisasi",
       "lainnya",
+      "libur",
     ])
     .optional(),
   itemsReviewed: zod.number().optional(),
@@ -300,6 +304,9 @@ export const UpdateActivityResponse = zod.object({
   dkNotes: zod.string().nullish(),
   duSignedOffAt: zod.coerce.date().nullish(),
   duSignedOffBy: zod.string().nullish(),
+  duRejectedAt: zod.coerce.date().nullish(),
+  duRejectedBy: zod.string().nullish(),
+  duRejectionReason: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -345,6 +352,9 @@ export const ReviewActivityResponse = zod.object({
   dkNotes: zod.string().nullish(),
   duSignedOffAt: zod.coerce.date().nullish(),
   duSignedOffBy: zod.string().nullish(),
+  duRejectedAt: zod.coerce.date().nullish(),
+  duRejectedBy: zod.string().nullish(),
+  duRejectionReason: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });
@@ -386,6 +396,57 @@ export const SignOffActivityResponse = zod.object({
   dkNotes: zod.string().nullish(),
   duSignedOffAt: zod.coerce.date().nullish(),
   duSignedOffBy: zod.string().nullish(),
+  duRejectedAt: zod.coerce.date().nullish(),
+  duRejectedBy: zod.string().nullish(),
+  duRejectionReason: zod.string().nullish(),
+  createdAt: zod.coerce.date(),
+  updatedAt: zod.coerce.date(),
+});
+
+/**
+ * @summary DU rejects an activity, sending it back to APUPPT for correction
+ */
+export const RejectActivityParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const RejectActivityBody = zod.object({
+  reason: zod.string(),
+});
+
+export const RejectActivityResponse = zod.object({
+  id: zod.string(),
+  ptId: zod.string(),
+  userId: zod.string(),
+  branchId: zod.string().nullish(),
+  branchName: zod.string().nullish(),
+  date: zod.coerce.date(),
+  activityType: zod.enum([
+    "kyc",
+    "cdd",
+    "screening",
+    "monitoring_transaksi",
+    "pelaporan",
+    "sosialisasi",
+    "lainnya",
+    "libur",
+  ]),
+  itemsReviewed: zod.number(),
+  customerRiskCategories: zod
+    .array(zod.enum(["high", "medium", "low"]))
+    .nullish(),
+  hasFinding: zod.boolean(),
+  findingSummary: zod.string().nullish(),
+  findingStatus: zod.enum(["pending", "follow_up", "completed"]).nullish(),
+  notes: zod.string().nullish(),
+  dkReviewedAt: zod.coerce.date().nullish(),
+  dkReviewedBy: zod.string().nullish(),
+  dkNotes: zod.string().nullish(),
+  duSignedOffAt: zod.coerce.date().nullish(),
+  duSignedOffBy: zod.string().nullish(),
+  duRejectedAt: zod.coerce.date().nullish(),
+  duRejectedBy: zod.string().nullish(),
+  duRejectionReason: zod.string().nullish(),
   createdAt: zod.coerce.date(),
   updatedAt: zod.coerce.date(),
 });

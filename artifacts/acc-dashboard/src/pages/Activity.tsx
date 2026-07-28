@@ -84,6 +84,8 @@ type ActivityItem = {
   documents?: unknown;
   dkReviewedAt?: string | null; dkNotes?: string | null;
   duSignedOffAt?: string | null;
+  duRejectedAt?: string | null;
+  duRejectionReason?: string | null;
   reportSubmittedAt?: string | null;
   uploadDeadlineAt?: string | null;
 };
@@ -330,6 +332,10 @@ function HistoryCard({
               <span className="text-xs font-medium text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded flex items-center gap-1">
                 <FileCheck2 className="w-3 h-3" />DU Approve
               </span>
+            ) : a.duRejectedAt ? (
+              <span className="text-xs font-medium text-red-300 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />Ditolak DU
+              </span>
             ) : (
               <span className="text-xs text-amber-300">Menunggu Review DU</span>
             )}
@@ -365,6 +371,11 @@ function HistoryCard({
             <p className="text-amber-300"><span className="font-semibold">Temuan:</span> {a.findingSummary}</p>
           )}
           {a.dkNotes && <p><span className="font-semibold text-slate-400">Catatan Monitoring:</span> {a.dkNotes}</p>}
+          {a.duRejectedAt && (
+            <p className="text-red-300">
+              <span className="font-semibold">Alasan Ditolak DU:</span> {a.duRejectionReason ?? "-"}
+            </p>
+          )}
           {a.reportSubmittedAt && <p><span className="font-semibold text-slate-400">Case Closed:</span> {new Date(a.reportSubmittedAt).toLocaleString("id-ID")}</p>}
           {a.notes && <p><span className="font-semibold text-slate-400">Catatan:</span> {a.notes}</p>}
           {docs.length > 0 && (
@@ -828,6 +839,8 @@ export default function Activity({
                             <span className="text-slate-200">Case Closed</span>
                           ) : ai.duSignedOffAt ? (
                             <span className="text-emerald-400">Approve DU</span>
+                          ) : ai.duRejectedAt ? (
+                            <span className="text-red-400">Ditolak DU</span>
                           ) : (
                             <span className="text-amber-400">Menunggu Review DU</span>
                           )}

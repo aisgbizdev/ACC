@@ -41,6 +41,7 @@ export * from "./ptStatus";
 export * from "./ptStatusCard";
 export * from "./ptStatusCardStatus";
 export * from "./ptStatusStatus";
+export * from "./rejectActivityBody";
 export * from "./resetPasswordBody";
 export * from "./reviewActivityBody";
 export * from "./successResponse";

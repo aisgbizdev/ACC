@@ -42,6 +42,10 @@ export const dailyActivitiesTable = pgTable(
     // DU Sign-off
     duSignedOffAt: timestamp("du_signed_off_at", { withTimezone: true }),
     duSignedOffBy: uuid("du_signed_off_by").references(() => usersTable.id),
+    // DU Rejection (sends the report back to APUPPT for correction)
+    duRejectedAt: timestamp("du_rejected_at", { withTimezone: true }),
+    duRejectedBy: uuid("du_rejected_by").references(() => usersTable.id),
+    duRejectionReason: text("du_rejection_reason"),
     // APUPPT upload completion (case closed)
     reportSubmittedAt: timestamp("report_submitted_at", { withTimezone: true }),
     reportSubmittedBy: uuid("report_submitted_by").references(() => usersTable.id),
@@ -64,6 +68,9 @@ export const insertDailyActivitySchema = createInsertSchema(dailyActivitiesTable
   dkNotes: true,
   duSignedOffAt: true,
   duSignedOffBy: true,
+  duRejectedAt: true,
+  duRejectedBy: true,
+  duRejectionReason: true,
   reportSubmittedAt: true,
   reportSubmittedBy: true,
 });

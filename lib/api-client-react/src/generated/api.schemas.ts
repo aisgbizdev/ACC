@@ -177,12 +177,19 @@ export interface DailyActivity {
   dkNotes?: string | null;
   duSignedOffAt?: string | null;
   duSignedOffBy?: string | null;
+  duRejectedAt?: string | null;
+  duRejectedBy?: string | null;
+  duRejectionReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ReviewActivityBody {
   notes?: string | null;
+}
+
+export interface RejectActivityBody {
+  reason: string;
 }
 
 export type CreateActivityBodyActivityType =
@@ -391,6 +398,7 @@ export const ListActivitiesReviewStatus = {
   pending_review: "pending_review",
   reviewed: "reviewed",
   signed_off: "signed_off",
+  rejected: "rejected",
 } as const;
 
 export type ListFindingsParams = {

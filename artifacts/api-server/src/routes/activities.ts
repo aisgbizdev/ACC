@@ -1,11 +1,11 @@
 import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
 import { eq, and, desc, SQL, isNull, isNotNull, inArray } from "drizzle-orm";
 import { db, dailyActivitiesTable, branchesTable, activityReviewsTable, usersTable, activityCommentsTable } from "@workspace/db";
-import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams, ReviewActivityBody } from "@workspace/api-zod";
+import { CreateActivityBody, UpdateActivityBody, ListActivitiesQueryParams, UpdateActivityParams, ReviewActivityBody, RejectActivityBody } from "@workspace/api-zod";
 import { requireAuth, requireRole } from "../middlewares/auth";
 import { z } from "zod";
 import { logAudit } from "../lib/audit";
-import { notifyNewActivity } from "../lib/push-notify";
+import { notifyNewActivity, notifyActivityRejected } from "../lib/push-notify";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
@@ -135,6 +135,9 @@ const ACTIVITY_SELECT = {
   dkNotes: dailyActivitiesTable.dkNotes,
   duSignedOffAt: dailyActivitiesTable.duSignedOffAt,
   duSignedOffBy: dailyActivitiesTable.duSignedOffBy,
+  duRejectedAt: dailyActivitiesTable.duRejectedAt,
+  duRejectedBy: dailyActivitiesTable.duRejectedBy,
+  duRejectionReason: dailyActivitiesTable.duRejectionReason,
   reportSubmittedAt: dailyActivitiesTable.reportSubmittedAt,
   reportSubmittedBy: dailyActivitiesTable.reportSubmittedBy,
   uploadDeadlineAt: dailyActivitiesTable.uploadDeadlineAt,
@@ -164,11 +167,14 @@ router.get("/activities", requireAuth, async (req, res): Promise<void> => {
 
   if (reviewStatus === "pending_review") {
     conditions.push(isNull(dailyActivitiesTable.duSignedOffAt));
+    conditions.push(isNull(dailyActivitiesTable.duRejectedAt));
   } else if (reviewStatus === "reviewed") {
     conditions.push(isNotNull(dailyActivitiesTable.duSignedOffAt));
     conditions.push(isNull(dailyActivitiesTable.reportSubmittedAt));
   } else if (reviewStatus === "signed_off") {
     conditions.push(isNotNull(dailyActivitiesTable.reportSubmittedAt));
+  } else if (reviewStatus === "rejected") {
+    conditions.push(isNotNull(dailyActivitiesTable.duRejectedAt));
   }
 
   const rows = await db
@@ -310,6 +316,9 @@ router.put("/activities/:id", requireRole("apuppt"), async (req, res): Promise<v
       ...(data.findingSummary !== undefined ? { findingSummary: data.findingSummary ?? null } : {}),
       ...(data.findingStatus !== undefined ? { findingStatus: data.findingStatus ?? null } : {}),
       ...(data.notes !== undefined ? { notes: data.notes ?? null } : {}),
+      ...(existing.duRejectedAt
+        ? { duRejectedAt: null, duRejectedBy: null, duRejectionReason: null }
+        : {}),
     })
     .where(eq(dailyActivitiesTable.id, params.data.id));
 
@@ -467,6 +476,63 @@ router.post("/activities/:id/signoff", requireRole("du"), async (req, res): Prom
     .from(dailyActivitiesTable)
     .leftJoin(branchesTable, eq(dailyActivitiesTable.branchId, branchesTable.id))
     .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  res.json(withBranch);
+});
+
+router.post("/activities/:id/reject", requireRole("du"), async (req, res): Promise<void> => {
+  const user = req.session.user!;
+  const rawId = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+
+  const params = ReviewParamsSchema.safeParse({ id: rawId });
+  if (!params.success) {
+    res.status(400).json({ error: "ID tidak valid." });
+    return;
+  }
+
+  const parsed = RejectActivityBody.safeParse(req.body);
+  if (!parsed.success || !parsed.data.reason.trim()) {
+    res.status(400).json({ error: "Alasan penolakan wajib diisi." });
+    return;
+  }
+
+  const [existing] = await db.select().from(dailyActivitiesTable).where(eq(dailyActivitiesTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Aktivitas tidak ditemukan." });
+    return;
+  }
+
+  if (user.ptId && existing.ptId !== user.ptId) {
+    res.status(403).json({ error: "Akses ditolak." });
+    return;
+  }
+
+  if (existing.duSignedOffAt) {
+    res.status(409).json({ error: "Aktivitas ini sudah di-approve DU." });
+    return;
+  }
+
+  await db
+    .update(dailyActivitiesTable)
+    .set({
+      duRejectedAt: new Date(),
+      duRejectedBy: user.id,
+      duRejectionReason: parsed.data.reason.trim(),
+    })
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  await logAudit("reject_activity", "activity", params.data.id, req, {
+    ptId: existing.ptId,
+    afterData: { reason: parsed.data.reason.trim() },
+  });
+
+  const [withBranch] = await db
+    .select(ACTIVITY_SELECT)
+    .from(dailyActivitiesTable)
+    .leftJoin(branchesTable, eq(dailyActivitiesTable.branchId, branchesTable.id))
+    .where(eq(dailyActivitiesTable.id, params.data.id));
+
+  notifyActivityRejected(existing.ptId, existing.activityType, user.id, parsed.data.reason.trim()).catch(() => {});
 
   res.json(withBranch);
 });

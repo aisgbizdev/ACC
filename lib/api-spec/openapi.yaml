@@ -321,7 +321,7 @@ paths:
           in: query
           schema:
             type: string
-            enum: [pending_review, reviewed, signed_off]
+            enum: [pending_review, reviewed, signed_off, rejected]
       responses:
         "200":
           description: List of activities
@@ -466,6 +466,55 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DailyActivity"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Access denied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /activities/{id}/reject:
+    post:
+      operationId: rejectActivity
+      tags: [activities]
+      summary: DU rejects an activity, sending it back to APUPPT for correction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectActivityBody"
+      responses:
+        "200":
+          description: Activity rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyActivity"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
         "401":
           description: Not authenticated
           content:
@@ -916,6 +965,7 @@ components:
             - pelaporan
             - sosialisasi
             - lainnya
+            - libur
         itemsReviewed:
           type: integer
         customerRiskCategories:
@@ -953,6 +1003,16 @@ components:
         duSignedOffBy:
           type: string
           nullable: true
+        duRejectedAt:
+          type: string
+          format: date-time
+          nullable: true
+        duRejectedBy:
+          type: string
+          nullable: true
+        duRejectionReason:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -977,6 +1037,14 @@ components:
           type: string
           nullable: true
 
+    RejectActivityBody:
+      type: object
+      properties:
+        reason:
+          type: string
+      required:
+        - reason
+
     CreateActivityBody:
       type: object
       properties:
@@ -998,6 +1066,7 @@ components:
             - pelaporan
             - sosialisasi
             - lainnya
+            - libur
         itemsReviewed:
           type: integer
         customerRiskCategories:
@@ -1041,6 +1110,7 @@ components:
             - pelaporan
             - sosialisasi
             - lainnya
+            - libur
         itemsReviewed:
           type: integer
         customerRiskCategories:

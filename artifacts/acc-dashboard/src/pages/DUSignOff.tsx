@@ -4,13 +4,14 @@ import {
   useListActivities,
   useListPts,
   useSignOffActivity,
+  useRejectActivity,
   getListActivitiesQueryKey,
   type DailyActivity,
   type ErrorType,
   type ErrorResponse,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileCheck2, Building2, Users, CheckCircle2, Clock, Paperclip, Download, Trash2 } from "lucide-react";
+import { FileCheck2, Building2, Users, CheckCircle2, XCircle, Clock, Paperclip, Download, Trash2 } from "lucide-react";
 import { detectActivityScope, stripActivityScopeTag, extractActivityInputTime } from "@/lib/activity-scope";
 import { getActivityDocuments, formatFileSize } from "@/lib/activity-documents";
 import { getBaseUrl } from "@/lib/api";
@@ -41,7 +42,7 @@ export default function DUSignOff() {
   const [filterPt, setFilterPt] = useState("");
   const [filterScope, setFilterScope] = useState<"" | "daily" | "monthly" | "quarterly">("");
   const canDeleteDocuments = user?.role === "apuppt" || user?.role === "owner" || user?.role === "superadmin";
-  const [filterTab, setFilterTab] = useState<"pending" | "approved" | "closed">("pending");
+  const [filterTab, setFilterTab] = useState<"pending" | "approved" | "closed" | "rejected">("pending");
 
   const activityParams: Record<string, string> = {};
   if (filterPt) activityParams.ptId = filterPt;
@@ -50,7 +51,9 @@ export default function DUSignOff() {
       ? "pending_review"
       : filterTab === "approved"
         ? "reviewed"
-        : "signed_off";
+        : filterTab === "rejected"
+          ? "rejected"
+          : "signed_off";
 
   const { data: activities, isLoading } = useListActivities(activityParams);
   const { data: pts } = useListPts();
@@ -66,6 +69,27 @@ export default function DUSignOff() {
       },
     },
   });
+
+  const { mutate: rejectActivity, isPending: rejecting } = useRejectActivity<ErrorType<ErrorResponse>>({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListActivitiesQueryKey() });
+      },
+      onError: (err) => {
+        window.alert(err.data?.error ?? err.message ?? "Gagal menolak laporan.");
+      },
+    },
+  });
+
+  const handleReject = (activityId: string) => {
+    const reason = window.prompt("Alasan penolakan (wajib diisi):");
+    if (reason === null) return;
+    if (!reason.trim()) {
+      window.alert("Alasan penolakan wajib diisi.");
+      return;
+    }
+    rejectActivity({ id: activityId, data: { reason: reason.trim() } });
+  };
 
   const handleDeleteDocument = async (activityId: string, docId: string, docName: string) => {
     const confirmed = window.confirm(`Hapus dokumen "${docName}"? Aksi ini tidak bisa dibatalkan.`);
@@ -144,6 +168,13 @@ export default function DUSignOff() {
           >
             Case Closed
           </button>
+          <button
+            type="button"
+            onClick={() => setFilterTab("rejected")}
+            className={`rounded-md px-4 py-1.5 text-xs font-medium ${filterTab === "rejected" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}
+          >
+            Ditolak
+          </button>
         </div>
 
         {isLoading ? (
@@ -214,17 +245,32 @@ export default function DUSignOff() {
 
                   <div className="mt-3">
                     {filterTab === "pending" ? (
-                      <button
-                        type="button"
-                        onClick={() => signOff({ id: a.id })}
-                        disabled={signingOff}
-                        className="w-full rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white hover:bg-violet-500 disabled:opacity-50"
-                      >
-                        {signingOff ? "Memproses..." : "Approve / OK"}
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => signOff({ id: a.id })}
+                          disabled={signingOff || rejecting}
+                          className="flex-1 rounded-xl bg-violet-600 px-4 py-3 text-sm font-bold text-white hover:bg-violet-500 disabled:opacity-50"
+                        >
+                          {signingOff ? "Memproses..." : "Approve / OK"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleReject(a.id)}
+                          disabled={signingOff || rejecting}
+                          className="flex-1 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-50"
+                        >
+                          {rejecting ? "Memproses..." : "Reject"}
+                        </button>
+                      </div>
                     ) : filterTab === "approved" ? (
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
                         DU sudah approve. Menunggu APUPPT update status ke "Laporan Terkirim (Case Closed)".
+                      </div>
+                    ) : filterTab === "rejected" ? (
+                      <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+                        <p className="flex items-center gap-1 font-semibold"><XCircle className="h-3.5 w-3.5" />Ditolak DU</p>
+                        {a.duRejectionReason && <p className="mt-1 font-normal">{a.duRejectionReason}</p>}
                       </div>
                     ) : (
                       <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-600">

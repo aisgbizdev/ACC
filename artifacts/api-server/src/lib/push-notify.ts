@@ -177,6 +177,23 @@ export async function notifyNewActivity(ptId: string, activityType: string, subm
   }
 }
 
+export async function notifyActivityRejected(ptId: string, activityType: string, rejectedByUserId: string, reason: string): Promise<void> {
+  try {
+    const rejecterName = await getUserDisplayName(rejectedByUserId);
+    const payload: PushPayload = {
+      title: "Laporan Ditolak DU",
+      body: `${rejecterName} menolak laporan ${activityType}: ${reason.slice(0, 80)}`,
+      url: "/activity",
+      tag: `activity-rejected-${ptId}`,
+    };
+
+    const apupptIds = await getUsersByRole(["apuppt"], ptId);
+    await sendToUsers(apupptIds, payload);
+  } catch (err) {
+    logger.error({ err }, "notifyActivityRejected failed");
+  }
+}
+
 export async function notifyDailyMissing(ptId: string, ptName: string): Promise<void> {
   try {
     const payload: PushPayload = {

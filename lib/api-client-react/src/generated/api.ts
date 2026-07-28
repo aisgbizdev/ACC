@@ -36,6 +36,7 @@ import type {
   PtDetail,
   PtReportSummary,
   PtStatus,
+  RejectActivityBody,
   ResetPasswordBody,
   ReviewActivityBody,
   SuccessResponse,
@@ -1362,6 +1363,93 @@ export const useSignOffActivity = <
   TContext
 > => {
   return useMutation(getSignOffActivityMutationOptions(options));
+};
+
+/**
+ * @summary DU rejects an activity, sending it back to APUPPT for correction
+ */
+export const getRejectActivityUrl = (id: string) => {
+  return `/api/activities/${id}/reject`;
+};
+
+export const rejectActivity = async (
+  id: string,
+  rejectActivityBody: RejectActivityBody,
+  options?: RequestInit,
+): Promise<DailyActivity> => {
+  return customFetch<DailyActivity>(getRejectActivityUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(rejectActivityBody),
+  });
+};
+
+export const getRejectActivityMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectActivity>>,
+    TError,
+    { id: string; data: BodyType<RejectActivityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof rejectActivity>>,
+  TError,
+  { id: string; data: BodyType<RejectActivityBody> },
+  TContext
+> => {
+  const mutationKey = ["rejectActivity"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof rejectActivity>>,
+    { id: string; data: BodyType<RejectActivityBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return rejectActivity(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RejectActivityMutationResult = NonNullable<
+  Awaited<ReturnType<typeof rejectActivity>>
+>;
+export type RejectActivityMutationBody = BodyType<RejectActivityBody>;
+export type RejectActivityMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary DU rejects an activity, sending it back to APUPPT for correction
+ */
+export const useRejectActivity = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof rejectActivity>>,
+    TError,
+    { id: string; data: BodyType<RejectActivityBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof rejectActivity>>,
+  TError,
+  { id: string; data: BodyType<RejectActivityBody> },
+  TContext
+> => {
+  return useMutation(getRejectActivityMutationOptions(options));
 };
 
 /**
